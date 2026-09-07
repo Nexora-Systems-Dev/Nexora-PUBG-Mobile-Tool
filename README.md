@@ -41,13 +41,13 @@ The GitHub Actions workflow in .github/workflows/build.yml runs the same Release
 
 Create a self-contained Windows x64 executable and a ZIP package:
 
-    .\scripts\package-release.ps1 -Version v1.0.8
+    .\scripts\package-release.ps1 -Version v1.0.9
 
 The generated files are written to artifacts:
 
-- Nexora-v1.0.8-win-x64.exe — self-contained executable with the .NET runtime.
-- Nexora-v1.0.8-win-x64.zip — portable package with release notes.
-- Nexora-v1.0.8-win-x64-SHA256SUMS.txt — SHA-256 checksums.
+- Nexora-v1.0.9-win-x64.exe — self-contained executable with the .NET runtime.
+- Nexora-v1.0.9-win-x64.zip — portable package with release notes.
+- Nexora-v1.0.9-win-x64-SHA256SUMS.txt — SHA-256 checksums.
 
 artifacts, bin, and obj are excluded from Git.
 
@@ -65,5 +65,5 @@ artifacts, bin, and obj are excluded from Git.
 
 - Settings are not applied until the related action is selected.
 - NVIDIA Profile Inspector or Defender operations can fail because of driver versions, file locks, antivirus policy, or Windows security policy. The result is reported in the UI.
-- The update endpoint in Services/UpdateService.cs still points to the previous GitHub repository. Update it after the new repository URL is known.
+- The update endpoint checks the latest release from `mohammad-emad-dev/Nexora-PUBG-Mobile-Tool` and downloads the ZIP asset.
 - No open-source license has been selected yet. Add a LICENSE file before granting reuse rights.
