@@ -1,0 +1,39 @@
+# Visual Studio / editor state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET build output
+[Bb]in/
+[Oo]bj/
+publish/
+publish-*/
+artifacts/
+
+# Test and coverage output
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Local configuration and secrets
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.snk
+
+# Operating system files
+Thumbs.db
+Desktop.ini
+.DS_Store
