@@ -4,6 +4,8 @@ Windows desktop application written in C# and WPF for applying selected GameLoop
 
 The project is a rebuild of the existing tool workflow. The interface is implemented in WPF; the operations remain explicit and user-triggered.
 
+Nexora is a local utility. It does not inject code into PUBG Mobile, read or write game memory, automate gameplay, or modify game executables.
+
 ## Scope
 
 - Connect to GameLoop through ADB and detect supported PUBG Mobile packages.
@@ -24,16 +26,23 @@ The project is a rebuild of the existing tool workflow. The interface is impleme
 
 The optimizer has paths for Intel, AMD, and NVIDIA hardware and for laptops. Actual results depend on the installed driver, Windows policy, GameLoop version, and hardware capabilities.
 
+Nexora discovers GameLoop from its 32-bit registry entries first, then from running GameLoop processes, and finally from standard Windows installation locations. It does not depend on the developer's drive. Portable or non-standard installations may require a future manual path selector; affected actions report a clear failure instead of silently using an unrelated path.
+
 ## Development
 
 Restore and run:
 
-    dotnet restore .\Nexora.csproj
+    dotnet restore .\Nexora.slnx
     dotnet run --project .\Nexora.csproj
 
 Build Release:
 
-    dotnet build .\Nexora.csproj --configuration Release
+    dotnet build .\Nexora.slnx --configuration Release
+    dotnet test .\Nexora.slnx --configuration Release --filter "Category!=LiveFunctionalVerification"
+
+The normal test suite does not require GameLoop. Live verification tests require a running, configured emulator and can be run explicitly with:
+
+    dotnet test .\Nexora.slnx --configuration Release --filter "Category=LiveFunctionalVerification"
 
 The GitHub Actions workflow in .github/workflows/build.yml runs the same Release build on Windows for pushes and pull requests targeting main.
 
@@ -41,21 +50,24 @@ The GitHub Actions workflow in .github/workflows/build.yml runs the same Release
 
 Create a self-contained Windows x64 executable and a ZIP package:
 
-    .\scripts\package-release.ps1 -Version v1.0.9
+    .\scripts\package-release.ps1 -Version v1.0.10
 
 The generated files are written to artifacts:
 
-- Nexora-v1.0.9-win-x64.exe — self-contained executable with the .NET runtime.
-- Nexora-v1.0.9-win-x64.zip — portable package with release notes.
-- Nexora-v1.0.9-win-x64-SHA256SUMS.txt — SHA-256 checksums.
+- Nexora-v1.0.10-win-x64.exe — self-contained executable with the .NET runtime.
+- Nexora-v1.0.10-win-x64.zip — portable package with release notes.
+- Nexora-v1.0.10-win-x64-SHA256SUMS.txt — SHA-256 checksums.
 
 artifacts, bin, and obj are excluded from Git.
 
 ## Project layout
 
     MainWindow.xaml(.cs)       WPF shell, navigation, and page handlers
-    Models/                    Shared result and settings models
+    Configuration/             Version, paths, options, and operational constants
+    Features/                  GameLoop, layout, and network-owned data/codecs
     Services/                  GameLoop, ADB, Windows, registry, update, and layout code
+    Shared/                    Process, registry, file, and result primitives
+    UI/                        Window behavior and presentation helpers
     Assets/                    Profiles, styles, icons, and bundled helper tools
     scripts/                   Reproducible release packaging scripts
     app.manifest               Administrator-elevation manifest

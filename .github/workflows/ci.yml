@@ -26,4 +26,4 @@ jobs:
         run: dotnet build Nexora.slnx --configuration Release --no-restore
 
       - name: Test Release
-        run: dotnet test Nexora.slnx --configuration Release --no-build --verbosity normal
+        run: dotnet test Nexora.slnx --configuration Release --no-build --filter "Category!=LiveFunctionalVerification" --verbosity normal

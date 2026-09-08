@@ -19,7 +19,11 @@ public sealed class ShortcutService
 
     public OperationResult CreateShortcut(string displayName, string packageName)
     {
-        var marketPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath) ?? AppConstants.Assets.DefaultAppMarketPath;
+        var marketPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath)
+            ?? (_registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI) is { } ui
+                ? Path.Combine(Directory.GetParent(ui)?.FullName ?? string.Empty, AppConstants.Registry.BranchAppMarket)
+                : null)
+            ?? AppConstants.Assets.DefaultAppMarketPath;
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
         var shortcutPath = Path.Combine(desktop, $"{displayName}.lnk");
         var iconSource = Path.Combine(_assetRoot, AppConstants.Assets.IconsDirectoryName, $"{packageName}.ico");

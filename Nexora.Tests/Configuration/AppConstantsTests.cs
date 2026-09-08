@@ -18,7 +18,7 @@ public sealed class AppConstantsTests
         // Arrange & Act
         var version = AppConstants.CurrentVersion;
 
-        // Assert: matches the "v1.0.9" tag scheme used by GitHub releases.
+        // Assert: matches the version tag scheme used by GitHub releases.
         version.Should().MatchRegex(@"^v\d+\.\d+\.\d+$");
     }
 

@@ -126,19 +126,63 @@ public sealed class GameLoopProcessService
     public string? GetGameLoopRoot()
     {
         var installPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
-        if (string.IsNullOrWhiteSpace(installPath))
+        if (!string.IsNullOrWhiteSpace(installPath))
         {
-            return null;
+            try
+            {
+                var root = Directory.GetParent(Path.GetFullPath(installPath))?.FullName;
+                if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
+                {
+                    return root;
+                }
+            }
+            catch
+            {
+                // Invalid path format
+            }
         }
 
-        try
+        // Running process fallback: discover root from active emulator executable
+        foreach (var name in AppConstants.Emulator.RunningCheckProcessNames)
         {
-            return Directory.GetParent(Path.GetFullPath(installPath))?.FullName;
+            try
+            {
+                var procs = Process.GetProcessesByName(name);
+                foreach (var process in procs)
+                {
+                    try
+                    {
+                        var modPath = process.MainModule?.FileName;
+                        if (!string.IsNullOrWhiteSpace(modPath))
+                        {
+                            var uiDir = Path.GetDirectoryName(modPath);
+                            if (!string.IsNullOrWhiteSpace(uiDir))
+                            {
+                                var parent = Directory.GetParent(uiDir)?.FullName;
+                                if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
+                                {
+                                    return parent;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Protected process access denied
+                    }
+                    finally
+                    {
+                        process.Dispose();
+                    }
+                }
+            }
+            catch
+            {
+                // Query access denied
+            }
         }
-        catch
-        {
-            return null;
-        }
+
+        return null;
     }
 
     /// <summary>

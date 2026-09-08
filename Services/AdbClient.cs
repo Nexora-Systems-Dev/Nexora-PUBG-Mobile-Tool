@@ -87,6 +87,13 @@ public sealed class AdbClient : IAdbClient
                 return true;
             }
 
+            if (!result.Succeeded ||
+                result.StandardError.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+                result.StandardOutput.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                TrySelectDevice(cancellationToken);
+            }
+
             await Task.Delay(AppConstants.Timeouts.AdbBootPollDelay, cancellationToken);
         }
 
@@ -195,6 +202,43 @@ public sealed class AdbClient : IAdbClient
             {
                 candidates.Add(Path.Combine(installPath, AppConstants.Adb.FileName));
                 candidates.Add(Path.Combine(installPath, "adb", AppConstants.Adb.FileName));
+            }
+        }
+
+        // Running process fallback: discover adb from active emulator executable location
+        foreach (var name in AppConstants.Emulator.RunningCheckProcessNames)
+        {
+            try
+            {
+                var procs = System.Diagnostics.Process.GetProcessesByName(name);
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        var modPath = p.MainModule?.FileName;
+                        if (!string.IsNullOrWhiteSpace(modPath))
+                        {
+                            var dir = Path.GetDirectoryName(modPath);
+                            if (!string.IsNullOrWhiteSpace(dir))
+                            {
+                                candidates.Add(Path.Combine(dir, AppConstants.Adb.FileName));
+                                candidates.Add(Path.Combine(dir, "adb", AppConstants.Adb.FileName));
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Protected process access denied
+                    }
+                    finally
+                    {
+                        p.Dispose();
+                    }
+                }
+            }
+            catch
+            {
+                // Access denied or platform restriction
             }
         }
 
