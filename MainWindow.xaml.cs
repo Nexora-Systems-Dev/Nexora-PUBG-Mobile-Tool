@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using Nexora.Configuration;
 using Nexora.Features.GameLoop;
 using Nexora.Features.Layout;
@@ -144,6 +145,15 @@ public partial class MainWindow : Window
         if (!result.Success)
         {
             SetStatus(result.Message, isError: true);
+            var danger = FindResource("Danger") as Brush ?? Brushes.Crimson;
+            var dangerGlow = new DropShadowEffect { Color = Color.FromRgb(0xEF, 0x44, 0x44), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.85 };
+            TopConnectionDot.Fill = danger;
+            TopConnectionDot.Effect = dangerGlow;
+            TopConnectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0xEF, 0x44, 0x44));
+            SidebarConnectionDot.Fill = danger;
+            SidebarConnectionDot.Effect = dangerGlow;
+            TopConnectionText.Text = "Connection failed";
+            SidebarConnectionText.Text = "FAILED";
             return;
         }
 
@@ -156,9 +166,14 @@ public partial class MainWindow : Window
         {
             SetStatus(result.Message);
             ConnectionDetail.Text = "Select the PUBG Mobile version to load its settings.";
-            TopConnectionDot.Fill = FindResource("Success") as Brush;
+            var success = FindResource("Success") as Brush ?? Brushes.LimeGreen;
+            var emeraldGlow = new DropShadowEffect { Color = Color.FromRgb(0x10, 0xB9, 0x81), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 };
+            TopConnectionDot.Fill = success;
+            TopConnectionDot.Effect = emeraldGlow;
+            TopConnectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x10, 0xB9, 0x81));
             TopConnectionText.Text = "GameLoop connected";
-            SidebarConnectionDot.Fill = FindResource("Success") as Brush;
+            SidebarConnectionDot.Fill = success;
+            SidebarConnectionDot.Effect = emeraldGlow;
             SidebarConnectionText.Text = "CONNECTED";
             SidebarAdbText.Text = "ADB: Connected";
             SummaryAdb.Text = "Connected";
@@ -589,10 +604,15 @@ public partial class MainWindow : Window
     private void SetConnectedState(string message)
     {
         var success = FindResource("Success") as Brush ?? Brushes.LimeGreen;
+        var emeraldGlow = new DropShadowEffect { Color = Color.FromRgb(0x10, 0xB9, 0x81), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 };
         ConnectionDot.Fill = success;
+        ConnectionDot.Effect = emeraldGlow;
         TopConnectionDot.Fill = success;
+        TopConnectionDot.Effect = emeraldGlow;
         TopConnectionText.Text = "Connected to GameLoop";
+        TopConnectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x10, 0xB9, 0x81));
         SidebarConnectionDot.Fill = success;
+        SidebarConnectionDot.Effect = emeraldGlow;
         SidebarConnectionText.Text = "CONNECTED";
         SidebarAdbText.Text = "ADB: Connected";
         SummaryAdb.Text = "Connected";
@@ -607,9 +627,13 @@ public partial class MainWindow : Window
     {
         var muted = FindResource("TextMuted") as Brush ?? Brushes.Gray;
         ConnectionDot.Fill = muted;
+        ConnectionDot.Effect = null;
         TopConnectionDot.Fill = muted;
+        TopConnectionDot.Effect = null;
         TopConnectionText.Text = "Not connected";
+        TopConnectionPill.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x32, 0x44));
         SidebarConnectionDot.Fill = muted;
+        SidebarConnectionDot.Effect = null;
         SidebarConnectionText.Text = "NOT CONNECTED";
         SidebarAdbText.Text = "ADB: Offline";
         SummaryAdb.Text = "Offline";

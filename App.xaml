@@ -11,12 +11,12 @@
         <SolidColorBrush x:Key="TextPrimary" Color="#F2EEE7" />
         <SolidColorBrush x:Key="TextSecondary" Color="#9DA8B2" />
         <SolidColorBrush x:Key="TextMuted" Color="#677580" />
-        <SolidColorBrush x:Key="Accent" Color="#C27A48" />
-        <SolidColorBrush x:Key="AccentSoft" Color="#302119" />
-        <SolidColorBrush x:Key="Success" Color="#73D99A" />
-        <SolidColorBrush x:Key="Danger" Color="#BD7070" />
+        <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
+        <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
+        <SolidColorBrush x:Key="Success" Color="#10B981" />
+        <SolidColorBrush x:Key="Danger" Color="#EF4444" />
 
-        <DropShadowEffect x:Key="AccentGlowEffect" Color="#C27A48" BlurRadius="12" ShadowDepth="0" Opacity="0.6" />
+        <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.5" />
 
         <LinearGradientBrush x:Key="GraphicsPageBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#101A24" Offset="0" />
@@ -24,8 +24,8 @@
             <GradientStop Color="#10202B" Offset="1" />
         </LinearGradientBrush>
         <RadialGradientBrush x:Key="GraphicsAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-            <GradientStop Color="#72C27A48" Offset="0" />
-            <GradientStop Color="#00C27A48" Offset="1" />
+            <GradientStop Color="#3500D2FF" Offset="0" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
         </RadialGradientBrush>
         <RadialGradientBrush x:Key="GraphicsCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
             <GradientStop Color="#355A84A8" Offset="0" />
@@ -37,48 +37,49 @@
             <GradientStop Color="#101D27" Offset="1" />
         </LinearGradientBrush>
         <RadialGradientBrush x:Key="OptimizerAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-            <GradientStop Color="#58C27A48" Offset="0" />
-            <GradientStop Color="#00C27A48" Offset="1" />
+            <GradientStop Color="#3000D2FF" Offset="0" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
         </RadialGradientBrush>
         <RadialGradientBrush x:Key="OptimizerCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
             <GradientStop Color="#2F5A84A8" Offset="0" />
             <GradientStop Color="#005A84A8" Offset="1" />
         </RadialGradientBrush>
-        <LinearGradientBrush x:Key="ConnectionCardBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#15222C" Offset="0" />
-            <GradientStop Color="#0E171F" Offset="1" />
+        <LinearGradientBrush x:Key="ConnectionCardBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#0D1722" Offset="0" />
+            <GradientStop Color="#060C12" Offset="1" />
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="HeaderBackgroundBrush" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#090F16" Offset="0" />
-            <GradientStop Color="#101B25" Offset="0.55" />
-            <GradientStop Color="#0B121A" Offset="1" />
+            <GradientStop Color="#080E15" Offset="0" />
+            <GradientStop Color="#0E1A24" Offset="0.5" />
+            <GradientStop Color="#0A121A" Offset="1" />
         </LinearGradientBrush>
         <RadialGradientBrush x:Key="HeaderAccentGlowBrush" Center="0.18,0.5" GradientOrigin="0.18,0.5" RadiusX="0.7" RadiusY="1">
-            <GradientStop Color="#35C27A48" Offset="0" />
-            <GradientStop Color="#00C27A48" Offset="1" />
+            <GradientStop Color="#2500D2FF" Offset="0" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
         </RadialGradientBrush>
 
         <Style x:Key="WindowControlButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+            <Setter Property="Foreground" Value="#94A3B8" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="ControlBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
+                        <Border x:Name="ControlBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ControlBorder" Property="Background" Value="#182631" />
-                                <Setter TargetName="ControlBorder" Property="BorderBrush" Value="#D49464" />
-                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                                <Setter TargetName="ControlBorder" Property="Background" Value="#142332" />
+                                <Setter TargetName="ControlBorder" Property="BorderBrush" Value="#264761" />
+                                <Setter Property="Foreground" Value="#00D2FF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ControlBorder" Property="Background" Value="{StaticResource AccentSoft}" />
-                                <Setter TargetName="ControlBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                <Setter TargetName="ControlBorder" Property="Background" Value="#0B1621" />
+                                <Setter TargetName="ControlBorder" Property="BorderBrush" Value="#00D2FF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -87,22 +88,23 @@
         </Style>
 
         <Style x:Key="CloseWindowButtonStyle" TargetType="Button" BasedOn="{StaticResource WindowControlButtonStyle}">
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="Foreground" Value="#94A3B8" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="CloseBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
+                        <Border x:Name="CloseBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CloseBorder" Property="Background" Value="#6B3030" />
-                                <Setter TargetName="CloseBorder" Property="BorderBrush" Value="#BD7070" />
-                                <Setter Property="Foreground" Value="#FFF7F1" />
+                                <Setter TargetName="CloseBorder" Property="Background" Value="#DC2626" />
+                                <Setter TargetName="CloseBorder" Property="BorderBrush" Value="#EF4444" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CloseBorder" Property="Background" Value="#8A3B38" />
-                                <Setter TargetName="CloseBorder" Property="BorderBrush" Value="#D58C87" />
+                                <Setter TargetName="CloseBorder" Property="Background" Value="#991B1B" />
+                                <Setter TargetName="CloseBorder" Property="BorderBrush" Value="#DC2626" />
+                                <Setter Property="Foreground" Value="#FEE2E2" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -115,36 +117,43 @@
             <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="Padding" Value="22,0" />
+            <Setter Property="Padding" Value="14,0" />
             <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Medium" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="NavBorder" Margin="10,3" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="2,0,0,0" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="NavBorder" Margin="10,2" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2" />
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border x:Name="ActiveRail" Grid.Column="0" Background="{StaticResource Accent}" CornerRadius="1" Visibility="Collapsed" />
-                                <ContentPresenter Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                <Border x:Name="ActiveRail" Grid.Column="0" Width="3.5" Height="22" Background="#00D2FF" CornerRadius="2" Visibility="Collapsed" HorizontalAlignment="Left" Margin="-4,0,8,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.85" />
+                                    </Border.Effect>
+                                </Border>
+                                <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="NavBorder" Property="Background" Value="#151F29" />
-                                <Setter TargetName="NavBorder" Property="BorderBrush" Value="#3D4E5B" />
+                                <Setter TargetName="NavBorder" Property="Background" Value="#101C26" />
+                                <Setter TargetName="NavBorder" Property="BorderBrush" Value="#1B3040" />
+                                <Setter Property="Foreground" Value="#F1F5F9" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="NavBorder" Property="Background" Value="{StaticResource AccentSoft}" />
-                                <Setter TargetName="NavBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                <Setter TargetName="NavBorder" Property="Background" Value="#0F2433" />
+                                <Setter TargetName="NavBorder" Property="BorderBrush" Value="#224963" />
                                 <Setter TargetName="ActiveRail" Property="Visibility" Value="Visible" />
-                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="NavBorder" Property="Background" Value="#3A281F" />
+                                <Setter TargetName="NavBorder" Property="Background" Value="#0C1D29" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -169,8 +178,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="SegmentBorder" Property="BorderBrush" Value="#D49464" />
-                                <Setter TargetName="SegmentBorder" Property="Background" Value="#1B2229" />
+                                <Setter TargetName="SegmentBorder" Property="BorderBrush" Value="#00D2FF" />
+                                <Setter TargetName="SegmentBorder" Property="Background" Value="#142432" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="SegmentBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
@@ -187,14 +196,15 @@
         </Style>
 
         <Style x:Key="OutlineButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Background" Value="#0D1822" />
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrightOutlineBrush}" />
+            <Setter Property="BorderBrush" Value="#1E3345" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="18,11" />
+            <Setter Property="Padding" Value="18,10" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -203,11 +213,48 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#D49464" />
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#1B2229" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#00D2FF" />
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#142636" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#2D211B" />
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#0A1620" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#0099CC" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SidebarRefreshButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0E1B26" />
+            <Setter Property="Foreground" Value="#00D2FF" />
+            <Setter Property="BorderBrush" Value="#1C354A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RefreshBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RefreshBorder" Property="Background" Value="#132B3E" />
+                                <Setter TargetName="RefreshBorder" Property="BorderBrush" Value="#00D2FF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="RefreshBorder" Property="Background" Value="#0A1721" />
+                                <Setter TargetName="RefreshBorder" Property="BorderBrush" Value="#00A3CC" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
@@ -221,7 +268,7 @@
         <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource OutlineButtonStyle}">
             <Setter Property="Background" Value="{StaticResource Accent}" />
             <Setter Property="Foreground" Value="#0B1118" />
-            <Setter Property="BorderBrush" Value="#D1986B" />
+            <Setter Property="BorderBrush" Value="#38BDF8" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Padding" Value="26,14" />
             <Setter Property="Template">
@@ -232,10 +279,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PrimaryBorder" Property="Background" Value="#D49464" />
+                                <Setter TargetName="PrimaryBorder" Property="Background" Value="#38BDF8" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="PrimaryBorder" Property="Background" Value="#8A5434" />
+                                <Setter TargetName="PrimaryBorder" Property="Background" Value="#0284C7" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
@@ -283,6 +330,7 @@
                                         <ContentPresenter
                                             Content="{TemplateBinding Content}"
                                             ContentTemplate="{TemplateBinding ContentTemplate}"
+                                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
                                             ContentStringFormat="{TemplateBinding ContentStringFormat}"
                                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
@@ -311,6 +359,7 @@
                                         IsHitTestVisible="False"
                                         Content="{TemplateBinding SelectionBoxItem}"
                                         ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                         ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
                                     <ToggleButton
                                         x:Name="DropDownToggleButton"
@@ -343,7 +392,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="#D49464" />
+                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="#00D2FF" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
@@ -371,7 +420,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#D49464" />
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#00D2FF" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
@@ -402,7 +451,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CompactBorder" Property="BorderBrush" Value="#D49464" />
+                                <Setter TargetName="CompactBorder" Property="BorderBrush" Value="#00D2FF" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="CompactBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
