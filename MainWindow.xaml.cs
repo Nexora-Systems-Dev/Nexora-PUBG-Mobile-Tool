@@ -252,6 +252,14 @@ public partial class MainWindow : Window
                     SetStatus("Downloading update...");
                     var result = await _updates.DownloadAndLaunchAsync(update);
                     SetStatus(result.Message, !result.Success);
+                    if (result.Success)
+                    {
+                        // UpdateService has already verified that the new
+                        // elevated process started successfully. Closing this
+                        // instance lets the new version take over cleanly.
+                        Close();
+                        return;
+                    }
                 }
             }
         }
