@@ -1904,7 +1904,7 @@
                         <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="#0C1B26" BorderBrush="#1C384E" BorderThickness="1" CornerRadius="6" Padding="12,8">
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse Width="8" Height="8" Fill="{StaticResource Success}" VerticalAlignment="Center" Margin="0,0,9,0" />
-                                <TextBlock x:Name="VersionText" Text="VERSION 1.0.10" Foreground="{StaticResource TextPrimary}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <TextBlock x:Name="VersionText" Text="VERSION 1.0.11" Foreground="{StaticResource TextPrimary}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
                     </Grid>

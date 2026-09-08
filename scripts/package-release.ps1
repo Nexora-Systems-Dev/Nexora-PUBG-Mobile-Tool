@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "v1.0.10",
+    [string]$Version = "v1.0.11",
     [string]$Runtime = "win-x64"
 )
 

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using FluentAssertions;
 using Nexora.Services;
+using Nexora.Shared.Kernel;
 using Xunit;
 
 namespace Nexora.Tests.Services;
@@ -152,6 +153,30 @@ public sealed class GameLoopServiceLogicTests
 
         // Assert
         changed.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GraphicsUpdate_Succeeds_WhenOptionalLobbyFieldsAreAbsent()
+    {
+        // Some GameLoop/PUBG builds only store the active battle fields.
+        var sav = Array.Empty<byte>()
+            .Concat(SavSegment("BattleRenderQuality", 0x03))
+            .Concat(SavSegment("BattleFPS", 0x04))
+            .Concat(SavSegment("BattleRenderStyle", 0x02))
+            .ToArray();
+        var service = CreateServiceWithSav(sav);
+
+        var result = InvokeInstance<OperationResult>(
+            "UpdateGraphicsSavProperties",
+            service,
+            (byte)0x01,
+            (byte)0x06,
+            (byte)0x01);
+
+        result.Success.Should().BeTrue();
+        service.GetGraphicsQuality().Should().Be("Smooth");
+        service.GetFrameRate().Should().Be("Extreme");
+        service.GetGraphicsStyle().Should().Be("Classic");
     }
 
     [Fact]

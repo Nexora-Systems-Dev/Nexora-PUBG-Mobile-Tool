@@ -50,13 +50,13 @@ The GitHub Actions workflow in .github/workflows/build.yml runs the same Release
 
 Create a self-contained Windows x64 executable and a ZIP package:
 
-    .\scripts\package-release.ps1 -Version v1.0.10
+    .\scripts\package-release.ps1 -Version v1.0.11
 
 The generated files are written to artifacts:
 
-- Nexora-v1.0.10-win-x64.exe — self-contained executable with the .NET runtime.
-- Nexora-v1.0.10-win-x64.zip — portable package with release notes.
-- Nexora-v1.0.10-win-x64-SHA256SUMS.txt — SHA-256 checksums.
+- Nexora-v1.0.11-win-x64.exe — self-contained executable with the .NET runtime.
+- Nexora-v1.0.11-win-x64.zip — portable package with release notes.
+- Nexora-v1.0.11-win-x64-SHA256SUMS.txt — SHA-256 checksums.
 
 artifacts, bin, and obj are excluded from Git.
 

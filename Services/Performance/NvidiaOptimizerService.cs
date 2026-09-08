@@ -15,12 +15,14 @@ public sealed class NvidiaOptimizerService
     private readonly ProcessRunner _runner;
     private readonly RegistryService _registry;
     private readonly string _assetRoot;
+    private readonly GameLoopProcessService _processService;
 
     public NvidiaOptimizerService(ProcessRunner runner, RegistryService registry, string? assetRoot = null)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _assetRoot = assetRoot ?? Path.Combine(AppContext.BaseDirectory, AppConstants.Assets.DirectoryName);
+        _processService = new GameLoopProcessService(_runner, _registry);
     }
 
     /// <summary>
@@ -36,7 +38,7 @@ public sealed class NvidiaOptimizerService
 
         var profilePath = Path.Combine(_assetRoot, AppConstants.Assets.NvidiaProfileFileName);
         var inspectorPath = Path.Combine(_assetRoot, AppConstants.Assets.NvidiaInspectorFileName);
-        var installPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
+        var installPath = _processService.GetGameLoopUiPath();
 
         if (!File.Exists(profilePath) || !File.Exists(inspectorPath) || string.IsNullOrWhiteSpace(installPath))
         {

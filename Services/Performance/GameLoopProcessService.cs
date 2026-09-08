@@ -186,6 +186,79 @@ public sealed class GameLoopProcessService
     }
 
     /// <summary>
+    /// Resolves the directory containing GameLoop's 64-bit executables.
+    /// Registry values differ between GameLoop builds, so active-process and
+    /// standard-install fallbacks are handled here as well.
+    /// </summary>
+    public string? GetGameLoopUiPath()
+    {
+        var registryPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
+        var fromRegistry = NormalizeUiPath(registryPath);
+        if (fromRegistry is not null) return fromRegistry;
+
+        foreach (var name in AppConstants.Emulator.RunningCheckProcessNames)
+        {
+            try
+            {
+                foreach (var process in Process.GetProcessesByName(name))
+                {
+                    try
+                    {
+                        var processDirectory = Path.GetDirectoryName(process.MainModule?.FileName);
+                        var fromProcess = NormalizeUiPath(processDirectory);
+                        if (fromProcess is not null) return fromProcess;
+                    }
+                    catch
+                    {
+                        // Protected process access denied.
+                    }
+                    finally
+                    {
+                        process.Dispose();
+                    }
+                }
+            }
+            catch
+            {
+                // Process query can be denied on another user's session.
+            }
+        }
+
+        foreach (var programFiles in new[]
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+        }.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var standardPath = NormalizeUiPath(Path.Combine(programFiles, AppConstants.Emulator.InstallFolderName, "UI"));
+            if (standardPath is not null) return standardPath;
+        }
+
+        return null;
+    }
+
+    private static string? NormalizeUiPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+
+        try
+        {
+            var fullPath = Path.GetFullPath(path.Trim());
+            if (File.Exists(fullPath)) fullPath = Path.GetDirectoryName(fullPath)!;
+            if (!Directory.Exists(fullPath)) return null;
+
+            var uiPath = Path.GetFileName(fullPath).Equals("UI", StringComparison.OrdinalIgnoreCase)
+                ? fullPath
+                : Path.Combine(fullPath, "UI");
+            return Directory.Exists(uiPath) ? uiPath : fullPath;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Determines whether an executable path belongs to the GameLoop installation directory.
     /// </summary>
     public static bool IsGameLoopPath(string? executablePath, string? gameLoopRoot)

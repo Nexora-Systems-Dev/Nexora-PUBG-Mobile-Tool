@@ -14,12 +14,14 @@ public sealed class GameLoopRegistryOptimizer
     private readonly ProcessRunner _runner;
     private readonly RegistryService _registry;
     private readonly GpuRoutingService _gpuRouting;
+    private readonly GameLoopProcessService _processService;
 
     public GameLoopRegistryOptimizer(ProcessRunner runner, RegistryService registry, GpuRoutingService? gpuRouting = null)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _gpuRouting = gpuRouting ?? new GpuRoutingService();
+        _processService = new GameLoopProcessService(_runner, _registry);
     }
 
     /// <summary>
@@ -74,7 +76,7 @@ public sealed class GameLoopRegistryOptimizer
     /// </summary>
     public OperationResult OptimizeGameLoopRegistry()
     {
-        var installPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
+        var installPath = _processService.GetGameLoopUiPath();
         if (string.IsNullOrWhiteSpace(installPath))
         {
             return OperationResult.Fail("GameLoop installation path was not found.");

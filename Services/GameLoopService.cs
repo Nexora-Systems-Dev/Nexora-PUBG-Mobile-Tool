@@ -322,20 +322,34 @@ public sealed class GameLoopService : IGameLoopService
 
     private OperationResult UpdateGraphicsSavProperties(byte qualityByte, byte fpsByte, byte styleByte)
     {
+        // Some PUBG/GameLoop builds omit the lobby/menu fields. The battle
+        // field is the important one; optional fields must not block an update.
+        var qualityUpdated = false;
         foreach (var property in new[] { "ArtQuality", "LobbyRenderQuality", "BattleRenderQuality" })
         {
-            if (!ChangeProperty(property, qualityByte))
+            if (ChangeProperty(property, qualityByte))
             {
-                return OperationResult.Fail($"Could not update {property}.");
+                qualityUpdated = true;
             }
         }
 
+        if (!qualityUpdated)
+        {
+            return OperationResult.Fail("Could not update the graphics quality in the PUBG profile.");
+        }
+
+        var fpsUpdated = false;
         foreach (var property in new[] { "FPSLevel", "BattleFPS", "LobbyFPS" })
         {
-            if (!ChangeProperty(property, fpsByte))
+            if (ChangeProperty(property, fpsByte))
             {
-                return OperationResult.Fail($"Could not update {property}.");
+                fpsUpdated = true;
             }
+        }
+
+        if (!fpsUpdated)
+        {
+            return OperationResult.Fail("Could not update the frame rate in the PUBG profile.");
         }
 
         if (!ChangeProperty("BattleRenderStyle", styleByte))

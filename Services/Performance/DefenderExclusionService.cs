@@ -12,11 +12,13 @@ public sealed class DefenderExclusionService
 {
     private readonly ProcessRunner _runner;
     private readonly RegistryService _registry;
+    private readonly GameLoopProcessService _processService;
 
     public DefenderExclusionService(ProcessRunner runner, RegistryService registry)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _processService = new GameLoopProcessService(_runner, _registry);
     }
 
     /// <summary>
@@ -37,10 +39,7 @@ public sealed class DefenderExclusionService
             return OperationResult.Ok("Windows Defender is disabled or unavailable; exclusion skipped.");
         }
 
-        var installPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath) ??
-                          _registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
-
-        var gameLoopPath = string.IsNullOrWhiteSpace(installPath) ? null : Path.GetDirectoryName(installPath);
+        var gameLoopPath = _processService.GetGameLoopRoot();
         if (string.IsNullOrWhiteSpace(gameLoopPath))
         {
             return OperationResult.Fail("GameLoop installation path was not found.");
