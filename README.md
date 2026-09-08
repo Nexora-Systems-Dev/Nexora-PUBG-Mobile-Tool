@@ -1,10 +1,36 @@
 # Nexora PUBG Mobile Tool
 
-Windows desktop application written in C# and WPF for applying selected GameLoop and PUBG Mobile settings.
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![Tests](https://img.shields.io/badge/tests-161%20passing-2ea44f)](./Nexora.Tests)
+[![Build](https://github.com/mohammad-emad-dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml/badge.svg)](https://github.com/mohammad-emad-dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml)
+[![License](https://img.shields.io/badge/license-not%20selected-lightgrey)](#license)
+
+Windows desktop application written in C# and WPF for applying selected GameLoop and PUBG Mobile settings. The project keeps each action visible and user-triggered, so the user can review the intended change before applying it.
 
 The project is a rebuild of the existing tool workflow. The interface is implemented in WPF; the operations remain explicit and user-triggered.
 
 Nexora is a local utility. It does not inject code into PUBG Mobile, read or write game memory, automate gameplay, or modify game executables.
+
+> Nexora is an independent community utility. It is not affiliated with, endorsed by, or sponsored by PUBG Mobile, Tencent, or GameLoop.
+
+## What it does
+
+- **GameLoop workflow:** connect through ADB, inspect the active PUBG Mobile package, and apply supported graphics and display profiles.
+- **Hardware-aware tuning:** build recommendations from the detected CPU, memory, GPU, display, power state, and virtualization state.
+- **Windows and GPU actions:** apply the selected performance actions with clear result reporting. Results can vary by driver, Windows policy, permissions, and hardware.
+- **Network and shortcuts:** manage selected DNS settings and create direct GameLoop shortcuts when the required paths are available.
+
+## Design principles
+
+### Dynamic Path Resolution
+
+Nexora does not assume that GameLoop is installed on the developer's drive. It resolves the installation from the relevant Windows registry entries, running GameLoop processes, and standard installation locations. If a portable or non-standard installation cannot be identified safely, the affected action reports the problem instead of silently targeting an unrelated directory.
+
+### Safe, non-destructive tuning
+
+The tool applies only the settings selected by the user. It does not inject code, automate gameplay, read or write game memory, modify PUBG Mobile executables, or patch the game itself. Some actions touch Windows settings, network adapters, power plans, or GameLoop configuration files; these actions are explicit and their result is reported in the interface.
+
+This design does not constitute a guarantee against account action. Users should follow the current GameLoop and PUBG Mobile rules and use the tool at their own discretion.
 
 ## Scope
 
@@ -46,6 +72,8 @@ The normal test suite does not require GameLoop. Live verification tests require
 
 The GitHub Actions workflow in .github/workflows/build.yml runs the same Release build on Windows for pushes and pull requests targeting main.
 
+The current automated suite contains 161 passing tests. Live GameLoop verification is kept separate because it requires a configured emulator and a running local environment.
+
 ## Release package
 
 Create a self-contained Windows x64 executable and a ZIP package:
@@ -78,4 +106,7 @@ artifacts, bin, and obj are excluded from Git.
 - Settings are not applied until the related action is selected.
 - NVIDIA Profile Inspector or Defender operations can fail because of driver versions, file locks, antivirus policy, or Windows security policy. The result is reported in the UI.
 - The update endpoint checks the latest release from `mohammad-emad-dev/Nexora-PUBG-Mobile-Tool` and downloads the ZIP asset.
-- No open-source license has been selected yet. Add a LICENSE file before granting reuse rights.
+
+## License
+
+No open-source license has been selected yet. Until a `LICENSE` file is added, the repository should be treated as source-available for inspection only; do not redistribute or reuse the code as an open-source project.
