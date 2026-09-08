@@ -37,3 +37,8 @@ appsettings.*.Local.json
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Agent & tool state
+.agent/
+.antigravity/
+ECC/

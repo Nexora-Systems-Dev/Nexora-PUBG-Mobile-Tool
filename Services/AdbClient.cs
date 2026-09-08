@@ -1,31 +1,26 @@
-using System.Text;
+using Nexora.Configuration;
+using Nexora.Shared.Infrastructure;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services;
 
-public sealed class AdbClient
+public sealed class AdbClient : IAdbClient
 {
-    private const string PreferredDeviceSerial = "emulator-5554";
-    private readonly ProcessRunner _runner;
+    private readonly IProcessRunner _runner;
     private readonly string _adbPath;
     private string? _deviceSerial;
 
-    public AdbClient(ProcessRunner runner, RegistryService registry)
+    public AdbClient(IProcessRunner runner, IRegistryService registry)
     {
         _runner = runner;
         _adbPath = FindAdbPath(registry);
     }
 
-    public string AdbPath => _adbPath;
-    public string DeviceSerial => _deviceSerial ?? PreferredDeviceSerial;
+    public string DeviceSerial => _deviceSerial ?? AppConstants.Adb.PreferredSerial;
 
     public ProcessResult Run(params string[] arguments)
     {
-        return _runner.Run(_adbPath, arguments, TimeSpan.FromSeconds(20));
-    }
-
-    public ProcessResult RunLong(TimeSpan timeout, params string[] arguments)
-    {
-        return _runner.Run(_adbPath, arguments, timeout);
+        return _runner.Run(_adbPath, arguments, AppConstants.Timeouts.AdbCommandTimeout);
     }
 
     public string Shell(string command)
@@ -33,25 +28,21 @@ public sealed class AdbClient
         return Run("-s", DeviceSerial, "shell", command).StandardOutput.Trim();
     }
 
-    public ProcessResult ShellResult(string command)
+    public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken)
     {
-        return Run("-s", DeviceSerial, "shell", command);
+        return TransferWithRetryAsync("pull", remotePath, localPath, cancellationToken);
     }
 
-    public bool Pull(string remotePath, string localPath)
+    public Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken)
     {
-        return TransferWithRetry("pull", remotePath, localPath);
+        return TransferWithRetryAsync("push", localPath, remotePath, cancellationToken);
     }
 
-    public bool Push(string localPath, string remotePath)
+    private async Task<bool> TransferWithRetryAsync(string operation, string source, string destination, CancellationToken cancellationToken)
     {
-        return TransferWithRetry("push", localPath, remotePath);
-    }
-
-    private bool TransferWithRetry(string operation, string source, string destination)
-    {
-        for (var attempt = 1; attempt <= 3; attempt++)
+        for (var attempt = 1; attempt <= AppConstants.Timeouts.AdbTransferMaxAttempts; attempt++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var result = Run("-s", DeviceSerial, operation, source, destination);
             var transferred = result.Succeeded &&
                 (operation.Equals("push", StringComparison.OrdinalIgnoreCase) || File.Exists(destination));
@@ -60,7 +51,7 @@ public sealed class AdbClient
                 return true;
             }
 
-            if (attempt == 3)
+            if (attempt == AppConstants.Timeouts.AdbTransferMaxAttempts)
             {
                 return false;
             }
@@ -69,21 +60,25 @@ public sealed class AdbClient
             // force-stopped/relaunched. Re-select the live serial before the
             // next transfer instead of treating that short race as a hard
             // graphics-apply failure.
-            Thread.Sleep(1000);
-            TrySelectDevice();
+            await Task.Delay(AppConstants.Timeouts.AdbTransferRetryDelay, cancellationToken);
+            TrySelectDevice(cancellationToken);
         }
 
         return false;
     }
 
-    public bool WaitForBoot(CancellationToken cancellationToken)
+    public async Task<bool> WaitForBootAsync(CancellationToken cancellationToken)
     {
-        if (!TrySelectDevice())
+        // Check before device selection: TrySelectDevice spawns adb
+        // processes (devices/connect probes), so a canceled token must exit
+        // before any of that work starts.
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!TrySelectDevice(cancellationToken))
         {
             return false;
         }
 
-        for (var attempt = 0; attempt < 60; attempt++)
+        for (var attempt = 0; attempt < AppConstants.Timeouts.AdbBootPollAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var result = Run("-s", DeviceSerial, "shell", "getprop", "dev.bootcomplete");
@@ -92,14 +87,15 @@ public sealed class AdbClient
                 return true;
             }
 
-            Thread.Sleep(1000);
+            await Task.Delay(AppConstants.Timeouts.AdbBootPollDelay, cancellationToken);
         }
 
         return false;
     }
 
-    private bool TrySelectDevice()
+    private bool TrySelectDevice(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var devices = Run("devices");
         if (!devices.Succeeded)
         {
@@ -115,9 +111,9 @@ public sealed class AdbClient
             .ToList();
 
         _deviceSerial = connectedSerials.FirstOrDefault(serial =>
-            string.Equals(serial, PreferredDeviceSerial, StringComparison.OrdinalIgnoreCase))
+            string.Equals(serial, AppConstants.Adb.PreferredSerial, StringComparison.OrdinalIgnoreCase))
             ?? connectedSerials.FirstOrDefault(serial =>
-                serial.EndsWith(":5555", StringComparison.OrdinalIgnoreCase));
+                serial.EndsWith(AppConstants.Adb.TcpPortSuffix, StringComparison.OrdinalIgnoreCase));
 
         if (!string.IsNullOrWhiteSpace(_deviceSerial))
         {
@@ -126,7 +122,9 @@ public sealed class AdbClient
 
         // GameLoop exposes its Android bridge on TCP 5555 on some installations.
         // Establish the local connection only when the emulator is already running.
-        Run("connect", "127.0.0.1:5555");
+        cancellationToken.ThrowIfCancellationRequested();
+        Run("connect", AppConstants.Adb.LoopbackEndpoint);
+        cancellationToken.ThrowIfCancellationRequested();
         devices = Run("devices");
         connectedSerials = devices.StandardOutput
             .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
@@ -137,18 +135,24 @@ public sealed class AdbClient
             .ToList();
 
         _deviceSerial = connectedSerials.FirstOrDefault(serial =>
-            string.Equals(serial, PreferredDeviceSerial, StringComparison.OrdinalIgnoreCase))
+            string.Equals(serial, AppConstants.Adb.PreferredSerial, StringComparison.OrdinalIgnoreCase))
             ?? connectedSerials.FirstOrDefault(serial =>
-                serial.EndsWith(":5555", StringComparison.OrdinalIgnoreCase));
+                serial.EndsWith(AppConstants.Adb.TcpPortSuffix, StringComparison.OrdinalIgnoreCase));
 
         return !string.IsNullOrWhiteSpace(_deviceSerial);
     }
 
-    public IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames)
+    public IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames, CancellationToken cancellationToken)
     {
         var installed = new List<string>();
         foreach (var packageName in packageNames)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!AppConstants.Validation.IsValidAndroidPackageName(packageName))
+            {
+                throw new ArgumentException($"Invalid Android package name: '{packageName}'.", nameof(packageNames));
+            }
+
             var result = Run("-s", DeviceSerial, "shell", "pm", "list", "packages", packageName);
             if (result.Succeeded && result.StandardOutput.Contains(packageName, StringComparison.OrdinalIgnoreCase))
             {
@@ -159,17 +163,17 @@ public sealed class AdbClient
         return installed;
     }
 
-    public static void KillAdb()
+    public void StopAdb() => KillAdb(_runner);
+
+    public static void KillAdb(IProcessRunner? runner = null)
     {
         try
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "taskkill.exe",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                ArgumentList = { "/F", "/IM", "adb.exe" }
-            })?.WaitForExit(5000);
+            var processRunner = runner ?? new ProcessRunner();
+            processRunner.Run(
+                AppConstants.Tools.TaskkillFileName,
+                new[] { "/F", "/IM", AppConstants.Adb.FileName },
+                TimeSpan.FromMilliseconds(AppConstants.Timeouts.AdbKillWaitMilliseconds));
         }
         catch
         {
@@ -177,20 +181,20 @@ public sealed class AdbClient
         }
     }
 
-    private static string FindAdbPath(RegistryService registry)
+    private static string FindAdbPath(IRegistryService registry)
     {
         var candidates = new List<string>
         {
-            Path.Combine(AppContext.BaseDirectory, "Assets", "adb.exe")
+            Path.Combine(AppContext.BaseDirectory, AppConstants.Assets.DirectoryName, AppConstants.Adb.FileName)
         };
 
-        foreach (var branch in new[] { "UI", "AppMarket" })
+        foreach (var branch in new[] { AppConstants.Registry.BranchUI, AppConstants.Registry.BranchAppMarket })
         {
-            var installPath = registry.GetLocalString("InstallPath", branch);
+            var installPath = registry.GetLocalString(AppConstants.Registry.ValueInstallPath, branch);
             if (!string.IsNullOrWhiteSpace(installPath))
             {
-                candidates.Add(Path.Combine(installPath, "adb.exe"));
-                candidates.Add(Path.Combine(installPath, "adb", "adb.exe"));
+                candidates.Add(Path.Combine(installPath, AppConstants.Adb.FileName));
+                candidates.Add(Path.Combine(installPath, "adb", AppConstants.Adb.FileName));
             }
         }
 
@@ -203,11 +207,11 @@ public sealed class AdbClient
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
         }.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            candidates.Add(Path.Combine(programFiles, "TxGameAssistant", "ui", "adb.exe"));
-            candidates.Add(Path.Combine(programFiles, "TxGameAssistant", "UI", "adb.exe"));
+            candidates.Add(Path.Combine(programFiles, AppConstants.Emulator.InstallFolderName, "ui", AppConstants.Adb.FileName));
+            candidates.Add(Path.Combine(programFiles, AppConstants.Emulator.InstallFolderName, "UI", AppConstants.Adb.FileName));
         }
 
         var existing = candidates.FirstOrDefault(File.Exists);
-        return existing ?? "adb.exe";
+        return existing ?? AppConstants.Adb.FileName;
     }
 }

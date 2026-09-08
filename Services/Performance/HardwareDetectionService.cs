@@ -1,7 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
-
-using Nexora.Models;
+using Nexora.Configuration;
+using Nexora.Features.Performance;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services.Performance;
 
@@ -16,6 +17,15 @@ public sealed class HardwareDetectionService
     public HardwareDetectionService(ProcessRunner runner)
     {
         _runner = runner;
+    }
+
+    public Task<HardwareSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return GetSnapshot();
+        }, cancellationToken);
     }
 
     public HardwareSnapshot GetSnapshot()
@@ -41,7 +51,7 @@ $laptop = @(Get-CimInstance Win32_Battery).Count -gt 0
 } | ConvertTo-Json -Compress
 ";
 
-        var result = _runner.RunPowerShell(script, TimeSpan.FromSeconds(20));
+        var result = _runner.RunPowerShell(script, AppConstants.Timeouts.HardwareDetectionTimeout);
         if (!result.Succeeded || string.IsNullOrWhiteSpace(result.StandardOutput))
         {
             return CreateFallbackSnapshot();

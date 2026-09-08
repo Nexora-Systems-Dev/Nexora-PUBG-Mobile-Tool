@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Nexora.slnx
+
+      - name: Build Release
+        run: dotnet build Nexora.slnx --configuration Release --no-restore
+
+      - name: Test Release
+        run: dotnet test Nexora.slnx --configuration Release --no-build --verbosity normal

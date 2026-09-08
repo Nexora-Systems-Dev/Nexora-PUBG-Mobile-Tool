@@ -3,74 +3,64 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Interop;
-using System.Runtime.InteropServices;
-using Nexora.Models;
+using Nexora.Configuration;
+using Nexora.Features.GameLoop;
+using Nexora.Features.Layout;
+using Nexora.Features.Performance;
+using Nexora.Features.SystemTools.Network;
 using Nexora.Services;
 using Nexora.Services.Performance;
+using Nexora.Shared.Infrastructure;
+using Nexora.Shared.Kernel;
+using Nexora.UI.Behaviors;
+using Nexora.UI.Helpers;
+using Nexora.UI.Layout;
+using Nexora.UI.Presentation;
 
 namespace Nexora;
 
 public partial class MainWindow : Window
 {
-    private readonly ProcessRunner _runner = new();
-    private readonly RegistryService _registry = new();
-    private readonly AdbClient _adb;
-    private readonly GameLoopService _gameLoop;
-    private readonly WindowsToolsService _windowsTools;
+    private readonly IGameLoopService _gameLoop;
+    private readonly IWindowsToolsService _windowsTools;
     private readonly IGameLoopPerformanceEngine _performanceEngine;
-    private readonly UpdateService _updates = new();
-    private readonly Dictionary<string, string[]> _dnsServers = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Google DNS - 8.8.8.8"] = new[] { "8.8.8.8", "8.8.4.4" },
-        ["Cloudflare DNS - 1.1.1.1"] = new[] { "1.1.1.1", "1.0.0.1" },
-        ["Quad9 DNS - 9.9.9.9"] = new[] { "9.9.9.9", "149.112.112.112" },
-        ["Cisco Umbrella - 208.67.222.222"] = new[] { "208.67.222.222", "208.67.220.220" },
-        ["Yandex DNS - 77.88.8.1"] = new[] { "77.88.8.1", "77.88.8.8" }
-    };
-
-    private static readonly IReadOnlyList<IpadResolutionPreset> IpadPresets = new[]
-    {
-        new IpadResolutionPreset("Competitive 4:3 (Recommended)", 1920, 1440, "Best balance of clarity and emulator performance"),
-        new IpadResolutionPreset("Balanced 4:3", 1600, 1200, "Lower load for entry-level systems"),
-        new IpadResolutionPreset("Classic iPad 4:3", 2048, 1536, "Native-style 4:3 iPad canvas"),
-        new IpadResolutionPreset("iPad 10.2-inch", 2160, 1620, "Apple 4:3 display profile"),
-        new IpadResolutionPreset("iPad Air 11-inch", 2360, 1640, "Wide iPad Air display profile"),
-        new IpadResolutionPreset("iPad Pro 11-inch (classic)", 2388, 1668, "Previous-generation Pro display profile"),
-        new IpadResolutionPreset("iPad Pro 11-inch (current)", 2420, 1668, "Current Pro display profile"),
-        new IpadResolutionPreset("iPad mini 8.3-inch", 2266, 1488, "Compact iPad display profile"),
-        new IpadResolutionPreset("iPad Pro 12.9-inch", 2732, 2048, "High-detail 4:3 Pro canvas"),
-        new IpadResolutionPreset("iPad Pro 13-inch (current)", 2752, 2064, "Maximum detail; highest emulator load")
-    };
+    private readonly IUpdateService _updates;
 
     private CancellationTokenSource? _connectionCancellation;
+    private IDisposable? _chromeHook;
     private bool _suppressSelection;
     private bool _isBusy;
-    private HardwareSnapshot? _hardwareSnapshot;
-    private OptimizerPlan? _optimizerPlan;
-
-    private const int WmGetMinMaxInfo = 0x0024;
-    private const uint MonitorDefaultToNearest = 0x00000002;
 
     public MainWindow()
+        : this(null, null, null)
+    {
+    }
+
+    public MainWindow(
+        IGameLoopService? gameLoop = null,
+        IWindowsToolsService? windowsTools = null,
+        IUpdateService? updates = null)
     {
         InitializeComponent();
-        _adb = new AdbClient(_runner, _registry);
-        _gameLoop = new GameLoopService(_registry, _adb);
-        _windowsTools = new WindowsToolsService(_runner, _registry);
+        var runner = new ProcessRunner();
+        var registry = new RegistryService();
+        var adb = new AdbClient(runner, registry);
+
+        _gameLoop = gameLoop ?? new GameLoopService(registry, adb);
+        _windowsTools = windowsTools ?? new WindowsToolsService(runner, registry);
         _performanceEngine = _windowsTools;
+        _updates = updates ?? new UpdateService(runner);
 
         PubgVersionComboBox.DisplayMemberPath = nameof(PubgVersion.DisplayName);
         ShortcutComboBox.DisplayMemberPath = nameof(PubgVersion.DisplayName);
-        // The custom ComboBox template renders string items reliably. Keep the
-        // strongly typed preset list in code and map the selected index back to
-        // its width/height when the user applies it.
-        IpadComboBox.ItemsSource = IpadPresets.Select(preset => preset.DisplayName).ToList();
+
+        IpadComboBox.ItemsSource = IpadPresetCatalog.Presets.Select(preset => preset.DisplayName).ToList();
         IpadComboBox.SelectedIndex = -1;
         UpdateIpadPresetDetails();
-        DnsComboBox.ItemsSource = _dnsServers.Keys.ToList();
+
+        DnsComboBox.ItemsSource = DnsCatalog.Labels;
         DnsComboBox.SelectedIndex = 0;
+
         ShortcutComboBox.ItemsSource = GameLoopService.PubgVersions
             .Select(pair => new PubgVersion(pair.Key, pair.Value))
             .ToList();
@@ -80,6 +70,7 @@ public partial class MainWindow : Window
         ClassicButton.IsChecked = true;
         SmoothButton.IsChecked = true;
         LowButton.IsChecked = true;
+        VersionText.Text = "VERSION " + AppConstants.CurrentVersion.TrimStart('v');
         SetStatus("Ready to connect to GameLoop.");
         UpdateSummary();
     }
@@ -87,23 +78,36 @@ public partial class MainWindow : Window
     private async void ConnectButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isBusy) return;
+
         if (_gameLoop.IsConnected)
         {
-            _connectionCancellation?.Cancel();
-            _gameLoop.Disconnect();
-            AdbClient.KillAdb();
-            ResetConnectionState("Disconnected from GameLoop.");
+            DisconnectFromGameLoop();
             return;
         }
 
+        await ConnectToGameLoopAsync();
+    }
+
+    private void DisconnectFromGameLoop()
+    {
+        CancelAndDisposeConnection();
+        _gameLoop.Disconnect();
+        AdbClient.KillAdb();
+        ResetConnectionState("Disconnected from GameLoop.");
+    }
+
+    private async Task ConnectToGameLoopAsync()
+    {
         _isBusy = true;
+        CancelAndDisposeConnection();
         _connectionCancellation = new CancellationTokenSource();
         SetBusyState(true);
         SetStatus("Connecting to GameLoop...");
+
         ConnectionResult result;
         try
         {
-            result = await Task.Run(() => _gameLoop.Connect(_connectionCancellation.Token));
+            result = await _gameLoop.ConnectAsync(_connectionCancellation.Token);
         }
         catch (OperationCanceledException)
         {
@@ -127,7 +131,10 @@ public partial class MainWindow : Window
                 ? result.InstalledVersions
                 : GameLoopService.PubgVersions.Select(pair => new PubgVersion(pair.Key, pair.Value)).ToList();
             ShortcutComboBox.SelectedIndex = result.InstalledVersions.Count == 1 ? 0 : -1;
-            if (result.InstalledVersions.Count == 1) PubgVersionComboBox.SelectedIndex = 0;
+            if (result.InstalledVersions.Count == 1)
+            {
+                PubgVersionComboBox.SelectedIndex = 0;
+            }
         }
         finally
         {
@@ -142,7 +149,7 @@ public partial class MainWindow : Window
 
         if (_gameLoop.IsConnected)
         {
-            ApplyLoadedSettings();
+            await ApplyLoadedSettingsAsync(_connectionCancellation?.Token ?? CancellationToken.None);
             SetConnectedState(result.Message);
         }
         else
@@ -165,20 +172,27 @@ public partial class MainWindow : Window
         SetStatus($"Loading {version.DisplayName}...");
         try
         {
-            var result = await Task.Run(() => _gameLoop.LoadVersion(version.PackageName));
+            var result = await _gameLoop.LoadVersionAsync(version.PackageName, CancellationToken.None);
             if (result.Success)
             {
-                ApplyLoadedSettings();
+                await ApplyLoadedSettingsAsync(CancellationToken.None);
                 SetConnectedState(result.Message);
             }
-            else SetStatus(result.Message, isError: true);
+            else
+            {
+                SetStatus(result.Message, isError: true);
+            }
         }
-        finally { _isBusy = false; }
+        finally
+        {
+            _isBusy = false;
+        }
     }
 
     private async void ApplyButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isBusy) return;
+
         var selection = new GraphicsSelection(
             SelectedContent(SmoothButton, BalancedButton, HdButton, HdrButton, UltraHdButton, UhdButton) ?? "Smooth",
             SelectedContent(LowButton, MediumButton, HighButton, UltraButton, ExtremeButton, Fps90Button, Fps120Button) ?? "Low",
@@ -191,9 +205,20 @@ public partial class MainWindow : Window
         SetBusyState(true);
         SetStatus("Applying graphics settings...");
         OperationResult result;
-        try { result = await Task.Run(() => _gameLoop.ApplyGraphics(selection)); }
-        catch (Exception ex) { result = OperationResult.Fail(ex.Message); }
-        finally { _isBusy = false; SetBusyState(false); }
+        try
+        {
+            result = await _gameLoop.ApplyGraphicsAsync(selection, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            result = OperationResult.Fail(ex.Message);
+        }
+        finally
+        {
+            _isBusy = false;
+            SetBusyState(false);
+        }
+
         SetStatus(result.Message, !result.Success);
     }
 
@@ -233,7 +258,8 @@ public partial class MainWindow : Window
         UpdateSummary();
     }
 
-    private async void TempCleanerButton_Click(object sender, RoutedEventArgs e) => await RunToolAsync(TempCleanerButton, () => _windowsTools.CleanTemp(), OptimizerStatusText);
+    private async void TempCleanerButton_Click(object sender, RoutedEventArgs e) =>
+        await RunToolAsync(TempCleanerButton, () => _windowsTools.CleanTempAsync(), OptimizerStatusText);
 
     private async void SmartSettingsButton_Click(object sender, RoutedEventArgs e)
     {
@@ -241,10 +267,8 @@ public partial class MainWindow : Window
         await RefreshOptimizerProfileAsync();
     }
 
-    private async void GameLoopOptimizerButton_Click(object sender, RoutedEventArgs e)
-    {
+    private async void GameLoopOptimizerButton_Click(object sender, RoutedEventArgs e) =>
         await RunToolAsync(GameLoopOptimizerButton, () => _performanceEngine.OptimizeGameLoop(), OptimizerStatusText);
-    }
 
     private async void AllRecommendedButton_Click(object sender, RoutedEventArgs e)
     {
@@ -252,12 +276,17 @@ public partial class MainWindow : Window
         await RefreshOptimizerProfileAsync();
     }
 
-    private async void ForceCloseButton_Click(object sender, RoutedEventArgs e) => await RunToolAsync(ForceCloseButton, () => _windowsTools.KillGameLoopProcesses(), OptimizerStatusText);
+    private async void ForceCloseButton_Click(object sender, RoutedEventArgs e) =>
+        await RunToolAsync(ForceCloseButton, () => _windowsTools.KillGameLoopProcesses(), OptimizerStatusText);
 
-    private async void PerformanceSessionButton_Click(object sender, RoutedEventArgs e) => await RunToolAsync(PerformanceSessionButton, () => _performanceEngine.ApplyPerformanceSession(), OptimizerStatusText);
-    private async void RestoreSessionButton_Click(object sender, RoutedEventArgs e) => await RunToolAsync(RestoreSessionButton, () => _performanceEngine.RestorePerformanceSession(), OptimizerStatusText);
+    private async void PerformanceSessionButton_Click(object sender, RoutedEventArgs e) =>
+        await RunToolAsync(PerformanceSessionButton, () => _performanceEngine.ApplyPerformanceSession(), OptimizerStatusText);
 
-    private async void RefreshOptimizerButton_Click(object sender, RoutedEventArgs e) => await RefreshOptimizerProfileAsync();
+    private async void RestoreSessionButton_Click(object sender, RoutedEventArgs e) =>
+        await RunToolAsync(RestoreSessionButton, () => _performanceEngine.RestorePerformanceSessionAsync(), OptimizerStatusText);
+
+    private async void RefreshOptimizerButton_Click(object sender, RoutedEventArgs e) =>
+        await RefreshOptimizerProfileAsync();
 
     private async Task RefreshOptimizerProfileAsync()
     {
@@ -265,14 +294,9 @@ public partial class MainWindow : Window
         RefreshOptimizerButton.IsEnabled = false;
         try
         {
-            var detected = await Task.Run(() =>
-            {
-                var hardware = _performanceEngine.GetHardwareSnapshot();
-                return (Hardware: hardware, Plan: _performanceEngine.GetRecommendedPlan(hardware));
-            });
-            _hardwareSnapshot = detected.Hardware;
-            _optimizerPlan = detected.Plan;
-            UpdateOptimizerPanel(detected.Hardware, detected.Plan);
+            var hardware = await _performanceEngine.GetHardwareSnapshotAsync();
+            var plan = _performanceEngine.GetRecommendedPlan(hardware);
+            UpdateOptimizerPanel(hardware, plan);
         }
         catch (Exception ex)
         {
@@ -287,52 +311,84 @@ public partial class MainWindow : Window
 
     private void UpdateOptimizerPanel(HardwareSnapshot hardware, OptimizerPlan plan)
     {
-        HardwareProfileText.Text = $"{plan.Tier.ToUpperInvariant()} HARDWARE PROFILE";
-        HardwareGpuText.Text = $"{hardware.GpuVendor} • {hardware.GpuName}";
-        HardwareCpuText.Text = $"{hardware.PhysicalCores} cores / {hardware.LogicalCores} threads";
-        HardwareMemoryText.Text = $"{hardware.TotalMemoryGb} GB RAM";
-        HardwareDisplayText.Text = $"{hardware.RefreshRateHz} Hz display";
-        HardwarePowerText.Text = hardware.IsLaptop
-            ? hardware.IsOnAcPower ? "AC / performance ready" : "Battery / balanced"
-            : "Desktop / performance ready";
-        HardwareVirtualizationText.Text = hardware.VirtualizationEnabled
-            ? hardware.HypervisorDetected ? "VT on / hypervisor" : "VT on"
-            : "VT off";
+        var display = OptimizerDisplayFormatter.Format(hardware, plan);
 
-        PlanTierText.Text = $"{plan.Tier.ToUpperInvariant()} • {plan.PowerMode}";
-        PlanCpuText.Text = $"{plan.EmulatorCpuCores} physical cores";
-        PlanMemoryText.Text = $"{plan.EmulatorMemoryMb / 1024d:0.#} GB";
-        PlanRenderText.Text = $"{plan.ContentScale}x • FXAA {plan.FxaaQuality}";
-        PlanFpsText.Text = plan.RecommendedFps;
-        PlanGpuText.Text = plan.GpuRoute;
-        SmartPlanText.Text = $"{plan.GpuRoute}; {plan.EmulatorCpuCores} CPU cores and {plan.EmulatorMemoryMb / 1024d:0.#} GB RAM recommended. Frame rate mode: {plan.RecommendedFps}.";
+        HardwareProfileText.Text = display.HardwareProfile;
+        HardwareGpuText.Text = display.HardwareGpu;
+        HardwareCpuText.Text = display.HardwareCpu;
+        HardwareMemoryText.Text = display.HardwareMemory;
+        HardwareDisplayText.Text = display.HardwareDisplay;
+        HardwarePowerText.Text = display.HardwarePower;
+        HardwareVirtualizationText.Text = display.HardwareVirtualization;
+
+        PlanTierText.Text = display.PlanTier;
+        PlanCpuText.Text = display.PlanCpu;
+        PlanMemoryText.Text = display.PlanMemory;
+        PlanRenderText.Text = display.PlanRender;
+        PlanFpsText.Text = display.PlanFps;
+        PlanGpuText.Text = display.PlanGpu;
+        SmartPlanText.Text = display.SmartPlanSummary;
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        _performanceEngine.RestorePerformanceSession();
+        CancelAndDisposeConnection();
+        _chromeHook?.Dispose();
+        _chromeHook = null;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                _performanceEngine.RestorePerformanceSession();
+            }
+            catch
+            {
+                // Suppress background errors during window shutdown
+            }
+        });
+    }
+
+    private void CancelAndDisposeConnection()
+    {
+        var cancellation = _connectionCancellation;
+        _connectionCancellation = null;
+        if (cancellation is null) return;
+        try
+        {
+            cancellation.Cancel();
+        }
+        finally
+        {
+            cancellation.Dispose();
+        }
     }
 
     private async void DnsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (DnsComboBox.SelectedItem is not string label || !_dnsServers.TryGetValue(label, out var servers)) return;
+        if (DnsComboBox.SelectedItem is not string label || !DnsCatalog.TryGet(label, out var entry) || entry is null) return;
         var selectedLabel = label;
-        DnsStatusText.Text = $"{selectedLabel.Split(" - ")[0]} • Testing response...";
-        var ping = await Task.Run(() => _windowsTools.PingDns(servers[0]));
-        if (DnsComboBox.SelectedItem is not string currentLabel ||
-            !string.Equals(currentLabel, selectedLabel, StringComparison.OrdinalIgnoreCase)) return;
+        DnsStatusText.Text = $"{entry.ShortName} • Testing response...";
+        var ping = await _windowsTools.PingDnsAsync(entry.Primary);
 
-        DnsStatusText.Text = ping is null
-            ? $"{selectedLabel.Split(" - ")[0]} • No response from DNS server"
-            : $"{selectedLabel.Split(" - ")[0]} • Ping: {ping}ms • Ready to apply";
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+
+        Dispatcher.Invoke(() =>
+        {
+            if (DnsComboBox.SelectedItem is not string currentLabel ||
+                !string.Equals(currentLabel, selectedLabel, StringComparison.OrdinalIgnoreCase)) return;
+
+            DnsStatusText.Text = ping is null
+                ? $"{entry.ShortName} • No response from DNS server"
+                : $"{entry.ShortName} • Ping: {ping}ms • Ready to apply";
+        });
     }
 
     private async void ChangeDnsButton_Click(object sender, RoutedEventArgs e)
     {
-        if (DnsComboBox.SelectedItem is not string label || !_dnsServers.TryGetValue(label, out var servers)) return;
-        var result = await RunToolAsync(ChangeDnsButton, () => _windowsTools.ChangeDns(servers[0], servers[1]), null);
+        if (DnsComboBox.SelectedItem is not string label || !DnsCatalog.TryGet(label, out var entry) || entry is null) return;
+        var result = await RunToolAsync(ChangeDnsButton, () => _windowsTools.ChangeDns(entry.Primary, entry.Secondary), null);
         DnsStatusText.Text = result.Success
-            ? $"{label.Split(" - ")[0]} • Applied: {servers[0]} / {servers[1]}"
+            ? $"{entry.ShortName} • Applied: {entry.Primary} / {entry.Secondary}"
             : result.Message;
     }
 
@@ -369,11 +425,10 @@ public partial class MainWindow : Window
     }
 
     private IpadResolutionPreset? GetSelectedIpadPreset() =>
-        IpadComboBox.SelectedItem is string selectedDisplayName
-            ? IpadPresets.FirstOrDefault(preset => string.Equals(preset.DisplayName, selectedDisplayName, StringComparison.Ordinal))
-            : null;
+        IpadPresetCatalog.FindByDisplayName(IpadComboBox.SelectedItem as string);
 
-    private async void ResetIpadButton_Click(object sender, RoutedEventArgs e) => await RunToolAsync(ResetIpadButton, () => _windowsTools.ResetIpadResolution(), null);
+    private async void ResetIpadButton_Click(object sender, RoutedEventArgs e) =>
+        await RunToolAsync(ResetIpadButton, () => _windowsTools.ResetIpadResolution(), null);
 
     private async void CreateShortcutButton_Click(object sender, RoutedEventArgs e)
     {
@@ -400,26 +455,8 @@ public partial class MainWindow : Window
         ShortcutDestinationText.Text = $"Desktop shortcut: {version.DisplayName}.lnk";
         CreateShortcutButton.IsEnabled = true;
 
-        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Icons", $"{version.PackageName}.ico");
-        if (!File.Exists(iconPath))
-        {
-            ShortcutIcon.Source = null;
-            return;
-        }
-
-        try
-        {
-            var icon = new BitmapImage();
-            icon.BeginInit();
-            icon.UriSource = new Uri(iconPath, UriKind.Absolute);
-            icon.CacheOption = BitmapCacheOption.OnLoad;
-            icon.EndInit();
-            ShortcutIcon.Source = icon;
-        }
-        catch (Exception)
-        {
-            ShortcutIcon.Source = null;
-        }
+        var iconPath = Path.Combine(AppContext.BaseDirectory, AppConstants.Assets.DirectoryName, AppConstants.Assets.IconsDirectoryName, $"{version.PackageName}.ico");
+        ShortcutIcon.Source = IconImageLoader.TryLoadIcon(iconPath);
     }
 
     private void NavigationButton_Click(object sender, RoutedEventArgs e)
@@ -445,105 +482,22 @@ public partial class MainWindow : Window
 
     private void Window_SourceInitialized(object? sender, EventArgs e)
     {
-        if (PresentationSource.FromVisual(this) is HwndSource source)
-        {
-            source.AddHook(WindowProc);
-        }
+        _chromeHook?.Dispose();
+        _chromeHook = WindowChromeBehavior.Attach(this);
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var compact = e.NewSize.Width < 1320;
-        var tight = e.NewSize.Width < 1200;
-        var sidebarWidth = tight ? 228 : compact ? 240 : 260;
+        var sidebarWidth = ResponsiveLayoutManager.GetSidebarWidth(e.NewSize.Width);
         SidebarColumn.Width = new GridLength(sidebarWidth);
         TitleBrandColumn.Width = new GridLength(sidebarWidth);
 
-        var pageMargin = tight
-            ? new Thickness(24, 20, 24, 18)
-            : compact
-                ? new Thickness(32, 22, 32, 20)
-                : new Thickness(48, 26, 48, 24);
-
+        var pageMargin = ResponsiveLayoutManager.GetPageMargin(e.NewSize.Width);
         GraphicsView.Margin = pageMargin;
         OptimizerView.Margin = pageMargin;
         NetworkView.Margin = pageMargin;
         ShortcutsView.Margin = pageMargin;
         AboutView.Margin = pageMargin;
-    }
-
-    private IntPtr WindowProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        if (message == WmGetMinMaxInfo)
-        {
-            var monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
-            if (monitor != IntPtr.Zero)
-            {
-                var monitorInfo = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
-                if (GetMonitorInfo(monitor, ref monitorInfo))
-                {
-                    var info = Marshal.PtrToStructure<MinMaxInfo>(lParam);
-                    info.MaxPosition = new Point32(
-                        monitorInfo.Work.Left - monitorInfo.Monitor.Left,
-                        monitorInfo.Work.Top - monitorInfo.Monitor.Top);
-                    info.MaxSize = new Point32(
-                        monitorInfo.Work.Right - monitorInfo.Work.Left,
-                        monitorInfo.Work.Bottom - monitorInfo.Work.Top);
-                    Marshal.StructureToPtr(info, lParam, fDeleteOld: false);
-                    handled = true;
-                }
-            }
-        }
-
-        return IntPtr.Zero;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo monitorInfo);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Point32
-    {
-        public int X;
-        public int Y;
-
-        public Point32(int x, int y)
-        {
-            X = x;
-            Y = y;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MinMaxInfo
-    {
-        public Point32 Reserved;
-        public Point32 MaxSize;
-        public Point32 MaxPosition;
-        public Point32 MinTrackSize;
-        public Point32 MaxTrackSize;
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct MonitorInfo
-    {
-        public int Size;
-        public Rect32 Monitor;
-        public Rect32 Work;
-        public uint Flags;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Rect32
-    {
-        public int Left;
-        public int Top;
-        public int Right;
-        public int Bottom;
     }
 
     private async Task<OperationResult> RunToolAsync(Button button, Func<OperationResult> action, TextBlock? resultLabel)
@@ -557,20 +511,50 @@ public partial class MainWindow : Window
             resultLabel.Text = "Working...";
             resultLabel.Foreground = FindResource("TextSecondary") as Brush;
         }
+
         OperationResult result;
         try { result = await Task.Run(action); }
         catch (Exception ex) { result = OperationResult.Fail(ex.Message); }
         finally { button.IsEnabled = true; _isBusy = false; }
+
         if (resultLabel is not null)
         {
             resultLabel.Text = result.Message;
             resultLabel.Foreground = FindResource(result.Success ? "Success" : "Danger") as Brush;
         }
+
         SetStatus(result.Message, !result.Success);
         return result;
     }
 
-    private void ApplyLoadedSettings()
+    private async Task<OperationResult> RunToolAsync(Button button, Func<Task<OperationResult>> action, TextBlock? resultLabel)
+    {
+        if (_isBusy) return OperationResult.Fail("Another operation is already running.");
+        _isBusy = true;
+        button.IsEnabled = false;
+        SetStatus("Working...");
+        if (resultLabel is not null)
+        {
+            resultLabel.Text = "Working...";
+            resultLabel.Foreground = FindResource("TextSecondary") as Brush;
+        }
+
+        OperationResult result;
+        try { result = await action(); }
+        catch (Exception ex) { result = OperationResult.Fail(ex.Message); }
+        finally { button.IsEnabled = true; _isBusy = false; }
+
+        if (resultLabel is not null)
+        {
+            resultLabel.Text = result.Message;
+            resultLabel.Foreground = FindResource(result.Success ? "Success" : "Danger") as Brush;
+        }
+
+        SetStatus(result.Message, !result.Success);
+        return result;
+    }
+
+    private async Task ApplyLoadedSettingsAsync(CancellationToken cancellationToken)
     {
         _suppressSelection = true;
         try
@@ -578,18 +562,27 @@ public partial class MainWindow : Window
             SelectContent(_gameLoop.GetGraphicsQuality(), new[] { SmoothButton, BalancedButton, HdButton, HdrButton, UltraHdButton, UhdButton });
             SelectContent(_gameLoop.GetFrameRate(), new[] { LowButton, MediumButton, HighButton, UltraButton, ExtremeButton, Fps90Button, Fps120Button });
             var style = _gameLoop.GetGraphicsStyle();
-            foreach (var button in new[] { ClassicButton, ColorfulButton, RealisticButton, SoftButton, MovieButton }) button.IsChecked = string.Equals(button.Tag?.ToString(), style, StringComparison.OrdinalIgnoreCase);
-            var shadow = _gameLoop.GetShadow();
+            foreach (var button in new[] { ClassicButton, ColorfulButton, RealisticButton, SoftButton, MovieButton })
+            {
+                button.IsChecked = string.Equals(button.Tag?.ToString(), style, StringComparison.OrdinalIgnoreCase);
+            }
+
+            var shadow = await _gameLoop.GetShadowAsync(cancellationToken);
             ShadowDisableButton.IsChecked = string.Equals(shadow, "Disable", StringComparison.OrdinalIgnoreCase);
             ShadowEnableButton.IsChecked = string.Equals(shadow, "Enable", StringComparison.OrdinalIgnoreCase);
             ShadowDisableButton.IsEnabled = true;
             ShadowEnableButton.IsEnabled = true;
+
             var isKoreanVersion = string.Equals(_gameLoop.CurrentPackage, "com.pubg.krmobile", StringComparison.OrdinalIgnoreCase);
             KoreanResolutionPanel.Visibility = isKoreanVersion ? Visibility.Visible : Visibility.Collapsed;
             KoreanFullHdButton.IsEnabled = isKoreanVersion;
             KoreanFullHdButton.IsChecked = isKoreanVersion;
         }
-        finally { _suppressSelection = false; }
+        finally
+        {
+            _suppressSelection = false;
+        }
+
         UpdateSummary();
     }
 
@@ -664,11 +657,18 @@ public partial class MainWindow : Window
                 : "—";
     }
 
-    private string SelectedStyle() => new[] { ClassicButton, ColorfulButton, RealisticButton, SoftButton, MovieButton }.FirstOrDefault(button => button.IsChecked == true)?.Tag?.ToString() ?? "Classic";
-    private static string? SelectedContent(params RadioButton[] buttons) => buttons.FirstOrDefault(button => button.IsChecked == true)?.Content?.ToString();
+    private string SelectedStyle() =>
+        new[] { ClassicButton, ColorfulButton, RealisticButton, SoftButton, MovieButton }
+            .FirstOrDefault(button => button.IsChecked == true)?.Tag?.ToString() ?? "Classic";
+
+    private static string? SelectedContent(params RadioButton[] buttons) =>
+        buttons.FirstOrDefault(button => button.IsChecked == true)?.Content?.ToString();
 
     private static void SelectContent(string content, IEnumerable<RadioButton> buttons)
     {
-        foreach (var button in buttons) button.IsChecked = string.Equals(button.Content?.ToString(), content, StringComparison.OrdinalIgnoreCase);
+        foreach (var button in buttons)
+        {
+            button.IsChecked = string.Equals(button.Content?.ToString(), content, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

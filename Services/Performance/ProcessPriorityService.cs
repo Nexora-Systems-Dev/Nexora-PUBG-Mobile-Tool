@@ -1,6 +1,6 @@
 using System.Diagnostics;
-
-using Nexora.Models;
+using Nexora.Configuration;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services.Performance;
 
@@ -10,18 +10,25 @@ namespace Nexora.Services.Performance;
 /// </summary>
 public sealed class ProcessPriorityService
 {
-    private static readonly string[] PerformanceProcessNames =
-    {
-        "aow_exe", "AndroidEmulatorEn", "AndroidEmulatorEx", "AndroidEmulator", "AndroidRenderer"
-    };
-
     private readonly object _sync = new();
     private readonly Dictionary<int, ProcessPrioritySnapshot> _snapshots = new();
     private CancellationTokenSource? _monitorCancellation;
     private Task? _monitorTask;
 
+    internal int SnapshotCount
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _snapshots.Count;
+            }
+        }
+    }
+
     public OperationResult Apply(string? gameLoopRoot)
     {
+        PruneDeadSnapshots();
         var scan = ApplyToRunningProcesses(gameLoopRoot);
         StartMonitor(gameLoopRoot);
 
@@ -42,7 +49,21 @@ public sealed class ProcessPriorityService
     public OperationResult Restore()
     {
         StopMonitor();
+        return RestoreSnapshots();
+    }
 
+    /// <summary>
+    /// Async shutdown path: awaits the monitor loop's exit instead of
+    /// blocking the caller, then restores the saved priorities.
+    /// </summary>
+    public async Task<OperationResult> RestoreAsync(CancellationToken cancellationToken = default)
+    {
+        await StopMonitorAsync(cancellationToken);
+        return RestoreSnapshots();
+    }
+
+    private OperationResult RestoreSnapshots()
+    {
         List<ProcessPrioritySnapshot> snapshots;
         lock (_sync)
         {
@@ -103,7 +124,7 @@ public sealed class ProcessPriorityService
             var alreadyHigh = 0;
             var skipped = 0;
 
-            foreach (var processName in PerformanceProcessNames)
+            foreach (var processName in AppConstants.Emulator.PerformanceProcessNames)
             {
                 foreach (var process in Process.GetProcessesByName(processName))
                 {
@@ -163,15 +184,18 @@ public sealed class ProcessPriorityService
         {
             if (_monitorTask is { IsCompleted: false }) return;
 
+            // The previous run finished: release its source before replacing it.
+            _monitorCancellation?.Dispose();
             _monitorCancellation = new CancellationTokenSource();
             var cancellation = _monitorCancellation;
             _monitorTask = Task.Run(async () =>
             {
-                using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+                using var timer = new PeriodicTimer(AppConstants.Timeouts.MonitorInterval);
                 try
                 {
                     while (await timer.WaitForNextTickAsync(cancellation.Token))
                     {
+                        PruneDeadSnapshots();
                         ApplyToRunningProcesses(gameLoopRoot);
                     }
                 }
@@ -183,7 +207,31 @@ public sealed class ProcessPriorityService
         }
     }
 
+    /// <summary>
+    /// Best-effort synchronous stop: signals cancellation and releases the
+    /// source without blocking on the monitor task. The loop observes the
+    /// token and exits on its own.
+    /// </summary>
     private void StopMonitor()
+    {
+        CancellationTokenSource? cancellation;
+        lock (_sync)
+        {
+            cancellation = _monitorCancellation;
+            cancellation?.Cancel();
+            _monitorTask = null;
+            _monitorCancellation = null;
+        }
+
+        cancellation?.Dispose();
+    }
+
+    /// <summary>
+    /// Clean async stop: signals cancellation and awaits the monitor loop's
+    /// exit, giving up after the centralized stop timeout so shutdown
+    /// can never hang. Never blocks via <c>Task.Wait()</c>.
+    /// </summary>
+    public async Task StopMonitorAsync(CancellationToken cancellationToken = default)
     {
         Task? monitor;
         CancellationTokenSource? cancellation;
@@ -196,12 +244,101 @@ public sealed class ProcessPriorityService
             _monitorCancellation = null;
         }
 
-        if (monitor is not null)
+        try
         {
-            try { monitor.Wait(TimeSpan.FromSeconds(2)); } catch { /* best effort during shutdown */ }
+            if (monitor is not null)
+            {
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(AppConstants.Timeouts.MonitorStopTimeout);
+                await monitor.WaitAsync(timeout.Token);
+            }
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Stop timeout elapsed while the loop winds down; it exits on its
+            // own via the canceled monitor token, so shutdown continues.
+        }
+        finally
+        {
+            cancellation?.Dispose();
+        }
+    }
 
-        cancellation?.Dispose();
+    /// <summary>
+    /// Drops snapshots whose process has exited (or whose PID was recycled
+    /// by the OS for a different process). Runs on every monitor tick so a
+    /// long session cannot grow the dictionary without bound.
+    /// </summary>
+    /// <returns>The number of stale entries removed.</returns>
+    internal int PruneDeadSnapshots()
+    {
+        List<int>? dead = null;
+        lock (_sync)
+        {
+            foreach (var (processId, snapshot) in _snapshots)
+            {
+                if (IsSnapshotStale(snapshot))
+                {
+                    dead ??= new List<int>();
+                    dead.Add(processId);
+                }
+            }
+
+            if (dead is null)
+            {
+                return 0;
+            }
+
+            foreach (var processId in dead)
+            {
+                _snapshots.Remove(processId);
+            }
+
+            return dead.Count;
+        }
+    }
+
+    /// <summary>
+    /// Test seam for the pruning contract: seeds a snapshot entry without
+    /// requiring a live GameLoop process.
+    /// </summary>
+    internal void AddSnapshotForTesting(
+        int processId,
+        string? executablePath,
+        string processName,
+        ProcessPriorityClass priority)
+    {
+        lock (_sync)
+        {
+            _snapshots[processId] = new ProcessPrioritySnapshot(processId, executablePath, processName, priority);
+        }
+    }
+
+    private static bool IsSnapshotStale(ProcessPrioritySnapshot snapshot)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(snapshot.ProcessId);
+            var sameProcess = string.IsNullOrWhiteSpace(snapshot.ExecutablePath)
+                ? string.Equals(process.ProcessName, snapshot.ProcessName, StringComparison.OrdinalIgnoreCase)
+                : PathsEqual(TryGetExecutablePath(process), snapshot.ExecutablePath);
+            return !sameProcess;
+        }
+        catch (ArgumentException)
+        {
+            // No process with this PID: it has terminated.
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // Transient process state; keep the entry for the next tick.
+            return false;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // Access denied reading the process; keep the entry.
+            return false;
+        }
     }
 
     private static string? TryGetExecutablePath(Process process)
@@ -229,7 +366,7 @@ public sealed class ProcessPriorityService
                 return fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase);
             }
 
-            return fullPath.Contains($"{Path.DirectorySeparatorChar}TxGameAssistant{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
+            return fullPath.Contains($"{Path.DirectorySeparatorChar}{AppConstants.Emulator.InstallFolderName}{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
         }
         catch
         {
@@ -242,7 +379,7 @@ public sealed class ProcessPriorityService
         // These names are limited to GameLoop's 64-bit emulator/rendering
         // processes. This fallback is used only when Windows denies reading
         // MainModule.FileName for an elevated process.
-        return PerformanceProcessNames.Contains(processName, StringComparer.OrdinalIgnoreCase);
+        return AppConstants.Emulator.PerformanceProcessNames.Contains(processName, StringComparer.OrdinalIgnoreCase);
     }
 
     private static bool PathsEqual(string? left, string? right)

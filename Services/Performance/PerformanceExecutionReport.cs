@@ -1,4 +1,4 @@
-using Nexora.Models;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services.Performance;
 

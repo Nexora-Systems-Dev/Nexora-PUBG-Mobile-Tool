@@ -1,6 +1,5 @@
-using Microsoft.Win32;
-
-using Nexora.Models;
+using Nexora.Shared.Infrastructure;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services.Performance;
 
@@ -14,6 +13,13 @@ public sealed class GpuRoutingService
     private const string UserGpuPreferencesPath =
         @"SOFTWARE\Microsoft\DirectX\UserGpuPreferences";
 
+    private readonly RegistryService _registry;
+
+    public GpuRoutingService(RegistryService? registry = null)
+    {
+        _registry = registry ?? new RegistryService();
+    }
+
     public OperationResult ApplyHighPerformance(string? installPath, IEnumerable<string> executableNames)
     {
         var installDirectory = ResolveInstallDirectory(installPath);
@@ -24,12 +30,6 @@ public sealed class GpuRoutingService
 
         try
         {
-            using var preferences = Registry.CurrentUser.CreateSubKey(UserGpuPreferencesPath, writable: true);
-            if (preferences is null)
-            {
-                return OperationResult.Fail("Windows GPU preference storage could not be opened.");
-            }
-
             var applied = 0;
             foreach (var executableName in executableNames.Distinct(StringComparer.OrdinalIgnoreCase))
             {
@@ -37,12 +37,13 @@ public sealed class GpuRoutingService
                 if (!File.Exists(executablePath)) continue;
 
                 var normalizedPath = Path.GetFullPath(executablePath);
-                preferences.SetValue(normalizedPath, "GpuPreference=2;", RegistryValueKind.String);
-
-                var actual = preferences.GetValue(normalizedPath)?.ToString();
-                if (string.Equals(actual, "GpuPreference=2;", StringComparison.OrdinalIgnoreCase))
+                if (_registry.SetCurrentUserString(UserGpuPreferencesPath, normalizedPath, "GpuPreference=2;"))
                 {
-                    applied++;
+                    var actual = _registry.GetCurrentUserString(UserGpuPreferencesPath, normalizedPath);
+                    if (string.Equals(actual, "GpuPreference=2;", StringComparison.OrdinalIgnoreCase))
+                    {
+                        applied++;
+                    }
                 }
             }
 

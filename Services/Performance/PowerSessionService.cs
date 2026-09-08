@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 
-using Nexora.Models;
+using Nexora.Features.Performance;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services.Performance;
 

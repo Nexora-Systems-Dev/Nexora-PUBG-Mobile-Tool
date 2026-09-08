@@ -1,26 +1,27 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Xml.Linq;
-using Nexora.Models;
+using Nexora.Configuration;
+using Nexora.Shared.Infrastructure;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services;
 
-public sealed class IpadLayoutService
+public sealed class IpadLayoutService : IIpadLayoutService
 {
-    private readonly RegistryService _registry;
-    private readonly string _mapPath;
+    private readonly IRegistryService _registry;
+    private readonly IpadLayoutOptions _options;
 
-    public IpadLayoutService(RegistryService registry)
+    public IpadLayoutService(IRegistryService registry, IpadLayoutOptions? options = null)
     {
         _registry = registry;
-        _mapPath = Path.Combine(AppContext.BaseDirectory, "Assets", "ipad_layout_map.json");
+        _options = options ?? new IpadLayoutOptions();
     }
 
     public OperationResult Apply(int width, int height)
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var keymapFolder = Path.Combine(appData, "AndroidTbox");
-        var originalPath = Path.Combine(keymapFolder, "TVM_100.xml");
-        var backupPath = originalPath + ".mkbackup";
+        var originalPath = _options.GetKeymapFilePath();
+        var backupPath = _options.GetBackupFilePath();
         if (!File.Exists(originalPath))
         {
             return OperationResult.Fail("GameLoop keymap file was not found.");
@@ -49,7 +50,7 @@ public sealed class IpadLayoutService
                 return OperationResult.Fail("GameLoop did not accept the selected iPad resolution.");
             }
 
-            return OperationResult.Ok($"Resolution set to {width} x {height}.");
+            return OperationResult.Ok(FormattableString.Invariant($"Resolution set to {width} x {height}."));
         }
         catch (Exception ex)
         {
@@ -59,9 +60,8 @@ public sealed class IpadLayoutService
 
     public OperationResult Reset()
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var originalPath = Path.Combine(appData, "AndroidTbox", "TVM_100.xml");
-        var backupPath = originalPath + ".mkbackup";
+        var originalPath = _options.GetKeymapFilePath();
+        var backupPath = _options.GetBackupFilePath();
         if (!File.Exists(backupPath)) return OperationResult.Fail("No saved iPad resolution was found.");
 
         try
@@ -84,8 +84,8 @@ public sealed class IpadLayoutService
 
     private void ApplyLayoutMap(string originalPath)
     {
-        if (!File.Exists(_mapPath)) throw new FileNotFoundException("The iPad layout map is missing.", _mapPath);
-        var map = JsonDocument.Parse(File.ReadAllText(_mapPath)).RootElement;
+        if (!File.Exists(_options.LayoutMapPath)) throw new FileNotFoundException("The iPad layout map is missing.", _options.LayoutMapPath);
+        var map = JsonDocument.Parse(File.ReadAllText(_options.LayoutMapPath)).RootElement;
         var source = File.ReadAllText(originalPath);
         var root = XElement.Parse($"<root>{source}</root>", LoadOptions.PreserveWhitespace);
         var supportedPackages = GameLoopService.PubgVersions.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -159,7 +159,7 @@ public sealed class IpadLayoutService
             var target = targets[index];
             if (buttonName == "Click with Scroll Wheel" && switchName == "Backpage")
             {
-                keyMappingEx.SetAttributeValue("Click_X", (double.Parse(target.X) + 0.1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                keyMappingEx.SetAttributeValue("Click_X", ShiftCoordinate(target.X, 0.1));
                 keyMappingEx.SetAttributeValue("Click_Y", target.Y);
             }
 
@@ -214,4 +214,17 @@ public sealed class IpadLayoutService
     }
 
     private sealed record PointPair(string X, string Y);
+
+    /// <summary>
+    /// Shifts a decimal coordinate by <paramref name="delta"/>, always
+    /// parsing and formatting with <see cref="CultureInfo.InvariantCulture"/>
+    /// so comma-decimal locales can neither throw nor corrupt the value.
+    /// Unparsable input is returned unchanged.
+    /// </summary>
+    internal static string ShiftCoordinate(string value, double delta)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? (parsed + delta).ToString(CultureInfo.InvariantCulture)
+            : value;
+    }
 }

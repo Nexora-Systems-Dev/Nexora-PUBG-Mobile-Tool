@@ -1,4 +1,5 @@
-using Nexora.Models;
+using Nexora.Features.Performance;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services.Performance;
 
@@ -9,6 +10,8 @@ namespace Nexora.Services.Performance;
 public interface IGameLoopPerformanceEngine
 {
     HardwareSnapshot GetHardwareSnapshot();
+
+    Task<HardwareSnapshot> GetHardwareSnapshotAsync(CancellationToken cancellationToken = default);
 
     OptimizerPlan GetRecommendedPlan(HardwareSnapshot hardware);
 
@@ -21,4 +24,6 @@ public interface IGameLoopPerformanceEngine
     OperationResult ApplyPerformanceSession();
 
     OperationResult RestorePerformanceSession();
+
+    Task<OperationResult> RestorePerformanceSessionAsync(CancellationToken cancellationToken = default);
 }

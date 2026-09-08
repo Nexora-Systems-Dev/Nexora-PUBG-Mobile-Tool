@@ -1,34 +1,4 @@
-namespace Nexora.Models;
-
-public sealed record PubgVersion(string PackageName, string DisplayName);
-
-public sealed record ConnectionResult(
-    bool Success,
-    string Message,
-    IReadOnlyList<PubgVersion> InstalledVersions);
-
-public sealed record OperationResult(bool Success, string Message)
-{
-    public static OperationResult Ok(string message) => new(true, message);
-    public static OperationResult Fail(string message) => new(false, message);
-}
-
-public sealed record GraphicsSelection(
-    string Quality,
-    string FrameRate,
-    string Style,
-    bool EnableShadow,
-    bool EnableKoreanFullHd);
-
-public sealed record IpadResolutionPreset(
-    string Label,
-    int Width,
-    int Height,
-    string Guidance)
-{
-    public string DisplayName => $"{Label}  •  {Width} × {Height}";
-    public string Details => $"{Width} × {Height}  •  {Guidance}";
-}
+namespace Nexora.Features.Performance;
 
 public sealed record HardwareSnapshot(
     string CpuVendor,

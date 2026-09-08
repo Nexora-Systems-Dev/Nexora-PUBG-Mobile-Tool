@@ -1,9 +1,16 @@
-using System.Text;
-using Nexora.Models;
+using System.Diagnostics;
+using Nexora.Configuration;
+using Nexora.Features.GameLoop;
+using Nexora.Shared.Infrastructure;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Services;
 
-public sealed class GameLoopService
+/// <summary>
+/// Orchestrates GameLoop emulator connectivity, PUBG Mobile version detection,
+/// graphics configuration updates via Unreal Engine 4 .sav binary patching, and shadow tuning.
+/// </summary>
+public sealed class GameLoopService : IGameLoopService
 {
     public static readonly IReadOnlyDictionary<string, string> PubgVersions =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -48,36 +55,50 @@ public sealed class GameLoopService
             ["Movie"] = 0x06
         };
 
-    private readonly RegistryService _registry;
-    private readonly AdbClient _adb;
-    private readonly string _assetRoot;
-    private readonly string _workRoot;
+    private readonly IRegistryService _registry;
+    private readonly IAdbClient _adb;
+    private readonly GameLoopWorkingStorage _storage;
     private byte[]? _activeSavContent;
 
-    public GameLoopService(RegistryService registry, AdbClient adb)
+    public GameLoopService(IRegistryService registry, IAdbClient adb)
+        : this(registry, adb, new GameLoopWorkingStorage())
     {
-        _registry = registry;
-        _adb = adb;
-        _assetRoot = Path.Combine(AppContext.BaseDirectory, "Assets");
-        _workRoot = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Nexora PUBG Mobile Tool");
-        Directory.CreateDirectory(_workRoot);
     }
 
-    public string? CurrentPackage { get; private set; }
-    public bool IsConnected => _activeSavContent is not null && !string.IsNullOrWhiteSpace(CurrentPackage);
-    public string AdbPath => _adb.AdbPath;
+    public GameLoopService(IRegistryService registry, IAdbClient adb, GameLoopWorkingStorage storage)
+    {
+        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _adb = adb ?? throw new ArgumentNullException(nameof(adb));
+        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+    }
 
+    /// <summary>
+    /// Currently loaded and connected PUBG Mobile package name, or null when disconnected.
+    /// </summary>
+    public string? CurrentPackage { get; private set; }
+
+    /// <summary>
+    /// Returns true if an active .sav buffer is loaded and a target PUBG package is active.
+    /// </summary>
+    public bool IsConnected => _activeSavContent is not null && !string.IsNullOrWhiteSpace(CurrentPackage);
+
+    /// <summary>
+    /// Resets the connection state and clears in-memory save data.
+    /// </summary>
     public void Disconnect()
     {
         _activeSavContent = null;
         CurrentPackage = null;
     }
 
-    public ConnectionResult Connect(CancellationToken cancellationToken)
+    /// <summary>
+    /// Checks prerequisites, waits for ADB boot, and enumerates installed PUBG Mobile packages.
+    /// </summary>
+    public async Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken)
     {
-        var adbStatus = _registry.GetUserDword("AdbDisable");
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var adbStatus = _registry.GetUserDword(AppConstants.Registry.ValueAdbDisable);
         if (adbStatus is null)
         {
             return new ConnectionResult(false, "Could not read GameLoop ADB status.", Array.Empty<PubgVersion>());
@@ -85,7 +106,7 @@ public sealed class GameLoopService
 
         if (adbStatus == 1)
         {
-            _registry.SetUserDword("AdbDisable", 0);
+            _registry.SetUserDword(AppConstants.Registry.ValueAdbDisable, 0);
             return new ConnectionResult(false, "ADB was enabled. Restart GameLoop and try again.", Array.Empty<PubgVersion>());
         }
 
@@ -94,20 +115,21 @@ public sealed class GameLoopService
             return new ConnectionResult(false, "GameLoop is not running.", Array.Empty<PubgVersion>());
         }
 
-        if (!_adb.WaitForBoot(cancellationToken))
+        if (!await _adb.WaitForBootAsync(cancellationToken))
         {
             AdbClient.KillAdb();
             return new ConnectionResult(false, "GameLoop ADB did not finish booting.", Array.Empty<PubgVersion>());
         }
 
-        var testFile = Path.Combine(_workRoot, "testADB.mkvip");
-        if (!_adb.Pull("/default.prop", testFile))
+        cancellationToken.ThrowIfCancellationRequested();
+        _storage.EnsureDirectoryCreated();
+        if (!await _adb.PullAsync("/default.prop", _storage.ConnectionProbePath, cancellationToken))
         {
             AdbClient.KillAdb();
             return new ConnectionResult(false, "Could not connect to GameLoop ADB.", Array.Empty<PubgVersion>());
         }
 
-        var installedPackages = _adb.FindInstalledPackages(PubgVersions.Keys);
+        var installedPackages = _adb.FindInstalledPackages(PubgVersions.Keys, cancellationToken);
         var installedVersions = installedPackages
             .Where(PubgVersions.ContainsKey)
             .Select(package => new PubgVersion(package, PubgVersions[package]))
@@ -120,38 +142,48 @@ public sealed class GameLoopService
 
         if (installedVersions.Count == 1)
         {
-            var load = LoadVersion(installedVersions[0].PackageName);
-            return load.Success
+            var loadResult = await LoadVersionAsync(installedVersions[0].PackageName, cancellationToken);
+            return loadResult.Success
                 ? new ConnectionResult(true, $"Using {installedVersions[0].DisplayName}.", installedVersions)
-                : new ConnectionResult(false, load.Message, installedVersions);
+                : new ConnectionResult(false, loadResult.Message, installedVersions);
         }
 
         return new ConnectionResult(true, "Select the PUBG Mobile version to use.", installedVersions);
     }
 
-    public OperationResult LoadVersion(string packageName)
+    /// <summary>
+    /// Pulls and loads the Active.sav and UserCustom.ini configuration files for the specified package.
+    /// </summary>
+    public async Task<OperationResult> LoadVersionAsync(string packageName, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!AppConstants.Validation.IsValidAndroidPackageName(packageName))
+        {
+            return OperationResult.Fail("Invalid PUBG package name.");
+        }
+
         if (!PubgVersions.ContainsKey(packageName))
         {
             return OperationResult.Fail("Unsupported PUBG Mobile version.");
         }
 
-        PrepareWorkingFiles();
-        var activePath = $"/sdcard/Android/data/{packageName}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/SaveGames/Active.sav";
-        var localActivePath = Path.Combine(_workRoot, "old.mkvip");
+        _storage.PrepareWorkingFiles();
+        var remoteSavPath = $"/sdcard/Android/data/{packageName}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/SaveGames/Active.sav";
 
-        if (!_adb.Pull(activePath, localActivePath))
+        if (!await _adb.PullAsync(remoteSavPath, _storage.PreviousSavPath, cancellationToken))
         {
             return OperationResult.Fail("Could not read the PUBG graphics file from GameLoop.");
         }
 
         try
         {
-            _activeSavContent = File.ReadAllBytes(localActivePath);
+            _activeSavContent = File.ReadAllBytes(_storage.PreviousSavPath);
             CurrentPackage = packageName;
 
-            var shadowPath = $"/sdcard/Android/data/{packageName}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android/UserCustom.ini";
-            _adb.Pull(shadowPath, Path.Combine(_workRoot, "user.mkvip"));
+            var remoteShadowPath = $"/sdcard/Android/data/{packageName}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android/UserCustom.ini";
+            await _adb.PullAsync(remoteShadowPath, _storage.ShadowSettingsPath, cancellationToken);
+
             return OperationResult.Ok($"Connected to {PubgVersions[packageName]}.");
         }
         catch (IOException ex)
@@ -193,21 +225,27 @@ public sealed class GameLoopService
         _ => "Classic"
     };
 
-    public string GetShadow()
+    /// <summary>
+    /// Retrieves the current shadow status ("Enable" or "Disable") from UserCustom.ini.
+    /// </summary>
+    public async Task<string> GetShadowAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(CurrentPackage))
         {
             return "Disable";
         }
 
-        var remotePath = $"/sdcard/Android/data/{CurrentPackage}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android/UserCustom.ini";
-        var localPath = Path.Combine(_workRoot, "user.mkvip");
-        if (!File.Exists(localPath) && !_adb.Pull(remotePath, localPath))
+        var localShadowPath = _storage.ShadowSettingsPath;
+        if (!File.Exists(localShadowPath))
         {
-            return "Disable";
+            var remoteShadowPath = $"/sdcard/Android/data/{CurrentPackage}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android/UserCustom.ini";
+            if (!await _adb.PullAsync(remoteShadowPath, localShadowPath, cancellationToken))
+            {
+                return "Disable";
+            }
         }
 
-        foreach (var line in File.ReadLines(localPath))
+        foreach (var line in File.ReadLines(localShadowPath))
         {
             var trimmed = line.Trim();
             if (!trimmed.StartsWith("+CVars=0B572A11181D160E280C1815100D0044", StringComparison.Ordinal))
@@ -221,23 +259,72 @@ public sealed class GameLoopService
         return "Disable";
     }
 
-    public OperationResult ApplyGraphics(GraphicsSelection selection)
+    /// <summary>
+    /// Applies the selected graphics quality, framerate, style, and shadow settings to the active PUBG Mobile installation.
+    /// </summary>
+    public async Task<OperationResult> ApplyGraphicsAsync(GraphicsSelection selection, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!IsConnected || _activeSavContent is null || string.IsNullOrWhiteSpace(CurrentPackage))
         {
             return OperationResult.Fail("Connect to GameLoop first.");
         }
 
-        if (!QualityValues.TryGetValue(selection.Quality, out var qualityValue) ||
-            !FrameRateValues.TryGetValue(selection.FrameRate, out var fpsValue) ||
-            !StyleValues.TryGetValue(selection.Style, out var styleValue))
+        if (!TryResolveGraphicsValues(selection, out var qualityByte, out var fpsByte, out var styleByte))
         {
             return OperationResult.Fail("One or more graphics settings are invalid.");
         }
 
+        var savUpdateResult = UpdateGraphicsSavProperties(qualityByte, fpsByte, styleByte);
+        if (!savUpdateResult.Success)
+        {
+            return savUpdateResult;
+        }
+
+        var shadowResult = UnrealCVarCodec.UpdateShadowFile(_storage.ShadowSettingsPath, selection.EnableShadow);
+        if (!shadowResult.Success)
+        {
+            return shadowResult;
+        }
+
+        _storage.PrepareWorkingFiles();
+        File.WriteAllBytes(_storage.PendingSavPath, _activeSavContent);
+
+        var deployResult = await DeployConfigurationFilesAsync(CurrentPackage, cancellationToken);
+        if (!deployResult.Success)
+        {
+            return deployResult;
+        }
+
+        if (selection.EnableKoreanFullHd && CurrentPackage.Equals("com.pubg.krmobile", StringComparison.OrdinalIgnoreCase))
+        {
+            return await ApplyKoreanFullHdAsync(cancellationToken);
+        }
+
+        RelaunchPubgActivity(CurrentPackage);
+        return OperationResult.Ok("Graphics settings applied successfully.");
+    }
+
+    private static bool TryResolveGraphicsValues(
+        GraphicsSelection selection,
+        out byte qualityByte,
+        out byte fpsByte,
+        out byte styleByte)
+    {
+        fpsByte = 0;
+        styleByte = 0;
+
+        return QualityValues.TryGetValue(selection.Quality, out qualityByte) &&
+               FrameRateValues.TryGetValue(selection.FrameRate, out fpsByte) &&
+               StyleValues.TryGetValue(selection.Style, out styleByte);
+    }
+
+    private OperationResult UpdateGraphicsSavProperties(byte qualityByte, byte fpsByte, byte styleByte)
+    {
         foreach (var property in new[] { "ArtQuality", "LobbyRenderQuality", "BattleRenderQuality" })
         {
-            if (!ChangeProperty(property, qualityValue))
+            if (!ChangeProperty(property, qualityByte))
             {
                 return OperationResult.Fail($"Could not update {property}.");
             }
@@ -245,183 +332,51 @@ public sealed class GameLoopService
 
         foreach (var property in new[] { "FPSLevel", "BattleFPS", "LobbyFPS" })
         {
-            if (!ChangeProperty(property, fpsValue))
+            if (!ChangeProperty(property, fpsByte))
             {
                 return OperationResult.Fail($"Could not update {property}.");
             }
         }
 
-        if (!ChangeProperty("BattleRenderStyle", styleValue))
+        if (!ChangeProperty("BattleRenderStyle", styleByte))
         {
             return OperationResult.Fail("Could not update the graphics style.");
         }
 
-        var shadowResult = UpdateShadow(selection.EnableShadow);
-        if (!shadowResult.Success)
-        {
-            return shadowResult;
-        }
+        return OperationResult.Ok("Graphics settings updated in save buffer.");
+    }
 
-        PrepareWorkingFiles();
-        var localNewPath = Path.Combine(_workRoot, "new.mkvip");
-        File.WriteAllBytes(localNewPath, _activeSavContent);
+    private async Task<OperationResult> DeployConfigurationFilesAsync(string packageName, CancellationToken cancellationToken)
+    {
+        var remoteDataRoot = $"/sdcard/Android/data/{packageName}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved";
 
-        var dataRoot = $"/sdcard/Android/data/{CurrentPackage}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved";
-        _adb.Shell($"am force-stop {CurrentPackage}");
-        Thread.Sleep(200);
+        cancellationToken.ThrowIfCancellationRequested();
+        _adb.Shell($"am force-stop {packageName}");
+        await Task.Delay(AppConstants.Timeouts.ForceStopSettleDelayMilliseconds, cancellationToken);
 
-        if (!_adb.Push(localNewPath, $"{dataRoot}/SaveGames/Active.sav"))
+        if (!await _adb.PushAsync(_storage.PendingSavPath, $"{remoteDataRoot}/SaveGames/Active.sav", cancellationToken))
         {
             return OperationResult.Fail("Could not apply the graphics file to GameLoop.");
         }
 
-        var userPath = Path.Combine(_workRoot, "user.mkvip");
-        if (File.Exists(userPath) && !_adb.Push(userPath, $"{dataRoot}/Config/Android/UserCustom.ini"))
+        var localShadowPath = _storage.ShadowSettingsPath;
+        if (File.Exists(localShadowPath) && !await _adb.PushAsync(localShadowPath, $"{remoteDataRoot}/Config/Android/UserCustom.ini", cancellationToken))
         {
             return OperationResult.Fail("Could not apply the shadow setting to GameLoop.");
         }
 
-        if (selection.EnableKoreanFullHd && CurrentPackage.Equals("com.pubg.krmobile", StringComparison.OrdinalIgnoreCase))
-        {
-            return ApplyKoreanFullHd();
-        }
-
-        _adb.Shell($"am start -n {CurrentPackage}/com.epicgames.ue4.SplashActivity");
-        return OperationResult.Ok("Graphics settings applied successfully.");
+        return OperationResult.Ok("Configuration files deployed.");
     }
 
-    private OperationResult UpdateShadow(bool enable)
+    private void RelaunchPubgActivity(string packageName)
     {
-        var localPath = Path.Combine(_workRoot, "user.mkvip");
-        if (!File.Exists(localPath))
-        {
-            return OperationResult.Fail("Could not read the PUBG shadow settings.");
-        }
-
-        var values = enable
-            ? new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["r.UserShadowSwitch"] = "1",
-                ["r.ShadowQuality"] = "1",
-                ["r.Mobile.DynamicObjectShadow"] = "1",
-                ["r.Shadow.MaxCSMResolution"] = "1",
-                ["r.Shadow.DistanceScale"] = "1",
-                ["r.Shadow.CSM.MaxMobileCascades"] = "1"
-            }
-            : new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["r.UserShadowSwitch"] = "0",
-                ["r.ShadowQuality"] = "0",
-                ["r.Mobile.DynamicObjectShadow"] = "0",
-                ["r.Shadow.MaxCSMResolution"] = "0",
-                ["r.Shadow.DistanceScale"] = "0",
-                ["r.Shadow.CSM.MaxMobileCascades"] = "0"
-            };
-
-        var lines = File.ReadAllLines(localPath);
-        var changed = false;
-        for (var index = 0; index < lines.Length; index++)
-        {
-            var trimmed = lines[index].Trim();
-            if (!trimmed.StartsWith("+CVars=", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var decoded = DecodeCVar(trimmed[7..]);
-            var separator = decoded.IndexOf('=');
-            if (separator < 0 || !values.TryGetValue(decoded[..separator], out var value))
-            {
-                continue;
-            }
-
-            var indentationLength = lines[index].Length - lines[index].TrimStart().Length;
-            lines[index] = lines[index][..indentationLength] + "+CVars=" + EncodeCVar(decoded[..separator], value);
-            changed = true;
-        }
-
-        if (!changed)
-        {
-            return OperationResult.Fail("The PUBG shadow setting was not found.");
-        }
-
-        File.WriteAllLines(localPath, lines, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        return OperationResult.Ok(enable ? "Shadow enabled." : "Shadow disabled.");
+        _adb.Shell($"am start -n {packageName}/com.epicgames.ue4.SplashActivity");
     }
 
-    private static string DecodeCVar(string encoded)
+    private async Task<OperationResult> ApplyKoreanFullHdAsync(CancellationToken cancellationToken)
     {
-        if (encoded.Length % 2 != 0)
-        {
-            return string.Empty;
-        }
+        cancellationToken.ThrowIfCancellationRequested();
 
-        var decoded = new StringBuilder(encoded.Length / 2);
-        for (var index = 0; index < encoded.Length; index += 2)
-        {
-            if (!byte.TryParse(encoded.Substring(index, 2), System.Globalization.NumberStyles.HexNumber, null, out var value))
-            {
-                return string.Empty;
-            }
-
-            decoded.Append((char)(value ^ 0x79));
-        }
-
-        return decoded.ToString();
-    }
-
-    private static string EncodeCVar(string name, string value)
-    {
-        var plainText = name + "=" + value;
-        var encoded = new StringBuilder(plainText.Length * 2);
-        foreach (var character in plainText)
-        {
-            encoded.Append(((byte)character ^ 0x79).ToString("X2"));
-        }
-
-        return encoded.ToString();
-    }
-
-    public static bool IsGameLoopRunning()
-    {
-        var processNames = new[] { "AndroidEmulatorEx", "AndroidEmulatorEn", "AndroidEmulator" };
-        return processNames.Any(name => Process.GetProcessesByName(name).Length > 0);
-    }
-
-    private byte ReadProperty(string name)
-    {
-        if (_activeSavContent is null)
-        {
-            return 0;
-        }
-
-        var header = CreateHeader(name);
-        var headerIndex = FindSequence(_activeSavContent, header);
-        return headerIndex >= 0 && headerIndex + header.Length < _activeSavContent.Length
-            ? _activeSavContent[headerIndex + header.Length]
-            : (byte)0;
-    }
-
-    private bool ChangeProperty(string name, byte value)
-    {
-        if (_activeSavContent is null)
-        {
-            return false;
-        }
-
-        var header = CreateHeader(name);
-        var headerIndex = FindSequence(_activeSavContent, header);
-        if (headerIndex < 0 || headerIndex + header.Length >= _activeSavContent.Length)
-        {
-            return false;
-        }
-
-        _activeSavContent[headerIndex + header.Length] = value;
-        return true;
-    }
-
-    private OperationResult ApplyKoreanFullHd()
-    {
         if (string.IsNullOrWhiteSpace(CurrentPackage))
         {
             return OperationResult.Fail("PUBG Mobile KR is not connected.");
@@ -430,36 +385,58 @@ public sealed class GameLoopService
         var dataPath = $"/sdcard/Android/data/{CurrentPackage}";
         var obbPath = $"/sdcard/Android/obb/{CurrentPackage}";
         var configPath = $"{dataPath}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/Config/Android/UserCustom.ini";
-        var safePath = "/sdcard/mk_safe_folder";
-        var accountPath = $"/data/data/{CurrentPackage}";
+        var temporaryAccountBackupPath = "/sdcard/mk_safe_folder";
+        var appAccountDataPath = $"/data/data/{CurrentPackage}";
 
-        var krIni = Path.Combine(_assetRoot, "mk_kr.ini");
-        if (!File.Exists(krIni) || !_adb.Push(krIni, configPath))
+        var koreanResolutionAssetPath = _storage.KoreanResolutionAssetPath;
+        if (!File.Exists(koreanResolutionAssetPath) || !await _adb.PushAsync(koreanResolutionAssetPath, configPath, cancellationToken))
         {
             return OperationResult.Fail("Could not apply the PUBG KR resolution file.");
         }
 
-        _adb.Shell($"mkdir -p {safePath}");
-        _adb.Shell($"cp -r {accountPath}/shared_prefs {safePath}/shared_prefs");
-        _adb.Shell($"cp -r {accountPath}/databases {safePath}/databases");
+        BackupAccountCredentials(appAccountDataPath, temporaryAccountBackupPath);
 
-        BackupRemoteFolder(dataPath);
-        BackupRemoteFolder(obbPath);
-        _adb.Shell($"pm clear {CurrentPackage}");
-        _adb.Shell($"pm grant {CurrentPackage} android.permission.READ_EXTERNAL_STORAGE");
-        _adb.Shell($"pm grant {CurrentPackage} android.permission.WRITE_EXTERNAL_STORAGE");
-        RestoreRemoteFolder(dataPath);
-        RestoreRemoteFolder(obbPath);
-        _adb.Shell($"cp -r {safePath}/shared_prefs {accountPath}/shared_prefs");
-        _adb.Shell($"cp -r {safePath}/databases {accountPath}/databases");
-        _adb.Shell($"am start -n {CurrentPackage}/com.epicgames.ue4.SplashActivity");
-        _adb.Shell($"rm -r {safePath}");
+        cancellationToken.ThrowIfCancellationRequested();
+        BackupRemoteFolder(dataPath, cancellationToken);
+        BackupRemoteFolder(obbPath, cancellationToken);
+
+        cancellationToken.ThrowIfCancellationRequested();
+        ResetPackageAndGrantPermissions(CurrentPackage);
+
+        cancellationToken.ThrowIfCancellationRequested();
+        RestoreRemoteFolder(dataPath, cancellationToken);
+        RestoreRemoteFolder(obbPath, cancellationToken);
+
+        RestoreAccountCredentials(temporaryAccountBackupPath, appAccountDataPath);
+        RelaunchPubgActivity(CurrentPackage);
+        _adb.Shell($"rm -r {temporaryAccountBackupPath}");
 
         return OperationResult.Ok("Graphics settings applied and PUBG KR set to 1080p.");
     }
 
-    private void BackupRemoteFolder(string remotePath)
+    private void BackupAccountCredentials(string appAccountDataPath, string temporaryBackupPath)
     {
+        _adb.Shell($"mkdir -p {temporaryBackupPath}");
+        _adb.Shell($"cp -r {appAccountDataPath}/shared_prefs {temporaryBackupPath}/shared_prefs");
+        _adb.Shell($"cp -r {appAccountDataPath}/databases {temporaryBackupPath}/databases");
+    }
+
+    private void ResetPackageAndGrantPermissions(string packageName)
+    {
+        _adb.Shell($"pm clear {packageName}");
+        _adb.Shell($"pm grant {packageName} android.permission.READ_EXTERNAL_STORAGE");
+        _adb.Shell($"pm grant {packageName} android.permission.WRITE_EXTERNAL_STORAGE");
+    }
+
+    private void RestoreAccountCredentials(string temporaryBackupPath, string appAccountDataPath)
+    {
+        _adb.Shell($"cp -r {temporaryBackupPath}/shared_prefs {appAccountDataPath}/shared_prefs");
+        _adb.Shell($"cp -r {temporaryBackupPath}/databases {appAccountDataPath}/databases");
+    }
+
+    private void BackupRemoteFolder(string remotePath, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         var backupPath = remotePath + ".MKbackup";
         var exists = _adb.Shell($"[ -d {remotePath} ] && echo 1 || echo 0").Trim() == "1";
         var backupExists = _adb.Shell($"[ -d {backupPath} ] && echo 1 || echo 0").Trim() == "1";
@@ -473,8 +450,9 @@ public sealed class GameLoopService
         }
     }
 
-    private void RestoreRemoteFolder(string remotePath)
+    private void RestoreRemoteFolder(string remotePath, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var backupPath = remotePath + ".MKbackup";
         if (_adb.Shell($"[ -d {backupPath} ] && echo 1 || echo 0").Trim() == "1")
         {
@@ -482,46 +460,44 @@ public sealed class GameLoopService
         }
     }
 
-    private void PrepareWorkingFiles()
+    public static bool IsGameLoopRunning()
     {
-        Directory.CreateDirectory(_workRoot);
-        foreach (var name in new[] { "old.mkvip", "new.mkvip", "user.mkvip", "testADB.mkvip" })
-        {
-            var source = Path.Combine(_assetRoot, name);
-            var destination = Path.Combine(_workRoot, name);
-            if (File.Exists(source) && !File.Exists(destination))
-            {
-                File.Copy(source, destination);
-            }
-        }
+        return AppConstants.Emulator.RunningCheckProcessNames.Any(name => Process.GetProcessesByName(name).Length > 0);
     }
 
-    private static byte[] CreateHeader(string propertyName)
-    {
-        return Encoding.UTF8.GetBytes(
-            propertyName + "\0\f\0\0\0IntProperty\0\x04\0\0\0\0\0\0\0\0");
-    }
+    private void PrepareWorkingFiles() => _storage.PrepareWorkingFiles();
 
-    private static int FindSequence(byte[] source, byte[] sequence)
+    #region Internal & Private Seams (Preserved for Tests & Backward Compatibility)
+
+    private byte ReadProperty(string name)
     {
-        for (var i = 0; i <= source.Length - sequence.Length; i++)
+        if (_activeSavContent is null)
         {
-            var match = true;
-            for (var j = 0; j < sequence.Length; j++)
-            {
-                if (source[i + j] != sequence[j])
-                {
-                    match = false;
-                    break;
-                }
-            }
-
-            if (match)
-            {
-                return i;
-            }
+            return 0;
         }
 
-        return -1;
+        return new Ue4SavEditor(_activeSavContent).ReadProperty(name);
     }
+
+    private bool ChangeProperty(string name, byte value)
+    {
+        if (_activeSavContent is null)
+        {
+            return false;
+        }
+
+        return new Ue4SavEditor(_activeSavContent).ChangeProperty(name, value);
+    }
+
+    private static byte[] CreateHeader(string propertyName) => Ue4SavEditor.CreateHeader(propertyName);
+
+    private static int FindSequence(byte[] source, byte[] sequence) => Ue4SavEditor.FindSequence(source, sequence);
+
+    private static string EncodeCVar(string name, string value) => UnrealCVarCodec.EncodeCVar(name, value);
+
+    private static string DecodeCVar(string encoded) => UnrealCVarCodec.DecodeCVar(encoded);
+
+    private OperationResult UpdateShadow(bool enable) => UnrealCVarCodec.UpdateShadowFile(_storage.ShadowSettingsPath, enable);
+
+    #endregion
 }
