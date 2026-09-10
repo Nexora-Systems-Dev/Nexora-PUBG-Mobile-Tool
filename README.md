@@ -78,13 +78,13 @@ The current automated suite contains 161 passing tests. Live GameLoop verificati
 
 Create a self-contained Windows x64 executable and a ZIP package:
 
-    .\scripts\package-release.ps1 -Version v1.0.12
+    .\scripts\package-release.ps1 -Version v1.0.13
 
 The generated files are written to artifacts:
 
-- Nexora-v1.0.12-win-x64.exe — self-contained executable with the .NET runtime.
-- Nexora-v1.0.12-win-x64.zip — portable package with release notes.
-- Nexora-v1.0.12-win-x64-SHA256SUMS.txt — SHA-256 checksums.
+- Nexora-v1.0.13-win-x64.exe — self-contained executable with the .NET runtime.
+- Nexora-v1.0.13-win-x64.zip — portable package with release notes.
+- Nexora-v1.0.13-win-x64-SHA256SUMS.txt — SHA-256 checksums.
 
 artifacts, bin, and obj are excluded from Git.
 

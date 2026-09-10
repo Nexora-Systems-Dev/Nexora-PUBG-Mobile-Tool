@@ -11,6 +11,12 @@ public interface IGameLoopService
 {
     string? CurrentPackage { get; }
 
+    /// <summary>
+    /// True when GameLoop ADB is available and at least one supported PUBG package was found.
+    /// This is intentionally independent from loading the graphics profile.
+    /// </summary>
+    bool IsGameLoopConnected { get; }
+
     bool IsConnected { get; }
 
     void Disconnect();

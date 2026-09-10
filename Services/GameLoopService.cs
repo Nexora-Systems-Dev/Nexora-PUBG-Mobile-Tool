@@ -59,6 +59,7 @@ public sealed class GameLoopService : IGameLoopService
     private readonly IAdbClient _adb;
     private readonly GameLoopWorkingStorage _storage;
     private byte[]? _activeSavContent;
+    private bool _isGameLoopConnected;
 
     public GameLoopService(IRegistryService registry, IAdbClient adb)
         : this(registry, adb, new GameLoopWorkingStorage())
@@ -78,6 +79,13 @@ public sealed class GameLoopService : IGameLoopService
     public string? CurrentPackage { get; private set; }
 
     /// <summary>
+    /// True after ADB is ready and a supported PUBG package is detected.
+    /// Profile-file loading is a separate step because game updates can change
+    /// or temporarily remove those files without disconnecting the emulator.
+    /// </summary>
+    public bool IsGameLoopConnected => _isGameLoopConnected;
+
+    /// <summary>
     /// Returns true if an active .sav buffer is loaded and a target PUBG package is active.
     /// </summary>
     public bool IsConnected => _activeSavContent is not null && !string.IsNullOrWhiteSpace(CurrentPackage);
@@ -89,6 +97,7 @@ public sealed class GameLoopService : IGameLoopService
     {
         _activeSavContent = null;
         CurrentPackage = null;
+        _isGameLoopConnected = false;
     }
 
     /// <summary>
@@ -97,6 +106,9 @@ public sealed class GameLoopService : IGameLoopService
     public async Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        _isGameLoopConnected = false;
+        _activeSavContent = null;
+        CurrentPackage = null;
 
         var adbStatus = _registry.GetUserDword(AppConstants.Registry.ValueAdbDisable);
         if (adbStatus is null)
@@ -140,12 +152,19 @@ public sealed class GameLoopService : IGameLoopService
             return new ConnectionResult(false, "No supported PUBG Mobile version was found.", installedVersions);
         }
 
+        // From this point on the emulator connection is valid. Loading the
+        // graphics profile below is best-effort because PUBG updates can
+        // change its storage layout without affecting ADB connectivity.
+        _isGameLoopConnected = true;
+
         if (installedVersions.Count == 1)
         {
             var loadResult = await LoadVersionAsync(installedVersions[0].PackageName, cancellationToken);
             return loadResult.Success
                 ? new ConnectionResult(true, $"Using {installedVersions[0].DisplayName}.", installedVersions)
-                : new ConnectionResult(false, loadResult.Message, installedVersions);
+                : new ConnectionResult(true,
+                    $"Connected to {installedVersions[0].DisplayName}. Graphics profile unavailable: {loadResult.Message}",
+                    installedVersions);
         }
 
         return new ConnectionResult(true, "Select the PUBG Mobile version to use.", installedVersions);

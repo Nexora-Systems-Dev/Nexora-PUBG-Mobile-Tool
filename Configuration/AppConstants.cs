@@ -18,7 +18,7 @@ public static class AppConstants
     /// <c>Nexora.csproj</c> (without the <c>v</c> prefix) and the About view,
     /// which renders this value at startup.
     /// </summary>
-    public const string CurrentVersion = "v1.0.12";
+    public const string CurrentVersion = "v1.0.13";
 
     public static class Update
     {

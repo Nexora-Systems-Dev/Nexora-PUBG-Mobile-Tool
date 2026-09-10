@@ -80,7 +80,7 @@ public partial class MainWindow : Window
     {
         if (_isBusy) return;
 
-        if (_gameLoop.IsConnected)
+        if (_gameLoop.IsGameLoopConnected)
         {
             DisconnectFromGameLoop();
             return;
@@ -161,6 +161,10 @@ public partial class MainWindow : Window
         {
             await ApplyLoadedSettingsAsync(_connectionCancellation?.Token ?? CancellationToken.None);
             SetConnectedState(result.Message);
+        }
+        else if (_gameLoop.IsGameLoopConnected)
+        {
+            SetTransportConnectedState(result.Message);
         }
         else
         {
@@ -626,6 +630,30 @@ public partial class MainWindow : Window
         SummaryAdb.Text = "Connected";
         ConnectButton.Content = "DISCONNECT";
         ApplyButton.IsEnabled = true;
+        ConnectionDetail.Text = message;
+        SetStatus(message);
+        UpdateSummary();
+    }
+
+    private void SetTransportConnectedState(string message)
+    {
+        var success = FindResource("Success") as Brush ?? Brushes.LimeGreen;
+        var emeraldGlow = new DropShadowEffect { Color = Color.FromRgb(0x10, 0xB9, 0x81), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 };
+        ConnectionDot.Fill = success;
+        ConnectionDot.Effect = emeraldGlow;
+        TopConnectionDot.Fill = success;
+        TopConnectionDot.Effect = emeraldGlow;
+        TopConnectionText.Text = "Connected to GameLoop";
+        TopConnectionPill.BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x10, 0xB9, 0x81));
+        SidebarConnectionDot.Fill = success;
+        SidebarConnectionDot.Effect = emeraldGlow;
+        SidebarConnectionText.Text = "CONNECTED";
+        SidebarAdbText.Text = "ADB: Connected";
+        SummaryAdb.Text = "Connected";
+        ConnectButton.Content = "DISCONNECT";
+        ApplyButton.IsEnabled = false;
+        ShadowDisableButton.IsEnabled = false;
+        ShadowEnableButton.IsEnabled = false;
         ConnectionDetail.Text = message;
         SetStatus(message);
         UpdateSummary();
