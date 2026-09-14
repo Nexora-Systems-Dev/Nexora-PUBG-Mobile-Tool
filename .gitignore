@@ -41,4 +41,6 @@ Desktop.ini
 # Agent & tool state
 .agent/
 .antigravity/
+.agents/
+graphify-out/
 ECC/
