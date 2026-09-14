@@ -4,16 +4,14 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services;
 
 /// <summary>
-/// Contract orchestrating GameLoop emulator connectivity, PUBG Mobile version detection,
-/// graphics configuration updates, and shadow tuning.
+/// Contract for GameLoop emulator connectivity, PUBG Mobile version detection, graphics configuration, and shadow settings.
 /// </summary>
 public interface IGameLoopService
 {
     string? CurrentPackage { get; }
 
     /// <summary>
-    /// True when GameLoop ADB is available and at least one supported PUBG package was found.
-    /// This is intentionally independent from loading the graphics profile.
+    /// Indicates whether GameLoop ADB is reachable and a supported PUBG package was found.
     /// </summary>
     bool IsGameLoopConnected { get; }
 

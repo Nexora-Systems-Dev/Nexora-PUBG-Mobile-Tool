@@ -1,0 +1,626 @@
+{
+  "App.xaml": {
+    "mtime": 1788899807.624377,
+    "seen": 1789078195.1203387,
+    "ast_hash": "86dc98fab44aba0f1a3d972db3bacf35",
+    "semantic_hash": "86dc98fab44aba0f1a3d972db3bacf35"
+  },
+  "App.xaml.cs": {
+    "mtime": 1789342599.0211775,
+    "seen": 1789342658.4698517,
+    "ast_hash": "9fd7dd22d5c0d345ae1e127b0ca5c712",
+    "semantic_hash": ""
+  },
+  "Assets/ipad_layout_map.json": {
+    "mtime": 1788720931.6747148,
+    "seen": 1789078195.1203387,
+    "ast_hash": "05e9e8a9c648f0b27bd6bd4f12f22007",
+    "semantic_hash": "05e9e8a9c648f0b27bd6bd4f12f22007"
+  },
+  "Configuration/AppConstants.cs": {
+    "mtime": 1789341423.0262945,
+    "seen": 1789341559.0634737,
+    "ast_hash": "b37066aac6348fe6db89dcfc63680512",
+    "semantic_hash": ""
+  },
+  "Configuration/IpadLayoutOptions.cs": {
+    "mtime": 1788894674.7997987,
+    "seen": 1789078195.1203387,
+    "ast_hash": "0cda4a3c4014fe8d769082312f42a89f",
+    "semantic_hash": "0cda4a3c4014fe8d769082312f42a89f"
+  },
+  "Configuration/TempCleanupOptions.cs": {
+    "mtime": 1788894669.6485624,
+    "seen": 1789078195.1203387,
+    "ast_hash": "20a39e27a9d9a5b6cdffe9607fc1a484",
+    "semantic_hash": "20a39e27a9d9a5b6cdffe9607fc1a484"
+  },
+  "Features/GameLoop/GameLoopModels.cs": {
+    "mtime": 1788886355.53209,
+    "seen": 1789078195.1203387,
+    "ast_hash": "b1e5d85ccf9092489fb7c4306760e9ae",
+    "semantic_hash": "b1e5d85ccf9092489fb7c4306760e9ae"
+  },
+  "Features/GameLoop/GameLoopWorkingStorage.cs": {
+    "mtime": 1788893350.5469422,
+    "seen": 1789078195.1203387,
+    "ast_hash": "1685d786257ccffaa301d2ca36379b7a",
+    "semantic_hash": "1685d786257ccffaa301d2ca36379b7a"
+  },
+  "Features/GameLoop/Ue4SavEditor.cs": {
+    "mtime": 1788893337.3936417,
+    "seen": 1789078195.1203387,
+    "ast_hash": "20004ad681e655b838d2b1d2b7503ff3",
+    "semantic_hash": "20004ad681e655b838d2b1d2b7503ff3"
+  },
+  "Features/GameLoop/UnrealCVarCodec.cs": {
+    "mtime": 1788893345.4519072,
+    "seen": 1789078195.1203387,
+    "ast_hash": "af4399140f958f1ba74b2477bdffe4bf",
+    "semantic_hash": "af4399140f958f1ba74b2477bdffe4bf"
+  },
+  "Features/Layout/IpadPresetCatalog.cs": {
+    "mtime": 1788886376.478563,
+    "seen": 1789078195.1203387,
+    "ast_hash": "f016c943cc8239808bec2c793349d96f",
+    "semantic_hash": "f016c943cc8239808bec2c793349d96f"
+  },
+  "Features/Layout/IpadResolutionPreset.cs": {
+    "mtime": 1788886358.484365,
+    "seen": 1789078195.1203387,
+    "ast_hash": "63bc913f0c5c35e7a6d637b8fa745b83",
+    "semantic_hash": "63bc913f0c5c35e7a6d637b8fa745b83"
+  },
+  "Features/Performance/PerformanceModels.cs": {
+    "mtime": 1788886363.7045298,
+    "seen": 1789078195.1203387,
+    "ast_hash": "dda2fbd44caa5a3647bdb0532efff782",
+    "semantic_hash": "dda2fbd44caa5a3647bdb0532efff782"
+  },
+  "Features/SystemTools/Network/DnsCatalog.cs": {
+    "mtime": 1788885952.3036098,
+    "seen": 1789078195.1203387,
+    "ast_hash": "605e1d72b2c72f280d6614c428b2aacb",
+    "semantic_hash": "605e1d72b2c72f280d6614c428b2aacb"
+  },
+  "GlobalUsings.cs": {
+    "mtime": 1788720845.6872666,
+    "seen": 1789078195.1203387,
+    "ast_hash": "a9042920e1159660778b644ffd3e3425",
+    "semantic_hash": "a9042920e1159660778b644ffd3e3425"
+  },
+  "MainWindow.xaml": {
+    "mtime": 1789000329.684252,
+    "seen": 1789078195.1203387,
+    "ast_hash": "b0cd506de9a146278dd6e6e5a85131e8",
+    "semantic_hash": "b0cd506de9a146278dd6e6e5a85131e8"
+  },
+  "MainWindow.xaml.cs": {
+    "mtime": 1789341464.692905,
+    "seen": 1789341559.0635087,
+    "ast_hash": "4f42e6c366555761a7f591e1eb5e78d2",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Catalogs/CatalogTests.cs": {
+    "mtime": 1788886016.537159,
+    "seen": 1789078195.1203387,
+    "ast_hash": "98bbddbbd45b511c0e0e84bae6dc9112",
+    "semantic_hash": "98bbddbbd45b511c0e0e84bae6dc9112"
+  },
+  "Nexora.Tests/Configuration/AppConstantsTests.cs": {
+    "mtime": 1788903342.5144715,
+    "seen": 1789078195.1203387,
+    "ast_hash": "9d4eb1003b1ac60c73afcdd64c69c397",
+    "semantic_hash": "9d4eb1003b1ac60c73afcdd64c69c397"
+  },
+  "Nexora.Tests/Configuration/OptionsTests.cs": {
+    "mtime": 1788894883.9048922,
+    "seen": 1789078195.1203387,
+    "ast_hash": "30990821207ef2a497dc0e67e6f02103",
+    "semantic_hash": "30990821207ef2a497dc0e67e6f02103"
+  },
+  "Nexora.Tests/Nexora.Tests.csproj": {
+    "mtime": 1789078513.4722176,
+    "seen": 1789078537.1913455,
+    "ast_hash": "4a85a86b2a46bf87a6fba2240d0aa3a7",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Performance/PerformanceExecutionReportTests.cs": {
+    "mtime": 1788890508.6026244,
+    "seen": 1789078195.1203387,
+    "ast_hash": "97468ba80d137217ca87aa29aab216d4",
+    "semantic_hash": "97468ba80d137217ca87aa29aab216d4"
+  },
+  "Nexora.Tests/Performance/PerformancePlanBuilderTests.cs": {
+    "mtime": 1788890509.892742,
+    "seen": 1789078195.1203387,
+    "ast_hash": "900e0e61e98d7a59bcf167dc6b95a7a6",
+    "semantic_hash": "900e0e61e98d7a59bcf167dc6b95a7a6"
+  },
+  "Nexora.Tests/Performance/ProcessPriorityShutdownTests.cs": {
+    "mtime": 1788881277.8731267,
+    "seen": 1789078195.1203387,
+    "ast_hash": "fc1358519426c76af1659613a10c030c",
+    "semantic_hash": "fc1358519426c76af1659613a10c030c"
+  },
+  "Nexora.Tests/Services/AdbCancellationTests.cs": {
+    "mtime": 1788890503.3528597,
+    "seen": 1789078195.1203387,
+    "ast_hash": "b572e72419af05c413170abafce2ee32",
+    "semantic_hash": "b572e72419af05c413170abafce2ee32"
+  },
+  "Nexora.Tests/Services/AsyncHygieneTests.cs": {
+    "mtime": 1788894892.111133,
+    "seen": 1789078195.1203387,
+    "ast_hash": "a6fb8a0abdff13e90073a4da781b9331",
+    "semantic_hash": "a6fb8a0abdff13e90073a4da781b9331"
+  },
+  "Nexora.Tests/Services/BoundaryValidationTests.cs": {
+    "mtime": 1788886031.3566854,
+    "seen": 1789078195.1203387,
+    "ast_hash": "6306fbfebc482decff8e4974dcf48596",
+    "semantic_hash": "6306fbfebc482decff8e4974dcf48596"
+  },
+  "Nexora.Tests/Services/DependencyInjectionTests.cs": {
+    "mtime": 1788895592.6274593,
+    "seen": 1789078195.1203387,
+    "ast_hash": "152eced77f7b54344e7e8015d32ff7b1",
+    "semantic_hash": "152eced77f7b54344e7e8015d32ff7b1"
+  },
+  "Nexora.Tests/Services/FileUtilitiesTests.cs": {
+    "mtime": 1788894510.3224032,
+    "seen": 1789078195.1203387,
+    "ast_hash": "225ea22a7ee7f2fcafee64129115cd14",
+    "semantic_hash": "225ea22a7ee7f2fcafee64129115cd14"
+  },
+  "Nexora.Tests/Services/GameLoopServiceLogicTests.cs": {
+    "mtime": 1789341493.9827256,
+    "seen": 1789341559.0635462,
+    "ast_hash": "06d993ac097ffc9e2803131243de5663",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Services/LiveGameLoopVerificationTests.cs": {
+    "mtime": 1788902127.8859744,
+    "seen": 1789078195.1203387,
+    "ast_hash": "421f94fd4e9e460a4b95ca25167329a0",
+    "semantic_hash": "421f94fd4e9e460a4b95ca25167329a0"
+  },
+  "Nexora.Tests/Services/RegistryServiceExtensionsTests.cs": {
+    "mtime": 1788894516.2888052,
+    "seen": 1789078195.1203387,
+    "ast_hash": "baa1208e643fb61320a7e46463a45a79",
+    "semantic_hash": "baa1208e643fb61320a7e46463a45a79"
+  },
+  "Nexora.Tests/Services/TemporaryFileHygieneTests.cs": {
+    "mtime": 1788882316.2425513,
+    "seen": 1789078195.1203387,
+    "ast_hash": "659557dec3be84ae0d5bdbda3c3e7c75",
+    "semantic_hash": "659557dec3be84ae0d5bdbda3c3e7c75"
+  },
+  "Nexora.Tests/Services/Ue4SavEditorTests.cs": {
+    "mtime": 1788893396.5547328,
+    "seen": 1789078195.1203387,
+    "ast_hash": "7fe4c78295bf7ff047b29254989766b3",
+    "semantic_hash": "7fe4c78295bf7ff047b29254989766b3"
+  },
+  "Nexora.Tests/Services/WindowsToolsExtractionTests.cs": {
+    "mtime": 1788886033.9101288,
+    "seen": 1789078195.1203387,
+    "ast_hash": "d3064c4d5d68ab3c9c79cd6949e64425",
+    "semantic_hash": "d3064c4d5d68ab3c9c79cd6949e64425"
+  },
+  "Nexora.Tests/Services/WindowsToolsServiceTests.cs": {
+    "mtime": 1788893610.379441,
+    "seen": 1789078195.1203387,
+    "ast_hash": "130564e724512774a934e090ca7226f5",
+    "semantic_hash": "130564e724512774a934e090ca7226f5"
+  },
+  "Nexora.Tests/UI/OptimizerDisplayFormatterTests.cs": {
+    "mtime": 1788893911.507565,
+    "seen": 1789078195.1203387,
+    "ast_hash": "09cf2ff4fd4124c79b2bd98729fa4b16",
+    "semantic_hash": "09cf2ff4fd4124c79b2bd98729fa4b16"
+  },
+  "Nexora.Tests/UI/ResponsiveLayoutManagerTests.cs": {
+    "mtime": 1788893866.1995893,
+    "seen": 1789078195.1203387,
+    "ast_hash": "25c7692eead3e34e13e216bd30e17093",
+    "semantic_hash": "25c7692eead3e34e13e216bd30e17093"
+  },
+  "Nexora.csproj": {
+    "mtime": 1789341476.7114625,
+    "seen": 1789341559.0635734,
+    "ast_hash": "e6dd1ba44208c4b3454b413a2c977a1b",
+    "semantic_hash": ""
+  },
+  "Nexora.slnx": {
+    "mtime": 1788877726.0692735,
+    "seen": 1789078195.1203387,
+    "ast_hash": "13e0cb372a7f290f32e00da23bf4cecd",
+    "semantic_hash": "13e0cb372a7f290f32e00da23bf4cecd"
+  },
+  "Services/AdbClient.cs": {
+    "mtime": 1788902369.9374964,
+    "seen": 1789078195.1203387,
+    "ast_hash": "d8b73942619199c82a1bebbde235c883",
+    "semantic_hash": "d8b73942619199c82a1bebbde235c883"
+  },
+  "Services/GameLoopService.cs": {
+    "mtime": 1789341442.2295077,
+    "seen": 1789341559.0635798,
+    "ast_hash": "7e9396440b9dd966a5533073a0166e7d",
+    "semantic_hash": ""
+  },
+  "Services/IAdbClient.cs": {
+    "mtime": 1788895124.9513211,
+    "seen": 1789078195.1203387,
+    "ast_hash": "42742252ec2ebef7c9fd754d545a7df1",
+    "semantic_hash": "42742252ec2ebef7c9fd754d545a7df1"
+  },
+  "Services/IGameLoopService.cs": {
+    "mtime": 1789000256.6859386,
+    "seen": 1789078195.1203387,
+    "ast_hash": "f9927a574c5cbfa8c2fbeaff693a4240",
+    "semantic_hash": "f9927a574c5cbfa8c2fbeaff693a4240"
+  },
+  "Services/IIpadLayoutService.cs": {
+    "mtime": 1788895152.2425191,
+    "seen": 1789078195.1203387,
+    "ast_hash": "ac48906117d8729fefb1a5a00b5bbab4",
+    "semantic_hash": "ac48906117d8729fefb1a5a00b5bbab4"
+  },
+  "Services/INetworkToolsService.cs": {
+    "mtime": 1788895166.549285,
+    "seen": 1789078195.1203387,
+    "ast_hash": "bfd89c0a0935046d0f2fdc9773da6d23",
+    "semantic_hash": "bfd89c0a0935046d0f2fdc9773da6d23"
+  },
+  "Services/ITempCleanupService.cs": {
+    "mtime": 1788895147.4636319,
+    "seen": 1789078195.1203387,
+    "ast_hash": "a24d5c1b4553ab9587498dee201e6fbd",
+    "semantic_hash": "a24d5c1b4553ab9587498dee201e6fbd"
+  },
+  "Services/IUpdateService.cs": {
+    "mtime": 1788895139.7451673,
+    "seen": 1789078195.1203387,
+    "ast_hash": "55888424dff3849d0d47be7f5ae08150",
+    "semantic_hash": "55888424dff3849d0d47be7f5ae08150"
+  },
+  "Services/IWindowsToolsService.cs": {
+    "mtime": 1788895172.139155,
+    "seen": 1789078195.1203387,
+    "ast_hash": "726f54e27d55dba040e3511e872b86d6",
+    "semantic_hash": "726f54e27d55dba040e3511e872b86d6"
+  },
+  "Services/IpadLayoutService.cs": {
+    "mtime": 1788895247.1541736,
+    "seen": 1789078195.1203387,
+    "ast_hash": "900d2f81067cadcd1d94e520e6add109",
+    "semantic_hash": "900d2f81067cadcd1d94e520e6add109"
+  },
+  "Services/NetworkToolsService.cs": {
+    "mtime": 1788895255.1958466,
+    "seen": 1789078195.1203387,
+    "ast_hash": "e1690d427dca4c6480741cb8c5bf06a8",
+    "semantic_hash": "e1690d427dca4c6480741cb8c5bf06a8"
+  },
+  "Services/Performance/DefenderExclusionService.cs": {
+    "mtime": 1789341086.189327,
+    "seen": 1789341559.063602,
+    "ast_hash": "fb68248771af25cbe43150f7daea5565",
+    "semantic_hash": ""
+  },
+  "Services/Performance/GameLoopProcessService.cs": {
+    "mtime": 1789341447.3151011,
+    "seen": 1789341559.063604,
+    "ast_hash": "9e0432908d43cc629d2debec728beff4",
+    "semantic_hash": ""
+  },
+  "Services/Performance/GameLoopRegistryOptimizer.cs": {
+    "mtime": 1788904279.9672387,
+    "seen": 1789078195.1203387,
+    "ast_hash": "73b83542e09093f6321ccef74ca27c6f",
+    "semantic_hash": "73b83542e09093f6321ccef74ca27c6f"
+  },
+  "Services/Performance/GpuRoutingService.cs": {
+    "mtime": 1788894479.7137313,
+    "seen": 1789078195.1203387,
+    "ast_hash": "166c782959243cb85baf8d3ffa3023c7",
+    "semantic_hash": "166c782959243cb85baf8d3ffa3023c7"
+  },
+  "Services/Performance/HardwareDetectionService.cs": {
+    "mtime": 1788894755.8374104,
+    "seen": 1789078195.1203387,
+    "ast_hash": "7493a9a5f192b9887d711cc1eeeba27f",
+    "semantic_hash": "7493a9a5f192b9887d711cc1eeeba27f"
+  },
+  "Services/Performance/IGameLoopPerformanceEngine.cs": {
+    "mtime": 1788894770.1898472,
+    "seen": 1789078195.1203387,
+    "ast_hash": "adc905f0b28a7904e79df3b3b6767012",
+    "semantic_hash": "adc905f0b28a7904e79df3b3b6767012"
+  },
+  "Services/Performance/NvidiaOptimizerService.cs": {
+    "mtime": 1788904279.9672387,
+    "seen": 1789078195.1203387,
+    "ast_hash": "18ee6fd6634d137be23e4a4ff3521ec1",
+    "semantic_hash": "18ee6fd6634d137be23e4a4ff3521ec1"
+  },
+  "Services/Performance/PerformanceExecutionReport.cs": {
+    "mtime": 1788890462.0962012,
+    "seen": 1789078195.1203387,
+    "ast_hash": "55c88b91fd543bfe68272e061c4a4efd",
+    "semantic_hash": "55c88b91fd543bfe68272e061c4a4efd"
+  },
+  "Services/Performance/PerformancePlanBuilder.cs": {
+    "mtime": 1788890462.6089065,
+    "seen": 1789078195.1203387,
+    "ast_hash": "37b418b280ee9466eab692659c609de0",
+    "semantic_hash": "37b418b280ee9466eab692659c609de0"
+  },
+  "Services/Performance/PowerSessionService.cs": {
+    "mtime": 1788890600.3561122,
+    "seen": 1789078195.1203387,
+    "ast_hash": "1f1ae50548bd81915ed7ee1b4f82a755",
+    "semantic_hash": "1f1ae50548bd81915ed7ee1b4f82a755"
+  },
+  "Services/Performance/ProcessPriorityService.cs": {
+    "mtime": 1789341436.4600682,
+    "seen": 1789341559.0636258,
+    "ast_hash": "ce12f3c6d40082c50035d9402e987a46",
+    "semantic_hash": ""
+  },
+  "Services/ShortcutService.cs": {
+    "mtime": 1788900909.685485,
+    "seen": 1789078195.1203387,
+    "ast_hash": "15598da7f3808c03ded7715cb9119c67",
+    "semantic_hash": "15598da7f3808c03ded7715cb9119c67"
+  },
+  "Services/TempCleanupService.cs": {
+    "mtime": 1788895238.806666,
+    "seen": 1789078195.1203387,
+    "ast_hash": "5238fc9927a1c584a70b88eae6d26124",
+    "semantic_hash": "5238fc9927a1c584a70b88eae6d26124"
+  },
+  "Services/UpdateService.cs": {
+    "mtime": 1789342594.9912097,
+    "seen": 1789342658.4699895,
+    "ast_hash": "70575ae1a347b7d24ad60227d22a19bb",
+    "semantic_hash": ""
+  },
+  "Services/WindowsToolsService.cs": {
+    "mtime": 1788895384.437732,
+    "seen": 1789078195.1203387,
+    "ast_hash": "5d34141556ef5dc431f0b375ca8c7e76",
+    "semantic_hash": "5d34141556ef5dc431f0b375ca8c7e76"
+  },
+  "Shared/Infrastructure/IRegistryService.cs": {
+    "mtime": 1788895319.5123503,
+    "seen": 1789078195.1203387,
+    "ast_hash": "6bfb0cd14af8191776f8349435642037",
+    "semantic_hash": "6bfb0cd14af8191776f8349435642037"
+  },
+  "Shared/Infrastructure/RegistryService.cs": {
+    "mtime": 1788895196.6936746,
+    "seen": 1789078195.1203387,
+    "ast_hash": "0d4dc5987aeb5598da95c6c432e09cfc",
+    "semantic_hash": "0d4dc5987aeb5598da95c6c432e09cfc"
+  },
+  "Shared/Kernel/FileUtilities.cs": {
+    "mtime": 1788894407.732848,
+    "seen": 1789078195.1203387,
+    "ast_hash": "5254979bd8ac177f8ba952164b60b54c",
+    "semantic_hash": "5254979bd8ac177f8ba952164b60b54c"
+  },
+  "Shared/Kernel/IProcessRunner.cs": {
+    "mtime": 1788895114.59903,
+    "seen": 1789078195.1203387,
+    "ast_hash": "bfa9db6f3be5c32c09319931fc5ab606",
+    "semantic_hash": "bfa9db6f3be5c32c09319931fc5ab606"
+  },
+  "Shared/Kernel/OperationResult.cs": {
+    "mtime": 1788886352.547626,
+    "seen": 1789078195.1203387,
+    "ast_hash": "6f1b9edfd07850a3f103152ea81ea1bc",
+    "semantic_hash": "6f1b9edfd07850a3f103152ea81ea1bc"
+  },
+  "Shared/Kernel/ProcessRunner.cs": {
+    "mtime": 1788895178.820991,
+    "seen": 1789078195.1203387,
+    "ast_hash": "b16c659dee10a5de80b7e9951a92101a",
+    "semantic_hash": "b16c659dee10a5de80b7e9951a92101a"
+  },
+  "Shared/Kernel/ProcessText.cs": {
+    "mtime": 1788885959.8842967,
+    "seen": 1789078195.1203387,
+    "ast_hash": "335168a8a2d73e04b85157b41943cdbf",
+    "semantic_hash": "335168a8a2d73e04b85157b41943cdbf"
+  },
+  "UI/Behaviors/WindowChromeBehavior.cs": {
+    "mtime": 1788885954.8606062,
+    "seen": 1789078195.1203387,
+    "ast_hash": "470768d1da82e65d8659a64a90f2efd8",
+    "semantic_hash": "470768d1da82e65d8659a64a90f2efd8"
+  },
+  "UI/Helpers/IconImageLoader.cs": {
+    "mtime": 1788893836.6332688,
+    "seen": 1789078195.1203387,
+    "ast_hash": "1415e8785b2d9a901754c7c564b1f3e9",
+    "semantic_hash": "1415e8785b2d9a901754c7c564b1f3e9"
+  },
+  "UI/Layout/ResponsiveLayoutManager.cs": {
+    "mtime": 1788893831.0178788,
+    "seen": 1789078195.1203387,
+    "ast_hash": "6694ce8b8f56221428c6bcae0b6b05b6",
+    "semantic_hash": "6694ce8b8f56221428c6bcae0b6b05b6"
+  },
+  "UI/Presentation/OptimizerDisplayFormatter.cs": {
+    "mtime": 1788893822.4203334,
+    "seen": 1789078195.1203387,
+    "ast_hash": "fcb1d2402283e7a273851e2000155ce5",
+    "semantic_hash": "fcb1d2402283e7a273851e2000155ce5"
+  },
+  "scripts/package-release.ps1": {
+    "mtime": 1789341411.9957547,
+    "seen": 1789341559.0636601,
+    "ast_hash": "250e4a326d761d63f4eef217852236eb",
+    "semantic_hash": ""
+  },
+  ".agents/rules/graphify.md": {
+    "mtime": 1789078131.0706534,
+    "seen": 1789078537.1913455,
+    "ast_hash": "a0e4d192b9e2e17256124dbfc8e24e6a",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/SKILL.md": {
+    "mtime": 1789078131.0656292,
+    "seen": 1789078537.1913455,
+    "ast_hash": "1656a8a8e4a05bbe69f32cd15de81e87",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/add-watch.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "d59d027fe449f06aa03905a01184e779",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/exports.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/extraction-spec.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "42fef56a01698118f7fd722acdadea34",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/github-and-merge.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/hooks.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "3f545db6ce646650bb9de588f5512a27",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/query.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "3c46f8ad006874260614ed8657d02307",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/transcribe.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/update.md": {
+    "mtime": 1789077966.6282995,
+    "seen": 1789078537.1913455,
+    "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
+    "semantic_hash": ""
+  },
+  ".agents/workflows/graphify.md": {
+    "mtime": 1789078131.0706534,
+    "seen": 1789078537.1913455,
+    "ast_hash": "a831cf3669f1e6ab85d8a80ebe655f99",
+    "semantic_hash": ""
+  },
+  ".github/workflows/build.yml": {
+    "mtime": 1788797384.4181657,
+    "seen": 1789078537.1913455,
+    "ast_hash": "0efce4e130b8a32e515f262856f360d2",
+    "semantic_hash": ""
+  },
+  ".github/workflows/ci.yml": {
+    "mtime": 1788903342.5144715,
+    "seen": 1789078537.1913455,
+    "ast_hash": "a62424d9bedf021ce64a770be4544237",
+    "semantic_hash": ""
+  },
+  "ARCHITECTURE.md": {
+    "mtime": 1789341545.175237,
+    "seen": 1789341559.0636919,
+    "ast_hash": "f7e6679ce88f7aeeab515108da4017a3",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1789000329.684252,
+    "seen": 1789078537.1913455,
+    "ast_hash": "3110017b3809e9db89b825da70751fa3",
+    "semantic_hash": ""
+  },
+  "Assets/Styles/Classic.png": {
+    "mtime": 1715808475.0,
+    "seen": 1789078537.1913455,
+    "ast_hash": "81f491f83adfe6b6acf17cdae897f4fe",
+    "semantic_hash": ""
+  },
+  "Assets/Styles/Colorful.png": {
+    "mtime": 1715808475.0,
+    "seen": 1789078537.1913455,
+    "ast_hash": "0031be29a9c78af1b672174318fc098c",
+    "semantic_hash": ""
+  },
+  "Assets/Styles/Movie.png": {
+    "mtime": 1715808475.0,
+    "seen": 1789078537.1913455,
+    "ast_hash": "6b56527d3abfeb39736b5accc1b33ca2",
+    "semantic_hash": ""
+  },
+  "Assets/Styles/Realistic.png": {
+    "mtime": 1715808475.0,
+    "seen": 1789078537.1913455,
+    "ast_hash": "e044e4bd7592666874905cf4b85a641c",
+    "semantic_hash": ""
+  },
+  "Assets/Styles/Soft.png": {
+    "mtime": 1715808475.0,
+    "seen": 1789078537.1913455,
+    "ast_hash": "4dfd20f508cf9bc18e557e29cc6a1145",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Performance/ShutdownRestorationTests.cs": {
+    "mtime": 1789340763.976979,
+    "seen": 1789341559.0635288,
+    "ast_hash": "52d4e9a59574346a3ef91d0c854cd2db",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Services/DefenderExclusionTrustTests.cs": {
+    "mtime": 1789341091.1117625,
+    "seen": 1789341559.0635378,
+    "ast_hash": "20de840ec51c6b502044e024d32ea5fc",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Services/IpadLayoutServiceTests.cs": {
+    "mtime": 1789341483.6808891,
+    "seen": 1789341559.063549,
+    "ast_hash": "42ba6f418585a3ffe2399819ec2a739a",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Services/NvidiaOptimizerServiceTests.cs": {
+    "mtime": 1789341480.6967318,
+    "seen": 1789341559.0635536,
+    "ast_hash": "2dd8eeca96ac2345c4f62d90fad3821d",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Services/UpdateIntegrityTests.cs": {
+    "mtime": 1789341500.0389123,
+    "seen": 1789341559.063562,
+    "ast_hash": "4046c46f0d610e673066bc0953a41ef2",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Services/UpdateReplacementTests.cs": {
+    "mtime": 1789342602.9666615,
+    "seen": 1789342658.469933,
+    "ast_hash": "c458fe34441d7c41e2f2630187f90fa9",
+    "semantic_hash": ""
+  }
+}

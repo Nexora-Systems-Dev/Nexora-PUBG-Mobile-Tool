@@ -7,8 +7,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services;
 
 /// <summary>
-/// Facade coordinating Windows system tools, performance tuning, and GameLoop optimization services.
-/// Implements <see cref="IGameLoopPerformanceEngine"/> for performance plan execution.
+/// Facade coordinating Windows system tools, performance tuning, and GameLoop optimization.
 /// </summary>
 public sealed class WindowsToolsService : IWindowsToolsService
 {
@@ -54,7 +53,7 @@ public sealed class WindowsToolsService : IWindowsToolsService
         _registryOptimizer = new GameLoopRegistryOptimizer(_runner, _registry, gpuRouting);
     }
 
-    #region IGameLoopPerformanceEngine Implementation
+    #region Performance Engine
 
     public HardwareSnapshot GetHardwareSnapshot() => _hardwareDetection.GetSnapshot();
 
@@ -72,15 +71,15 @@ public sealed class WindowsToolsService : IWindowsToolsService
 
     public OperationResult OptimizeGameLoop()
     {
+        var hardware = GetHardwareSnapshot();
         var report = PerformanceExecutionReport.Create(
+            ("Windows power policy", _powerSession.Apply(hardware)),
             ("GameLoop registry and GPU routing", OptimizeGameLoopRegistry()),
             ("GameLoop runtime priority", _processPriority.Apply(_processService.GetGameLoopRoot())),
             ("NVIDIA profile", OptimizeForNvidia()),
             ("Defender exclusion", AddDefenderExclusion()));
 
-        return report.ToOperationResult(
-            "Windows and GPU boost applied successfully.",
-            "Windows and GPU boost completed with issues.");
+        return report.ToDetailedResult("Windows and GPU boost finished");
     }
 
     public OperationResult OptimizeAll()
@@ -93,9 +92,7 @@ public sealed class WindowsToolsService : IWindowsToolsService
             ("Defender exclusion", AddDefenderExclusion()),
             ("Temp cleanup", CleanTemp()));
 
-        return report.ToOperationResult(
-            "All recommended settings applied successfully.",
-            "Optimizer completed with issues.");
+        return report.ToDetailedResult("All recommended settings finished");
     }
 
     public OperationResult ApplyPerformanceSession()
@@ -131,7 +128,7 @@ public sealed class WindowsToolsService : IWindowsToolsService
 
     #endregion
 
-    #region System and Emulator Tools Facade
+    #region System and Emulator Tools
 
     public OperationResult CleanTemp() => _tempCleanup.CleanTemp();
 

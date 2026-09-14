@@ -1,7 +1,7 @@
 namespace Nexora.Shared.Kernel;
 
 /// <summary>
-/// Execution boundary for external process and PowerShell script execution.
+/// Execution boundary for external processes and PowerShell scripts.
 /// </summary>
 public interface IProcessRunner
 {

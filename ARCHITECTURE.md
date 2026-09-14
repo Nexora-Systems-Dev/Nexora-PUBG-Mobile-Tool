@@ -194,8 +194,12 @@ Nexora contains a dedicated, non-destructive live verification suite ([`LiveGame
 ## 6. Verification & Test Suite Summary
 
 - **Build Quality:** `dotnet build Nexora.slnx` → 0 Errors, 0 Warnings (`<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`).
-- **Automated Test Suite:** `dotnet test Nexora.slnx --filter "Category!=LiveFunctionalVerification"` → **160 standard tests passing**.
+- **Automated Test Suite:** `dotnet test Nexora.slnx --filter "Category!=LiveFunctionalVerification"` → **205 standard tests passing**.
   - **Live GameLoop Verification:** five opt-in tests cover connection and diagnostics, graphics settings and SavEditor, Performance Center and hardware telemetry, DNS latency and iPad layout guards, and dynamic path resolution. Run them with `--filter "Category=LiveFunctionalVerification"` on a configured GameLoop machine.
+  - **Security & Integrity Tests:** Authenticode signature validation, publisher pinning, GitHub domain verification, dual-format SHA-256 extraction, and untrusted update rejection.
+  - **Defender Exclusion Trust Tests:** Registry-only path resolution, TxGameAssistant directory segment validation, and rejection of system directories and prefix spoofing.
+  - **Shutdown Teardown Tests:** Bounded synchronous wait for session restoration, safe exception handling, and avoidance of process hangs or UI deadlocks.
   - **Async Hygiene Tests:** Cancellation token adherence, non-blocking asynchronous execution, and process priority monitor shutdown.
   - **Boundary Validation Tests:** Malformed Android package rejection, culture-invariant coordinate shifting, and invalid IP address handling.
+  - **Service-Level Seam Tests:** Dedicated unit tests for `NvidiaOptimizerService`, `IpadLayoutService`, `FileUtilities`, and `CatalogTests`.
   - **Dependency Injection Tests:** Composition Root resolution, transient view lifetimes, and mock service substitutability.

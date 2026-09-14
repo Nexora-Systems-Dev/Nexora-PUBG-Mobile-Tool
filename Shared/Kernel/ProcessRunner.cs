@@ -40,7 +40,7 @@ public sealed class ProcessRunner : IProcessRunner
             var waitTime = timeout ?? AppConstants.Timeouts.DefaultProcessTimeout;
             if (!process.WaitForExit((int)waitTime.TotalMilliseconds))
             {
-                try { process.Kill(true); } catch { /* the process may have exited */ }
+                try { process.Kill(true); } catch { /* Ignore if already exited. */ }
                 return new ProcessResult(-1, string.Empty, "Process timed out.", true);
             }
 
@@ -65,8 +65,7 @@ public sealed class ProcessRunner : IProcessRunner
     }
 
     /// <summary>
-    /// Launches a detached external process with Windows administrator elevation (UAC runas verb).
-    /// Returns true if the process was successfully started; otherwise, false.
+    /// Launches a detached external process with Windows administrator elevation.
     /// </summary>
     public bool StartDetachedElevated(string fileName, string? arguments = null)
     {

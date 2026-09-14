@@ -189,18 +189,27 @@ public partial class MainWindow : Window
         if (_suppressSelection || _isBusy || PubgVersionComboBox.SelectedItem is not PubgVersion version || _gameLoop.IsConnected) return;
         _isBusy = true;
         SetStatus($"Loading {version.DisplayName}...");
+        var cancellationToken = _connectionCancellation?.Token ?? CancellationToken.None;
         try
         {
-            var result = await _gameLoop.LoadVersionAsync(version.PackageName, CancellationToken.None);
+            var result = await _gameLoop.LoadVersionAsync(version.PackageName, cancellationToken);
             if (result.Success)
             {
-                await ApplyLoadedSettingsAsync(CancellationToken.None);
+                await ApplyLoadedSettingsAsync(cancellationToken);
                 SetConnectedState(result.Message);
             }
             else
             {
                 SetStatus(result.Message, isError: true);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            SetStatus("Loading version settings was canceled.");
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Could not load {version.DisplayName}: {ex.Message}", isError: true);
         }
         finally
         {
@@ -224,9 +233,14 @@ public partial class MainWindow : Window
         SetBusyState(true);
         SetStatus("Applying graphics settings...");
         OperationResult result;
+        var cancellationToken = _connectionCancellation?.Token ?? CancellationToken.None;
         try
         {
-            result = await _gameLoop.ApplyGraphicsAsync(selection, CancellationToken.None);
+            result = await _gameLoop.ApplyGraphicsAsync(selection, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            result = OperationResult.Fail("Graphics application was canceled.");
         }
         catch (Exception ex)
         {
@@ -362,17 +376,24 @@ public partial class MainWindow : Window
         CancelAndDisposeConnection();
         _chromeHook?.Dispose();
         _chromeHook = null;
-        _ = Task.Run(() =>
+
+        // Restore performance session synchronously before shutdown so the
+        // system's power plan and process priorities are not left modified.
+        // A bounded timeout ensures shutdown can never hang indefinitely.
+        try
         {
-            try
-            {
-                _performanceEngine.RestorePerformanceSession();
-            }
-            catch
-            {
-                // Suppress background errors during window shutdown
-            }
-        });
+            var restoreTask = _performanceEngine.RestorePerformanceSessionAsync();
+            restoreTask.Wait(AppConstants.Timeouts.ShutdownRestoreTimeout);
+        }
+        catch (AggregateException)
+        {
+            // Restoration failed or timed out; the system changes are best-effort.
+            // Logging infrastructure is unavailable at shutdown.
+        }
+        catch (Exception)
+        {
+            // Best-effort teardown during window closure.
+        }
     }
 
     private void CancelAndDisposeConnection()
@@ -399,15 +420,22 @@ public partial class MainWindow : Window
 
         if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
 
-        Dispatcher.Invoke(() =>
+        try
         {
-            if (DnsComboBox.SelectedItem is not string currentLabel ||
-                !string.Equals(currentLabel, selectedLabel, StringComparison.OrdinalIgnoreCase)) return;
+            Dispatcher.Invoke(() =>
+            {
+                if (DnsComboBox.SelectedItem is not string currentLabel ||
+                    !string.Equals(currentLabel, selectedLabel, StringComparison.OrdinalIgnoreCase)) return;
 
-            DnsStatusText.Text = ping is null
-                ? $"{entry.ShortName} • No response from DNS server"
-                : $"{entry.ShortName} • Ping: {ping}ms • Ready to apply";
-        });
+                DnsStatusText.Text = ping is null
+                    ? $"{entry.ShortName} • No response from DNS server"
+                    : $"{entry.ShortName} • Ping: {ping}ms • Ready to apply";
+            });
+        }
+        catch (Exception)
+        {
+            // Suppress dispatcher invocation errors during application shutdown.
+        }
     }
 
     private async void ChangeDnsButton_Click(object sender, RoutedEventArgs e)
@@ -537,6 +565,11 @@ public partial class MainWindow : Window
         {
             resultLabel.Text = "Working...";
             resultLabel.Foreground = FindResource("TextSecondary") as Brush;
+            if (ReferenceEquals(resultLabel, OptimizerStatusText) && OptimizerActivityText is not null)
+            {
+                OptimizerActivityText.Text = "Running each boost step...";
+                OptimizerActivityText.Foreground = FindResource("TextSecondary") as Brush;
+            }
         }
 
         OperationResult result;
@@ -546,11 +579,21 @@ public partial class MainWindow : Window
 
         if (resultLabel is not null)
         {
-            resultLabel.Text = result.Message;
-            resultLabel.Foreground = FindResource(result.Success ? "Success" : "Danger") as Brush;
+            if (ReferenceEquals(resultLabel, OptimizerStatusText))
+            {
+                RenderOptimizerReport(result);
+            }
+            else
+            {
+                resultLabel.Text = result.Message;
+                resultLabel.Foreground = FindResource(result.Success ? "Success" : "Danger") as Brush;
+            }
         }
 
-        SetStatus(result.Message, !result.Success);
+        var statusLine = ReferenceEquals(resultLabel, OptimizerStatusText)
+            ? ActivityReportFormatter.Format(result).StatusLine
+            : result.Message;
+        SetStatus(statusLine, !result.Success);
         return result;
     }
 
@@ -564,6 +607,11 @@ public partial class MainWindow : Window
         {
             resultLabel.Text = "Working...";
             resultLabel.Foreground = FindResource("TextSecondary") as Brush;
+            if (ReferenceEquals(resultLabel, OptimizerStatusText) && OptimizerActivityText is not null)
+            {
+                OptimizerActivityText.Text = "Running each boost step...";
+                OptimizerActivityText.Foreground = FindResource("TextSecondary") as Brush;
+            }
         }
 
         OperationResult result;
@@ -573,12 +621,40 @@ public partial class MainWindow : Window
 
         if (resultLabel is not null)
         {
-            resultLabel.Text = result.Message;
-            resultLabel.Foreground = FindResource(result.Success ? "Success" : "Danger") as Brush;
+            if (ReferenceEquals(resultLabel, OptimizerStatusText))
+            {
+                RenderOptimizerReport(result);
+            }
+            else
+            {
+                resultLabel.Text = result.Message;
+                resultLabel.Foreground = FindResource(result.Success ? "Success" : "Danger") as Brush;
+            }
         }
 
-        SetStatus(result.Message, !result.Success);
+        var statusLine = ReferenceEquals(resultLabel, OptimizerStatusText)
+            ? ActivityReportFormatter.Format(result).StatusLine
+            : result.Message;
+        SetStatus(statusLine, !result.Success);
         return result;
+    }
+
+    private void RenderOptimizerReport(OperationResult result)
+    {
+        var display = ActivityReportFormatter.Format(result);
+        OptimizerStatusText.Text = display.StatusLine;
+        if (OptimizerActivityText is not null)
+        {
+            OptimizerActivityText.Text = string.IsNullOrWhiteSpace(display.Details)
+                ? "No step details."
+                : display.Details;
+            OptimizerActivityText.Foreground = FindResource(display.IsError ? "Danger" : "TextSecondary") as Brush;
+        }
+
+        var statusBrush = result.Success
+            ? result.IsSkipped ? "Accent" : "Success"
+            : "Danger";
+        OptimizerStatusText.Foreground = FindResource(statusBrush) as Brush;
     }
 
     private async Task ApplyLoadedSettingsAsync(CancellationToken cancellationToken)

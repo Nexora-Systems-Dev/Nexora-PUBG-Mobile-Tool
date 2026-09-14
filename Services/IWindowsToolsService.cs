@@ -5,7 +5,6 @@ namespace Nexora.Services;
 
 /// <summary>
 /// Facade contract coordinating Windows system tools, performance tuning, and GameLoop optimization services.
-/// Extends <see cref="IGameLoopPerformanceEngine"/>.
 /// </summary>
 public interface IWindowsToolsService : IGameLoopPerformanceEngine
 {

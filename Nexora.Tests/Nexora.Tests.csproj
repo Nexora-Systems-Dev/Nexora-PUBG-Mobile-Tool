@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFrameworkIdentifier>.NETCoreApp</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v8.0</TargetFrameworkVersion>
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <TargetPlatformVersion>7.0</TargetPlatformVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>

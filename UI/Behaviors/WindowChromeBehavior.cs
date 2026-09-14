@@ -5,8 +5,7 @@ using System.Windows.Interop;
 namespace Nexora.UI.Behaviors;
 
 /// <summary>
-/// Clamps a borderless window's maximized bounds to the current monitor's
-/// work area so the custom title bar never slides under the taskbar.
+/// Constrains a borderless window's maximized bounds to the current monitor's work area.
 /// </summary>
 public static class WindowChromeBehavior
 {
@@ -14,9 +13,7 @@ public static class WindowChromeBehavior
     private const uint MonitorDefaultToNearest = 0x00000002;
 
     /// <summary>
-    /// Attaches the maximized-bounds hook to the window's <see cref="HwndSource"/>.
-    /// The returned lifetime removes the hook on dispose; the window must
-    /// dispose it on close so the source stops retaining the delegate.
+    /// Attaches the WM_GETMINMAXINFO hook to the window's HwndSource and returns an IDisposable lifetime token.
     /// </summary>
     public static IDisposable Attach(Window window)
     {

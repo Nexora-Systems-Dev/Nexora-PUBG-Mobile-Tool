@@ -31,7 +31,6 @@ public sealed class Ue4SavEditorTests
     [Fact]
     public void Ue4SavEditor_ReadAndChangeProperty_RoundTripsCorrectly()
     {
-        // Arrange
         var header = Ue4SavEditor.CreateHeader("BattleFPS");
         var buffer = new byte[header.Length + 4];
         header.CopyTo(buffer, 0);
@@ -39,14 +38,11 @@ public sealed class Ue4SavEditorTests
 
         var editor = new Ue4SavEditor(buffer);
 
-        // Act & Assert Initial Read
         editor.ReadProperty("BattleFPS").Should().Be(0x04);
 
-        // Act Modify
         var updated = editor.ChangeProperty("BattleFPS", 0x06); // update to Extreme
         updated.Should().BeTrue();
 
-        // Assert Modified Read
         editor.ReadProperty("BattleFPS").Should().Be(0x06);
     }
 
@@ -80,7 +76,6 @@ public sealed class Ue4SavEditorTests
     [Fact]
     public void UnrealCVarCodec_TryApplyShadowPreset_EnablesAndDisablesShadows()
     {
-        // Arrange
         var initialLines = new[]
         {
             "[UserCustom]",
@@ -88,17 +83,13 @@ public sealed class Ue4SavEditorTests
             "+CVars=" + UnrealCVarCodec.EncodeCVar("r.UserShadowSwitch", "0")
         };
 
-        // Act: Enable
         var enableSuccess = UnrealCVarCodec.TryApplyShadowPreset(initialLines, enable: true, out var enabledLines);
 
-        // Assert: Enable
         enableSuccess.Should().BeTrue();
         enabledLines[1].Should().EndWith("48"); // '1' ^ 0x79 = 0x48
 
-        // Act: Disable
         var disableSuccess = UnrealCVarCodec.TryApplyShadowPreset(enabledLines, enable: false, out var disabledLines);
 
-        // Assert: Disable
         disableSuccess.Should().BeTrue();
         disabledLines[1].Should().EndWith("49"); // '0' ^ 0x79 = 0x49
     }

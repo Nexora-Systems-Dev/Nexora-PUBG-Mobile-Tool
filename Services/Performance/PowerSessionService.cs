@@ -6,9 +6,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Temporarily selects a suitable Windows power plan and restores the exact
-/// plan that was active before the session. AC and battery use different,
-/// deliberate policies for laptops.
+/// Manages temporary Windows power plan switching and restores the original scheme on session close.
 /// </summary>
 public sealed class PowerSessionService
 {

@@ -1,7 +1,7 @@
 namespace Nexora.Shared.Infrastructure;
 
 /// <summary>
-/// Execution boundary for typed Windows registry access across current user and local machine hives.
+/// Interface for Windows registry access across current user and local machine hives.
 /// </summary>
 public interface IRegistryService
 {

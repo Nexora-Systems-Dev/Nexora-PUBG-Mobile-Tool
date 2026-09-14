@@ -5,9 +5,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Features.GameLoop;
 
 /// <summary>
-/// Encodes and decodes Unreal Engine Console Variables (CVars) formatted
-/// with PUBG Mobile's XOR-79 hex obfuscation, and applies shadow presets
-/// to UserCustom.ini lines.
+/// Encodes, decodes, and updates XOR-79 obfuscated Unreal Engine Console Variables (CVars) in UserCustom.ini files.
 /// </summary>
 public static class UnrealCVarCodec
 {
@@ -37,8 +35,7 @@ public static class UnrealCVarCodec
         };
 
     /// <summary>
-    /// Encodes a CVar name and value into an XOR-79 hexadecimal string.
-    /// Format: (byte)character ^ 0x79 formatted as 2-character hex.
+    /// Encodes a CVar name and value pair into an XOR-79 hexadecimal string.
     /// </summary>
     public static string EncodeCVar(string name, string value)
     {
@@ -53,8 +50,7 @@ public static class UnrealCVarCodec
     }
 
     /// <summary>
-    /// Decodes an XOR-79 hexadecimal string into its plain text CVar representation.
-    /// Returns empty string if the input length is odd or non-hexadecimal.
+    /// Decodes an XOR-79 hexadecimal string into its plain-text CVar representation.
     /// </summary>
     public static string DecodeCVar(string encoded)
     {
@@ -78,8 +74,7 @@ public static class UnrealCVarCodec
     }
 
     /// <summary>
-    /// Applies the shadow configuration preset (enabled or disabled) to an array of UserCustom.ini lines.
-    /// Returns true if at least one matching CVar line was found and updated.
+    /// Updates shadow CVars across an array of UserCustom.ini lines according to the specified preset.
     /// </summary>
     public static bool TryApplyShadowPreset(string[] lines, bool enable, out string[] updatedLines)
     {

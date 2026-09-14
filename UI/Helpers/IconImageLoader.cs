@@ -9,8 +9,7 @@ namespace Nexora.UI.Helpers;
 public static class IconImageLoader
 {
     /// <summary>
-    /// Attempts to load an icon file into a BitmapImage with OnLoad caching.
-    /// Returns null if the file does not exist or decoding fails.
+    /// Loads an icon file into a BitmapImage, or returns null if missing or invalid.
     /// </summary>
     public static BitmapImage? TryLoadIcon(string? iconPath)
     {

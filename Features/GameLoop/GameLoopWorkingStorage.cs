@@ -27,16 +27,13 @@ public sealed class GameLoopWorkingStorage
     public string ConnectionProbePath => Path.Combine(_workRoot, AppConstants.Assets.ConnectionProbeFileName);
     public string KoreanResolutionAssetPath => Path.Combine(_assetRoot, AppConstants.Assets.KoreanResolutionFileName);
 
-    /// <summary>
-    /// Ensures the working directory in %LOCALAPPDATA% exists.
-    /// </summary>
     public void EnsureDirectoryCreated()
     {
         Directory.CreateDirectory(_workRoot);
     }
 
     /// <summary>
-    /// Seeds initial template assets from the installation directory into the working directory if missing.
+    /// Copies default template assets from the installation directory to the working folder if missing.
     /// </summary>
     public void PrepareWorkingFiles()
     {

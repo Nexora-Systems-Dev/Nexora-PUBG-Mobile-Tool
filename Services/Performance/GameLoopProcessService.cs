@@ -6,7 +6,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Discovers, validates, and terminates GameLoop emulator processes safely.
+/// Discovers, validates, and terminates GameLoop emulator processes.
 /// </summary>
 public sealed class GameLoopProcessService
 {
@@ -20,14 +20,13 @@ public sealed class GameLoopProcessService
     }
 
     /// <summary>
-    /// Asynchronously terminates all running GameLoop emulator processes with cancellation support.
+    /// Terminates running GameLoop emulator processes asynchronously.
     /// </summary>
     public Task<OperationResult> KillGameLoopProcessesAsync(CancellationToken cancellationToken) =>
         Task.Run(() => KillGameLoopProcesses(cancellationToken), cancellationToken);
 
     /// <summary>
-    /// Terminates all running GameLoop emulator processes using taskkill.exe.
-    /// Throws OperationCanceledException if the cancellation token is triggered.
+    /// Terminates running GameLoop emulator processes using taskkill.
     /// </summary>
     public OperationResult KillGameLoopProcesses(CancellationToken cancellationToken = default)
     {
@@ -77,7 +76,7 @@ public sealed class GameLoopProcessService
     }
 
     /// <summary>
-    /// Scans the system for processes matching GameLoop emulator image names and verifies their file paths.
+    /// Finds processes matching GameLoop emulator image names and verifies their file paths.
     /// </summary>
     public List<Process> FindGameLoopProcesses(string? gameLoopRoot = null)
     {
@@ -97,9 +96,7 @@ public sealed class GameLoopProcessService
                 }
                 catch
                 {
-                    // The app runs elevated, but protected processes can still
-                    // deny path access. Only use the fallback for emulator-only
-                    // names; never terminate a generic Windows process by name.
+                    // Process path access can be denied on protected processes; fall back to known safe image names.
                     isGameLoopProcess = AppConstants.Emulator.SafeFallbackImageNames.Contains(imageName, StringComparer.OrdinalIgnoreCase);
                 }
 
@@ -114,14 +111,52 @@ public sealed class GameLoopProcessService
             }
         }
 
-        return candidates
-            .GroupBy(process => process.Id)
-            .Select(group => group.First())
-            .ToList();
+        var unique = new List<Process>();
+        var seenIds = new HashSet<int>();
+        foreach (var process in candidates)
+        {
+            if (seenIds.Add(process.Id))
+            {
+                unique.Add(process);
+            }
+            else
+            {
+                process.Dispose();
+            }
+        }
+
+        return unique;
     }
 
     /// <summary>
-    /// Resolves the root folder of the GameLoop installation from the registry.
+    /// Resolves the GameLoop root folder using only the registry to avoid path spoofing.
+    /// </summary>
+    public string? GetGameLoopRootFromRegistry()
+    {
+        var installPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
+        if (string.IsNullOrWhiteSpace(installPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var root = Directory.GetParent(Path.GetFullPath(installPath))?.FullName;
+            if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
+            {
+                return root;
+            }
+        }
+        catch
+        {
+            // Ignore invalid registry path formats.
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Resolves the GameLoop root folder from the registry or running processes.
     /// </summary>
     public string? GetGameLoopRoot()
     {
@@ -138,11 +173,11 @@ public sealed class GameLoopProcessService
             }
             catch
             {
-                // Invalid path format
+                // Ignore invalid path formats.
             }
         }
 
-        // Running process fallback: discover root from active emulator executable
+        // Fall back to active emulator process paths.
         foreach (var name in AppConstants.Emulator.RunningCheckProcessNames)
         {
             try
@@ -168,7 +203,7 @@ public sealed class GameLoopProcessService
                     }
                     catch
                     {
-                        // Protected process access denied
+                        // Ignore protected processes.
                     }
                     finally
                     {
@@ -178,7 +213,7 @@ public sealed class GameLoopProcessService
             }
             catch
             {
-                // Query access denied
+                // Ignore enumeration errors.
             }
         }
 
@@ -186,9 +221,7 @@ public sealed class GameLoopProcessService
     }
 
     /// <summary>
-    /// Resolves the directory containing GameLoop's 64-bit executables.
-    /// Registry values differ between GameLoop builds, so active-process and
-    /// standard-install fallbacks are handled here as well.
+    /// Resolves the directory containing GameLoop 64-bit executables.
     /// </summary>
     public string? GetGameLoopUiPath()
     {
@@ -210,7 +243,7 @@ public sealed class GameLoopProcessService
                     }
                     catch
                     {
-                        // Protected process access denied.
+                        // Ignore protected processes.
                     }
                     finally
                     {
@@ -220,7 +253,7 @@ public sealed class GameLoopProcessService
             }
             catch
             {
-                // Process query can be denied on another user's session.
+                // Ignore enumeration errors.
             }
         }
 

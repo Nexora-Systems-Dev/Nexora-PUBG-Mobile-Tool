@@ -7,8 +7,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Reads hardware and power information without applying any changes.
-/// Keeping detection read-only makes it safe to run during startup and preview.
+/// Reads read-only hardware and power information for optimization planning and diagnostics.
 /// </summary>
 public sealed class HardwareDetectionService
 {

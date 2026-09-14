@@ -3,8 +3,7 @@ using System.Text;
 namespace Nexora.Features.GameLoop;
 
 /// <summary>
-/// Handles in-memory binary parsing and property manipulation for Unreal Engine 4
-/// SaveGame (.sav) files, specifically targeting IntProperty values used by PUBG Mobile.
+/// In-memory binary parser and editor for Unreal Engine 4 SaveGame (.sav) IntProperty values.
 /// </summary>
 public sealed class Ue4SavEditor
 {
@@ -16,18 +15,12 @@ public sealed class Ue4SavEditor
         _content = content ?? throw new ArgumentNullException(nameof(content));
     }
 
-    /// <summary>
-    /// Returns a copy of the underlying binary content.
-    /// </summary>
     public byte[] ToBytes() => (byte[])_content.Clone();
 
-    /// <summary>
-    /// Direct access to the internal buffer.
-    /// </summary>
     public byte[] RawBuffer => _content;
 
     /// <summary>
-    /// Reads a single-byte property value following its IntProperty header.
+    /// Reads the byte value following an IntProperty header.
     /// </summary>
     public byte ReadProperty(string propertyName, byte defaultValue = 0)
     {
@@ -46,7 +39,7 @@ public sealed class Ue4SavEditor
     }
 
     /// <summary>
-    /// Updates a single-byte property value in-place if its IntProperty header exists.
+    /// Updates the byte value following an IntProperty header in-place.
     /// </summary>
     public bool ChangeProperty(string propertyName, byte value)
     {
@@ -69,7 +62,7 @@ public sealed class Ue4SavEditor
     }
 
     /// <summary>
-    /// Generates the binary search header for a given Unreal Engine IntProperty.
+    /// Generates the binary search header for an Unreal Engine IntProperty.
     /// </summary>
     public static byte[] CreateHeader(string propertyName)
     {
@@ -77,8 +70,7 @@ public sealed class Ue4SavEditor
     }
 
     /// <summary>
-    /// Locates the start index of a sequence of bytes in a source buffer.
-    /// Returns -1 if not found.
+    /// Finds the first index of a byte sequence within a buffer, or -1 if not found.
     /// </summary>
     public static int FindSequence(byte[] source, byte[] sequence)
     {

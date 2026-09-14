@@ -3,22 +3,17 @@ namespace Nexora.Configuration;
 using System.Text.RegularExpressions;
 
 /// <summary>
-/// Single source of truth for operational constants: application identity,
-/// update endpoints, process timeout thresholds, ADB connection details,
-/// emulator process names, registry keys, and asset file names. Services
-/// must reference these instead of keeping their own hardcoded copies so a
-/// value can never drift between call sites.
+/// Operational constants including application identity, endpoints,
+/// timeouts, ADB settings, process names, and asset file names.
 /// </summary>
 public static class AppConstants
 {
     public const string ApplicationName = "Nexora PUBG Mobile Tool";
 
     /// <summary>
-    /// Current release tag. Keep in sync with <c>&lt;Version&gt;</c> in
-    /// <c>Nexora.csproj</c> (without the <c>v</c> prefix) and the About view,
-    /// which renders this value at startup.
+    /// Current release tag matching the project version in Nexora.csproj.
     /// </summary>
-    public const string CurrentVersion = "v1.0.13";
+    public const string CurrentVersion = "v1.0.14";
 
     public static class Update
     {
@@ -34,10 +29,12 @@ public static class AppConstants
         public static readonly TimeSpan HttpTimeout = TimeSpan.FromSeconds(12);
 
         /// <summary>
-        /// Staging trees older than this are treated as orphans from a
-        /// killed or crashed run and swept on the next update attempt. Kept
-        /// deliberately long so a concurrently running update from another
-        /// app instance is never mistaken for an orphan.
+        /// Expected publisher identifier in the Authenticode certificate subject.
+        /// </summary>
+        public const string ExpectedPublisher = "Nexora";
+
+        /// <summary>
+        /// Maximum age before temporary update staging directories are swept as orphans.
         /// </summary>
         public static readonly TimeSpan StaleStagingMaxAge = TimeSpan.FromHours(24);
     }
@@ -47,10 +44,10 @@ public static class AppConstants
         /// <summary>Default cap for any spawned process (<see cref="Shared.Kernel.ProcessRunner"/>).</summary>
         public static readonly TimeSpan DefaultProcessTimeout = TimeSpan.FromSeconds(30);
 
-        /// <summary>Cap for a single ADB command round-trip.</summary>
+        /// <summary>Timeout for a single ADB command round-trip.</summary>
         public static readonly TimeSpan AdbCommandTimeout = TimeSpan.FromSeconds(20);
 
-        /// <summary>How long the ADB teardown waits for taskkill to exit, in milliseconds.</summary>
+        /// <summary>Timeout waiting for taskkill to exit when stopping ADB, in milliseconds.</summary>
         public const int AdbKillWaitMilliseconds = 5000;
 
         public const int AdbTransferMaxAttempts = 3;
@@ -59,7 +56,7 @@ public static class AppConstants
         public const int AdbBootPollAttempts = 60;
         public static readonly TimeSpan AdbBootPollDelay = TimeSpan.FromSeconds(1);
 
-        /// <summary>Settle pause after force-stopping the game package, in milliseconds.</summary>
+        /// <summary>Pause after force-stopping the game package, in milliseconds.</summary>
         public const int ForceStopSettleDelayMilliseconds = 200;
 
         public static readonly TimeSpan HardwareDetectionTimeout = TimeSpan.FromSeconds(20);
@@ -72,6 +69,11 @@ public static class AppConstants
 
         public static readonly TimeSpan MonitorInterval = TimeSpan.FromSeconds(2);
         public static readonly TimeSpan MonitorStopTimeout = TimeSpan.FromSeconds(2);
+
+        /// <summary>
+        /// Maximum time to wait for performance session restoration during application shutdown.
+        /// </summary>
+        public static readonly TimeSpan ShutdownRestoreTimeout = TimeSpan.FromSeconds(5);
     }
 
     public static class Adb
@@ -79,7 +81,7 @@ public static class AppConstants
         public const string FileName = "adb.exe";
         public const string PreferredSerial = "emulator-5554";
 
-        /// <summary>GameLoop exposes its Android bridge on this TCP port on some installations.</summary>
+        /// <summary>TCP port suffix used by GameLoop Android bridge connections.</summary>
         public const string TcpPortSuffix = ":5555";
         public const string LoopbackEndpoint = "127.0.0.1:5555";
     }
@@ -89,19 +91,19 @@ public static class AppConstants
         public const string InstallFolderName = "TxGameAssistant";
         public const string AppMarketFileName = "AppMarket.exe";
 
-        /// <summary>Extensionless names for <c>Process.GetProcessesByName</c> liveness checks.</summary>
+        /// <summary>Process names used for GameLoop liveness checks.</summary>
         public static readonly string[] RunningCheckProcessNames =
         {
             "AndroidEmulatorEx", "AndroidEmulatorEn", "AndroidEmulator"
         };
 
-        /// <summary>Extensionless names eligible for High-priority tuning.</summary>
+        /// <summary>Process names targeted for high-priority tuning.</summary>
         public static readonly string[] PerformanceProcessNames =
         {
             "aow_exe", "AndroidEmulatorEn", "AndroidEmulatorEx", "AndroidEmulator", "AndroidRenderer"
         };
 
-        /// <summary>Full image names scanned by the force-close pass.</summary>
+        /// <summary>Image names targeted during the force-close pass.</summary>
         public static readonly string[] ProcessImageNames =
         {
             "aow_exe.exe", "AndroidEmulatorEn.exe", "AndroidEmulator.exe", "AndroidEmulatorEx.exe",
@@ -111,9 +113,7 @@ public static class AppConstants
         };
 
         /// <summary>
-        /// Images safe to match by name when Windows denies reading the
-        /// executable path. Must stay a subset of <see cref="ProcessImageNames"/>;
-        /// never add a generic Windows process here.
+        /// Image names matched by name when process executable paths are inaccessible.
         /// </summary>
         public static readonly string[] SafeFallbackImageNames =
         {
@@ -122,7 +122,7 @@ public static class AppConstants
             "GameLoader.exe", "TP3Helper.exe", "GameDownload.exe"
         };
 
-        /// <summary>Images tuned by the GameLoop registry/GPU optimization pass.</summary>
+        /// <summary>Image names targeted by registry and GPU optimization passes.</summary>
         public static readonly string[] RegistryImageNames =
         {
             "AndroidEmulator.exe", "AndroidEmulatorEn.exe", "AndroidEmulatorEx.exe",
@@ -163,9 +163,7 @@ public static class AppConstants
     public static class Validation
     {
         /// <summary>
-        /// Strict Android package name: two or more dot-separated segments,
-        /// each starting with a lowercase letter. Anything else is rejected
-        /// before the value can reach an ADB shell command or a file path.
+        /// Regular expression pattern for valid Android package names.
         /// </summary>
         public const string AndroidPackageNamePattern = @"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$";
 

@@ -5,8 +5,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Tunes only verified GameLoop emulator processes and keeps the previous
-/// priority so a temporary performance session can be restored safely.
+/// Sets and restores process priority for verified GameLoop emulator processes.
 /// </summary>
 public sealed class ProcessPriorityService
 {
@@ -34,15 +33,25 @@ public sealed class ProcessPriorityService
 
         if (scan.Candidates == 0)
         {
-            return OperationResult.Ok("No running GameLoop process was found; High-priority monitoring is ready for the next emulator process.");
+            return OperationResult.Skip("GameLoop is not running; high-priority monitoring armed for the next emulator launch.");
         }
 
         if (scan.Changed == 0 && scan.AlreadyHigh == 0)
         {
+            if (scan.AccessDenied > 0)
+            {
+                return OperationResult.Fail($"Access denied by Windows for {scan.AccessDenied} GameLoop process(es); run as administrator, then boost again. {scan.Skipped} process(es) skipped safely.");
+            }
+
             return OperationResult.Fail($"GameLoop processes were found, but Windows did not allow High priority to be applied. {scan.Skipped} process(es) were skipped.");
         }
 
         var suffix = scan.Skipped > 0 ? $" {scan.Skipped} process(es) were skipped safely." : string.Empty;
+        if (scan.AccessDenied > 0)
+        {
+            suffix += $" {scan.AccessDenied} process(es) need administrator access.";
+        }
+
         return OperationResult.Ok($"GameLoop runtime priority set to High for {scan.Changed + scan.AlreadyHigh}/{scan.Candidates} process(es); monitor active.{suffix}");
     }
 
@@ -53,8 +62,7 @@ public sealed class ProcessPriorityService
     }
 
     /// <summary>
-    /// Async shutdown path: awaits the monitor loop's exit instead of
-    /// blocking the caller, then restores the saved priorities.
+    /// Asynchronously stops monitoring and restores saved process priorities.
     /// </summary>
     public async Task<OperationResult> RestoreAsync(CancellationToken cancellationToken = default)
     {
@@ -115,7 +123,7 @@ public sealed class ProcessPriorityService
             : OperationResult.Ok($"Restored priority for {restored} GameLoop process(es); {skipped} process(es) had already exited or changed.");
     }
 
-    private (int Changed, int Candidates, int AlreadyHigh, int Skipped) ApplyToRunningProcesses(string? gameLoopRoot)
+    private (int Changed, int Candidates, int AlreadyHigh, int Skipped, int AccessDenied) ApplyToRunningProcesses(string? gameLoopRoot)
     {
         lock (_sync)
         {
@@ -123,6 +131,7 @@ public sealed class ProcessPriorityService
             var candidates = 0;
             var alreadyHigh = 0;
             var skipped = 0;
+            var accessDenied = 0;
 
             foreach (var processName in AppConstants.Emulator.PerformanceProcessNames)
             {
@@ -147,8 +156,7 @@ public sealed class ProcessPriorityService
                                 process.PriorityClass);
                         }
 
-                        // High is the requested GameLoop tuning level. Realtime
-                        // is intentionally never used because it can starve Windows.
+                        // Use High priority; Realtime is avoided to prevent starving system threads.
                         if (process.PriorityClass != ProcessPriorityClass.High)
                         {
                             process.PriorityClass = ProcessPriorityClass.High;
@@ -165,6 +173,9 @@ public sealed class ProcessPriorityService
                     }
                     catch (System.ComponentModel.Win32Exception)
                     {
+                        // Access denied (process owned by an elevated GameLoop instance).
+                        // Count separately so the caller can report elevation guidance.
+                        accessDenied++;
                         skipped++;
                     }
                     finally
@@ -174,7 +185,7 @@ public sealed class ProcessPriorityService
                 }
             }
 
-            return (changed, candidates, alreadyHigh, skipped);
+            return (changed, candidates, alreadyHigh, skipped, accessDenied);
         }
     }
 
@@ -184,7 +195,7 @@ public sealed class ProcessPriorityService
         {
             if (_monitorTask is { IsCompleted: false }) return;
 
-            // The previous run finished: release its source before replacing it.
+            // Release the previous cancellation source before creating a new one.
             _monitorCancellation?.Dispose();
             _monitorCancellation = new CancellationTokenSource();
             var cancellation = _monitorCancellation;
@@ -201,16 +212,14 @@ public sealed class ProcessPriorityService
                 }
                 catch (OperationCanceledException)
                 {
-                    // Normal shutdown of the performance monitor.
+                    // Normal cancellation on monitor stop.
                 }
             });
         }
     }
 
     /// <summary>
-    /// Best-effort synchronous stop: signals cancellation and releases the
-    /// source without blocking on the monitor task. The loop observes the
-    /// token and exits on its own.
+    /// Signals the monitor loop to stop without awaiting its completion.
     /// </summary>
     private void StopMonitor()
     {
@@ -227,9 +236,7 @@ public sealed class ProcessPriorityService
     }
 
     /// <summary>
-    /// Clean async stop: signals cancellation and awaits the monitor loop's
-    /// exit, giving up after the centralized stop timeout so shutdown
-    /// can never hang. Never blocks via <c>Task.Wait()</c>.
+    /// Signals cancellation and awaits monitor loop termination up to the configured stop timeout.
     /// </summary>
     public async Task StopMonitorAsync(CancellationToken cancellationToken = default)
     {
@@ -255,8 +262,7 @@ public sealed class ProcessPriorityService
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            // Stop timeout elapsed while the loop winds down; it exits on its
-            // own via the canceled monitor token, so shutdown continues.
+            // The stop timeout elapsed; allow shutdown to continue.
         }
         finally
         {
@@ -265,9 +271,7 @@ public sealed class ProcessPriorityService
     }
 
     /// <summary>
-    /// Drops snapshots whose process has exited (or whose PID was recycled
-    /// by the OS for a different process). Runs on every monitor tick so a
-    /// long session cannot grow the dictionary without bound.
+    /// Removes snapshots for terminated or recycled processes to prevent unbounded dictionary growth.
     /// </summary>
     /// <returns>The number of stale entries removed.</returns>
     internal int PruneDeadSnapshots()
@@ -299,8 +303,7 @@ public sealed class ProcessPriorityService
     }
 
     /// <summary>
-    /// Test seam for the pruning contract: seeds a snapshot entry without
-    /// requiring a live GameLoop process.
+    /// Test seam to seed snapshot entries without requiring a live process.
     /// </summary>
     internal void AddSnapshotForTesting(
         int processId,
@@ -319,24 +322,34 @@ public sealed class ProcessPriorityService
         try
         {
             using var process = Process.GetProcessById(snapshot.ProcessId);
-            var sameProcess = string.IsNullOrWhiteSpace(snapshot.ExecutablePath)
-                ? string.Equals(process.ProcessName, snapshot.ProcessName, StringComparison.OrdinalIgnoreCase)
-                : PathsEqual(TryGetExecutablePath(process), snapshot.ExecutablePath);
+            var currentPath = TryGetExecutablePath(process);
+
+            bool sameProcess;
+            if (string.IsNullOrWhiteSpace(snapshot.ExecutablePath) || string.IsNullOrWhiteSpace(currentPath))
+            {
+                // Fall back to process name comparison if executable path access is denied.
+                sameProcess = string.Equals(process.ProcessName, snapshot.ProcessName, StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                sameProcess = PathsEqual(currentPath, snapshot.ExecutablePath);
+            }
+
             return !sameProcess;
         }
         catch (ArgumentException)
         {
-            // No process with this PID: it has terminated.
+            // Process terminated.
             return true;
         }
         catch (InvalidOperationException)
         {
-            // Transient process state; keep the entry for the next tick.
+            // Process exited during query or transient state.
             return false;
         }
         catch (System.ComponentModel.Win32Exception)
         {
-            // Access denied reading the process; keep the entry.
+            // Access denied; keep snapshot.
             return false;
         }
     }
@@ -376,9 +389,7 @@ public sealed class ProcessPriorityService
 
     private static bool IsKnownGameLoopProcess(string processName)
     {
-        // These names are limited to GameLoop's 64-bit emulator/rendering
-        // processes. This fallback is used only when Windows denies reading
-        // MainModule.FileName for an elevated process.
+        // Fallback for when MainModule access is denied on elevated processes.
         return AppConstants.Emulator.PerformanceProcessNames.Contains(processName, StringComparer.OrdinalIgnoreCase);
     }
 

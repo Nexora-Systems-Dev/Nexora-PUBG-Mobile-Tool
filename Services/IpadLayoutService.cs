@@ -216,10 +216,8 @@ public sealed class IpadLayoutService : IIpadLayoutService
     private sealed record PointPair(string X, string Y);
 
     /// <summary>
-    /// Shifts a decimal coordinate by <paramref name="delta"/>, always
-    /// parsing and formatting with <see cref="CultureInfo.InvariantCulture"/>
-    /// so comma-decimal locales can neither throw nor corrupt the value.
-    /// Unparsable input is returned unchanged.
+    /// Shifts a decimal coordinate by the specified delta using invariant culture formatting.
+    /// Returns unparsable input unchanged.
     /// </summary>
     internal static string ShiftCoordinate(string value, double delta)
     {

@@ -7,7 +7,7 @@ namespace Nexora.Services.Performance;
 
 /// <summary>
 /// Configures GameLoop emulator registry settings, hardware-guided smart settings,
-/// and Windows Image File Execution Options (IFEO) CPU priorities.
+/// and Image File Execution Options (IFEO) CPU priorities.
 /// </summary>
 public sealed class GameLoopRegistryOptimizer
 {
@@ -54,9 +54,7 @@ public sealed class GameLoopRegistryOptimizer
                 }
             }
 
-            // Keep the local shader cache to avoid rebuilding assets during play.
-            // Force-global cache can produce approximate frames, so it stays off
-            // as the compatibility-first default for every GPU vendor.
+            // Enable local shader cache; leave global cache disabled for compatibility.
             var isLowEndProfile = plan.ContentScale == 1 && plan.FxaaQuality == 0;
             if (!ApplyRenderScaleAndQuality(plan.ContentScale, isLowEndProfile))
             {
@@ -72,7 +70,7 @@ public sealed class GameLoopRegistryOptimizer
     }
 
     /// <summary>
-    /// Applies high-performance GPU routing, CPU priority IFEO registry keys, and AppCompatFlags to GameLoop executables.
+    /// Applies GPU routing, CPU priority IFEO keys, and compatibility flags to GameLoop executables.
     /// </summary>
     public OperationResult OptimizeGameLoopRegistry()
     {
@@ -85,9 +83,16 @@ public sealed class GameLoopRegistryOptimizer
         var registryKeys = AppConstants.Emulator.RegistryImageNames;
         var gpuRouting = _gpuRouting.ApplyHighPerformance(installPath, registryKeys);
 
+        var registryChanged = false;
         foreach (var key in registryKeys)
         {
             var subKey = $@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{key}\PerfOptions";
+            var current = _registry.GetLocalMachineDword(subKey, "CpuPriorityClass");
+            if (current != 3)
+            {
+                registryChanged = true;
+            }
+
             if (!_registry.SetLocalMachineDword(subKey, "CpuPriorityClass", 3))
             {
                 return gpuRouting.Success
@@ -96,19 +101,33 @@ public sealed class GameLoopRegistryOptimizer
             }
         }
 
+        const string appCompatSubKey = @"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
         foreach (var key in registryKeys)
         {
-            const string appCompatSubKey = @"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
             var targetPath = Path.Combine(installPath, key);
+            var current = _registry.GetCurrentUserString(appCompatSubKey, targetPath);
+            if (!string.Equals(current, "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE", StringComparison.Ordinal))
+            {
+                registryChanged = true;
+            }
+
             if (!_registry.SetCurrentUserString(appCompatSubKey, targetPath, "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE"))
             {
                 return OperationResult.Fail("GameLoop registry optimization could not be completed.");
             }
         }
 
-        return gpuRouting.Success
-            ? OperationResult.Ok(gpuRouting.Message + " GameLoop registry optimization applied.")
-            : OperationResult.Fail("GameLoop registry optimization applied, but GPU routing was not confirmed: " + gpuRouting.Message);
+        if (!gpuRouting.Success)
+        {
+            return OperationResult.Fail("GameLoop registry optimization applied, but GPU routing was not confirmed: " + gpuRouting.Message);
+        }
+
+        if (!registryChanged && gpuRouting.IsSkipped)
+        {
+            return OperationResult.Skip("GameLoop registry and GPU routing already configured; no changes were needed.");
+        }
+
+        return OperationResult.Ok(gpuRouting.Message + " GameLoop registry optimization applied.");
     }
 
     /// <summary>

@@ -10,7 +10,6 @@ public sealed class OptimizerDisplayFormatterTests
     [Fact]
     public void Format_FormatsDesktopHardwareAndPlanCorrectly()
     {
-        // Arrange
         var hardware = new HardwareSnapshot(
             CpuVendor: "Intel",
             CpuName: "Core i9-13900K",
@@ -39,10 +38,8 @@ public sealed class OptimizerDisplayFormatterTests
             GpuRoute: "NVIDIA GeForce RTX",
             PowerMode: "Ultimate Performance");
 
-        // Act
         var display = OptimizerDisplayFormatter.Format(hardware, plan);
 
-        // Assert
         display.HardwareProfile.Should().Be("HIGH HARDWARE PROFILE");
         display.HardwareGpu.Should().Be("NVIDIA • RTX 4090");
         display.HardwareCpu.Should().Be("8 cores / 16 threads");
@@ -63,7 +60,6 @@ public sealed class OptimizerDisplayFormatterTests
     [Fact]
     public void Format_HandlesLaptopOnBatteryWithHypervisor()
     {
-        // Arrange
         var hardware = new HardwareSnapshot(
             CpuVendor: "Intel",
             CpuName: "Core i7-1165G7",
@@ -92,10 +88,8 @@ public sealed class OptimizerDisplayFormatterTests
             GpuRoute: "Intel Iris Xe",
             PowerMode: "Balanced");
 
-        // Act
         var display = OptimizerDisplayFormatter.Format(hardware, plan);
 
-        // Assert
         display.HardwarePower.Should().Be("Battery / balanced");
         display.HardwareVirtualization.Should().Be("VT on / hypervisor");
         display.PlanMemory.Should().Be("4 GB");
@@ -104,7 +98,6 @@ public sealed class OptimizerDisplayFormatterTests
     [Fact]
     public void Format_HandlesVirtualizationDisabled()
     {
-        // Arrange
         var hardware = new HardwareSnapshot(
             CpuVendor: "AMD",
             CpuName: "Ryzen 5 5600X",
@@ -133,10 +126,8 @@ public sealed class OptimizerDisplayFormatterTests
             GpuRoute: "AMD Radeon",
             PowerMode: "High Performance");
 
-        // Act
         var display = OptimizerDisplayFormatter.Format(hardware, plan);
 
-        // Assert
         display.HardwareVirtualization.Should().Be("VT off");
         display.PlanMemory.Should().Be("6 GB");
     }

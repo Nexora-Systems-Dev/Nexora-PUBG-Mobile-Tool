@@ -22,6 +22,9 @@ public partial class App : Application
         ConfigureServices(services);
         _serviceProvider = services.BuildServiceProvider();
 
+        // Purge stale update staging directories left from previous runs.
+        _ = Task.Run(() => UpdateService.PurgeStaleStagingDirectories());
+
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         mainWindow.Show();
     }
@@ -34,15 +37,12 @@ public partial class App : Application
 
     public static void ConfigureServices(IServiceCollection services)
     {
-        // Options
         services.AddSingleton(new TempCleanupOptions());
         services.AddSingleton(new IpadLayoutOptions());
 
-        // Kernel & Infrastructure
         services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddSingleton<IRegistryService, RegistryService>();
 
-        // Core Services
         services.AddSingleton<IAdbClient, AdbClient>();
         services.AddSingleton<IGameLoopService, GameLoopService>();
         services.AddSingleton<IUpdateService, UpdateService>();
@@ -50,12 +50,10 @@ public partial class App : Application
         services.AddSingleton<IIpadLayoutService, IpadLayoutService>();
         services.AddSingleton<INetworkToolsService, NetworkToolsService>();
 
-        // Facade & Performance Engine
         services.AddSingleton<WindowsToolsService>();
         services.AddSingleton<IWindowsToolsService>(sp => sp.GetRequiredService<WindowsToolsService>());
         services.AddSingleton<IGameLoopPerformanceEngine>(sp => sp.GetRequiredService<WindowsToolsService>());
 
-        // View
         services.AddTransient<MainWindow>();
     }
 }

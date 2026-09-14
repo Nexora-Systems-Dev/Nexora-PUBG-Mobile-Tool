@@ -4,8 +4,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Stable seam for GameLoop performance work. UI code can depend on this
-/// contract while implementation details evolve behind it.
+/// Contract for GameLoop hardware inspection, optimization plans, and performance sessions.
 /// </summary>
 public interface IGameLoopPerformanceEngine
 {

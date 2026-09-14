@@ -7,8 +7,18 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Detects NVIDIA display adapters and applies optimized GameLoop profile settings
-/// using NVIDIA Profile Inspector without modifying original assets.
+/// Detected GPU vendor from a Windows video-controller description string.
+/// </summary>
+public enum GpuVendor
+{
+    Nvidia,
+    Intel,
+    Amd,
+    Unknown
+}
+
+/// <summary>
+/// Detects NVIDIA adapters and applies GameLoop profile settings via NVIDIA Profile Inspector.
 /// </summary>
 public sealed class NvidiaOptimizerService
 {
@@ -26,14 +36,15 @@ public sealed class NvidiaOptimizerService
     }
 
     /// <summary>
-    /// Applies high-performance profile settings for NVIDIA graphics cards if present.
+    /// Applies high-performance profile settings if an NVIDIA GPU is present.
     /// </summary>
     public OperationResult OptimizeForNvidia()
     {
         var provider = ReadWmiText("(Get-CimInstance Win32_VideoController | ForEach-Object { $_.AdapterCompatibility; $_.Name }) -join ' | '");
-        if (!provider.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
+        var vendor = ClassifyGpuProvider(provider);
+        if (vendor != GpuVendor.Nvidia)
         {
-            return OperationResult.Ok("NVIDIA optimization was not needed.");
+            return OperationResult.Skip(VendorSkipMessage(vendor));
         }
 
         var profilePath = Path.Combine(_assetRoot, AppConstants.Assets.NvidiaProfileFileName);
@@ -48,12 +59,24 @@ public sealed class NvidiaOptimizerService
         try
         {
             var document = XDocument.Load(profilePath, LoadOptions.PreserveWhitespace);
-            var targetExecutablePath = Path.Combine(installPath, "androidemulatoren.exe").ToLowerInvariant();
+            var targets = ResolveProfileTargets(installPath);
+            if (targets.Count == 0)
+            {
+                return OperationResult.Fail("No GameLoop emulator executable was found for the NVIDIA profile.");
+            }
 
             var profileName = document.Descendants("ProfileName").FirstOrDefault();
-            var executable = document.Descendants("Executeables").Elements("string").FirstOrDefault();
-            if (profileName is not null) profileName.Value = targetExecutablePath;
-            if (executable is not null) executable.Value = targetExecutablePath;
+            if (profileName is not null) profileName.Value = targets[0];
+
+            var executables = document.Descendants("Executeables").FirstOrDefault();
+            if (executables is not null)
+            {
+                executables.RemoveAll();
+                foreach (var target in targets)
+                {
+                    executables.Add(new XElement("string", target));
+                }
+            }
 
             var fxaaSetting = document.Descendants("ProfileSetting")
                 .FirstOrDefault(node => node.Element("SettingNameInfo")?.Value == "Enable FXAA")?
@@ -75,18 +98,58 @@ public sealed class NvidiaOptimizerService
                     : $" {result.StandardError.Trim()}";
 
                 return result.Succeeded
-                    ? OperationResult.Ok("NVIDIA optimization applied.")
+                    ? OperationResult.Ok($"NVIDIA optimization applied for {targets.Count} executable(s).")
                     : OperationResult.Fail($"NVIDIA Profile Inspector could not apply the profile.{detail}");
             }
             finally
             {
-                try { File.Delete(importPath); } catch { /* best-effort cleanup of temporary file */ }
+                try { File.Delete(importPath); } catch { /* Best-effort cleanup */ }
             }
         }
         catch (Exception ex)
         {
             return OperationResult.Fail($"NVIDIA optimization failed: {ex.Message}");
         }
+    }
+
+    public static GpuVendor ClassifyGpuProvider(string? providerText)
+    {
+        if (string.IsNullOrWhiteSpace(providerText)) return GpuVendor.Unknown;
+        if (providerText.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase)) return GpuVendor.Nvidia;
+        if (providerText.Contains("Intel", StringComparison.OrdinalIgnoreCase)) return GpuVendor.Intel;
+        if (providerText.Contains("AMD", StringComparison.OrdinalIgnoreCase)
+            || providerText.Contains("Radeon", StringComparison.OrdinalIgnoreCase)
+            || providerText.Contains("Advanced Micro Devices", StringComparison.OrdinalIgnoreCase))
+        {
+            return GpuVendor.Amd;
+        }
+
+        return GpuVendor.Unknown;
+    }
+
+    internal static string VendorSkipMessage(GpuVendor vendor) => vendor switch
+    {
+        GpuVendor.Intel => "Intel GPU detected; NVIDIA profile skipped. DirectX GPU routing still applies.",
+        GpuVendor.Amd => "AMD GPU detected; NVIDIA profile skipped. DirectX GPU routing still applies.",
+        _ => "No NVIDIA GPU detected; NVIDIA profile skipped."
+    };
+
+    private static List<string> ResolveProfileTargets(string installPath)
+    {
+        // NVIDIA profiles address the main emulator and game processes.
+        // AndroidRenderer.exe is covered by GPU routing and IFEO instead.
+        var preferred = new[] { "AndroidEmulatorEx.exe", "AndroidEmulatorEn.exe", "AndroidEmulator.exe", "aow_exe.exe" };
+        var targets = new List<string>();
+        foreach (var fileName in preferred)
+        {
+            var fullPath = Path.Combine(installPath, fileName);
+            if (File.Exists(fullPath))
+            {
+                targets.Add(Path.GetFullPath(fullPath).ToLowerInvariant());
+            }
+        }
+
+        return targets;
     }
 
     private string ReadWmiText(string expression)

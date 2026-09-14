@@ -1,7 +1,11 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "v1.0.13",
-    [string]$Runtime = "win-x64"
+    [string]$Version = "v1.0.14",
+    [string]$Runtime = "win-x64",
+    [string]$CertificateThumbprint = $env:NEXORA_SIGN_CERT_THUMBPRINT,
+    [string]$CertificatePath = $env:NEXORA_SIGN_CERT_PATH,
+    [SecureString]$CertificatePassword,
+    [string]$TimestampServer = "http://timestamp.digicert.com"
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +18,43 @@ $packageDir = Join-Path $artifactsRoot $releaseName
 $releaseExe = Join-Path $artifactsRoot "$releaseName.exe"
 $releaseZip = Join-Path $artifactsRoot "$releaseName.zip"
 $releaseNotes = Join-Path $artifactsRoot "$releaseName-README.txt"
+
+function Invoke-CodeSign {
+    param([string]$FilePath)
+
+    $cert = $null
+    if (-not [string]::IsNullOrWhiteSpace($CertificatePath) -and (Test-Path -LiteralPath $CertificatePath)) {
+        if ($CertificatePassword) {
+            $cert = Get-PfxCertificate -FilePath $CertificatePath -Password $CertificatePassword
+        } else {
+            $cert = Get-PfxCertificate -FilePath $CertificatePath
+        }
+    } elseif (-not [string]::IsNullOrWhiteSpace($CertificateThumbprint)) {
+        $cert = Get-ChildItem -Path "Cert:\CurrentUser\My", "Cert:\LocalMachine\My" -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.Thumbprint -eq $CertificateThumbprint } |
+            Select-Object -First 1
+    }
+
+    if ($null -ne $cert) {
+        Write-Host "Signing '$FilePath' with certificate: $($cert.Subject) [Thumbprint: $($cert.Thumbprint)]"
+        $signParams = @{
+            FilePath = $FilePath
+            Certificate = $cert
+            HashAlgorithm = "SHA256"
+        }
+        if (-not [string]::IsNullOrWhiteSpace($TimestampServer)) {
+            $signParams["TimestampServer"] = $TimestampServer
+        }
+        $sig = Set-AuthenticodeSignature @signParams
+        if ($sig.Status -ne "Valid") {
+            Write-Warning "Authenticode signing status for '$FilePath': $($sig.StatusMessage)"
+        } else {
+            Write-Host "Successfully signed '$FilePath'." -ForegroundColor Green
+        }
+    } else {
+        Write-Host "Notice: No code signing certificate specified (NEXORA_SIGN_CERT_THUMBPRINT / NEXORA_SIGN_CERT_PATH). Artifact '$FilePath' remains unsigned." -ForegroundColor Yellow
+    }
+}
 
 New-Item -ItemType Directory -Path $artifactsRoot -Force | Out-Null
 foreach ($path in @($publishDir, $packageDir, $releaseExe, $releaseZip, $releaseNotes)) {
@@ -53,6 +94,9 @@ if (Test-Path -LiteralPath $packageExe) {
 }
 
 Copy-Item -LiteralPath $publishedExe -Destination $releaseExe -Force
+
+Invoke-CodeSign -FilePath $packageExe
+Invoke-CodeSign -FilePath $releaseExe
 @"
 Nexora PUBG Mobile Tool $Version
 Runtime: $Runtime

@@ -3,14 +3,13 @@ using Nexora.Features.Performance;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Pure decision logic for the optimizer. It never writes to Windows or GameLoop.
+/// Evaluates hardware characteristics to build an optimizer configuration plan.
 /// </summary>
 public sealed class PerformancePlanBuilder
 {
     public OptimizerPlan Build(HardwareSnapshot hardware)
     {
-        // Keep the legacy fallback behavior: unknown/zero VRAM is treated as
-        // limited so detection failures never lead to an aggressive profile.
+        // Treat unknown or zero VRAM as limited to avoid overly aggressive profiles on detection failure.
         var limitedGpu = hardware.GpuMemoryGb <= 2;
         var entryLevel = hardware.TotalMemoryGb <= 8 || hardware.PhysicalCores <= 4 || limitedGpu;
         var performanceLevel = hardware.TotalMemoryGb >= 16 && hardware.PhysicalCores >= 6 &&
@@ -29,8 +28,7 @@ public sealed class PerformancePlanBuilder
         var contentScale = lowRenderPath ? 1 : 2;
         var fxaaQuality = limitedGpu ? 0 : hardware.HasDedicatedGpu ? 2 : 1;
 
-        // The optimizer must not downgrade the user's frame-rate mode. GameLoop
-        // and PUBG remain responsible for exposing supported modes up to 120 FPS.
+        // Target 120 FPS recommendation while leaving actual runtime support to the emulator and game.
         const string recommendedFps = "120 FPS";
         var gpuRoute = hardware.HasDedicatedGpu
             ? $"High-performance {hardware.GpuName}"

@@ -6,29 +6,23 @@ using Xunit;
 namespace Nexora.Tests.Services;
 
 /// <summary>
-/// Verifies the P2-Step-3 hygiene contract: updater staging trees (archive
-/// plus extracted files) are purged on every branch — success, failure, and
-/// cancellation — cleanup never throws and never alters the user-visible
-/// result, and staging trees orphaned by a killed process are swept on the
-/// next attempt. Stale-purge tests run against an isolated directory so the
-/// real %TEMP% is never touched; residue tests only enumerate it.
-/// </summary>
+/// Verifies updater staging cleanup across success, failure, and cancellation paths,
+/// ensuring stale staging trees are safely purged without leaving residual files.
 public sealed class TemporaryFileHygieneTests
 {
     [Fact]
     public void TryDeleteDirectory_RemovesPopulatedTree()
     {
-        // Arrange: a staging-like tree with an archive plus nested files.
+        // A staging-like tree with an archive plus nested files.
         var root = CreateUniqueDirectory();
         File.WriteAllText(Path.Combine(root, AppConstants.Update.ArchiveFileName), "archive-bytes");
         var nested = Directory.CreateDirectory(Path.Combine(root, AppConstants.Update.ExtractionFolderName, "nested"));
         File.WriteAllText(Path.Combine(nested.FullName, "app.exe"), "exe-bytes");
         File.WriteAllText(Path.Combine(nested.FullName, "readme.txt"), "readme");
 
-        // Act
         var act = () => UpdateService.TryDeleteDirectory(root);
 
-        // Assert: everything gone, no exception.
+        // Everything gone, no exception.
         act.Should().NotThrow();
         Directory.Exists(root).Should().BeFalse();
     }
@@ -36,7 +30,6 @@ public sealed class TemporaryFileHygieneTests
     [Fact]
     public void TryDeleteDirectory_IgnoresMissingAndBlankPaths()
     {
-        // Act
         var act = () =>
         {
             UpdateService.TryDeleteDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
@@ -44,23 +37,19 @@ public sealed class TemporaryFileHygieneTests
             UpdateService.TryDeleteDirectory("   ");
         };
 
-        // Assert
         act.Should().NotThrow();
     }
 
     [Fact]
     public void TryDeleteDirectory_RemovesReadOnlyFiles()
     {
-        // Arrange
         var root = CreateUniqueDirectory();
         var readOnly = Path.Combine(root, "locked-attr.exe");
         File.WriteAllText(readOnly, "exe-bytes");
         File.SetAttributes(readOnly, FileAttributes.ReadOnly);
 
-        // Act
         var act = () => UpdateService.TryDeleteDirectory(root);
 
-        // Assert
         act.Should().NotThrow();
         Directory.Exists(root).Should().BeFalse();
     }
@@ -68,7 +57,7 @@ public sealed class TemporaryFileHygieneTests
     [Fact]
     public void TryDeleteDirectory_LeavesLockedFilesWithoutThrowing()
     {
-        // Arrange: one file held open with no sharing (like a running installer).
+        // One file held open with no sharing (like a running installer).
         var root = CreateUniqueDirectory();
         var lockedPath = Path.Combine(root, "running.exe");
         var freePath = Path.Combine(root, "scratch.txt");
@@ -76,10 +65,9 @@ public sealed class TemporaryFileHygieneTests
         File.WriteAllText(freePath, "scratch");
         using var locked = new FileStream(lockedPath, FileMode.Open, FileAccess.Read, FileShare.None);
 
-        // Act
         var act = () => UpdateService.TryDeleteDirectory(root);
 
-        // Assert: best-effort — the free file is gone, the locked one survives, nothing throws.
+        // Best-effort - the free file is gone, the locked one survives, nothing throws.
         act.Should().NotThrow();
         File.Exists(freePath).Should().BeFalse();
         File.Exists(lockedPath).Should().BeTrue();
@@ -88,7 +76,7 @@ public sealed class TemporaryFileHygieneTests
     [Fact]
     public void PurgeStaleStagingDirectories_RemovesOnlyOldMatchingTrees()
     {
-        // Arrange: isolated temp root with an old match, a fresh match, and an old non-match.
+        // Isolated temp root with an old match, a fresh match, and an old non-match.
         var tempRoot = CreateUniqueDirectory();
         try
         {
@@ -99,11 +87,9 @@ public sealed class TemporaryFileHygieneTests
             Directory.SetLastWriteTimeUtc(oldMatch, DateTime.UtcNow.AddDays(-2));
             Directory.SetLastWriteTimeUtc(oldOther, DateTime.UtcNow.AddDays(-2));
 
-            // Act
             var removed = 0;
             var act = () => removed = UpdateService.PurgeStaleStagingDirectories(tempRoot, TimeSpan.FromHours(1));
 
-            // Assert
             act.Should().NotThrow();
             removed.Should().Be(1);
             Directory.Exists(oldMatch).Should().BeFalse();
@@ -119,26 +105,22 @@ public sealed class TemporaryFileHygieneTests
     [Fact]
     public void PurgeStaleStagingDirectories_ReturnsZeroForMissingDirectory()
     {
-        // Act
         var removed = UpdateService.PurgeStaleStagingDirectories(
             Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")),
             TimeSpan.FromHours(1));
 
-        // Assert
         removed.Should().Be(0);
     }
 
     [Fact]
     public async Task DownloadAndLaunchAsync_WithoutAvailableUpdate_CreatesNoStaging()
     {
-        // Arrange
         var service = new UpdateService();
         var before = ListStagingDirectories();
 
-        // Act
         var result = await service.DownloadAndLaunchAsync(new UpdateInfo(false, AppConstants.CurrentVersion, string.Empty, string.Empty, string.Empty));
 
-        // Assert: rejected before any staging exists, and none is left behind.
+        // Rejected before any staging exists, and none is left behind.
         result.Success.Should().BeFalse();
         ListStagingDirectories().Should().BeEquivalentTo(before);
     }
@@ -146,17 +128,16 @@ public sealed class TemporaryFileHygieneTests
     [Fact]
     public async Task DownloadAndLaunchAsync_CancelledAttempt_LeavesNoStaging()
     {
-        // Arrange: an already-cancelled token fails the download before any network I/O.
+        // An already-cancelled token fails the download before any network I/O.
         var service = new UpdateService();
         using var cancelled = new CancellationTokenSource();
         await cancelled.CancelAsync();
         var update = new UpdateInfo(true, "v9.9.9", "Nexora-v9.9.9-win-x64.zip", "https://example.com/Nexora-v9.9.9-win-x64.zip", string.Empty);
         var before = ListStagingDirectories();
 
-        // Act
         var act = () => service.DownloadAndLaunchAsync(update, cancelled.Token);
 
-        // Assert: surfaces as a failure result (never an escape), with no residue in %TEMP%.
+        // Surfaces as a failure result (never an escape), with no residue in %TEMP%.
         var result = await act.Should().NotThrowAsync();
         result.Subject.Success.Should().BeFalse();
         ListStagingDirectories().Should().BeEquivalentTo(before);

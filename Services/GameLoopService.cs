@@ -7,8 +7,8 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services;
 
 /// <summary>
-/// Orchestrates GameLoop emulator connectivity, PUBG Mobile version detection,
-/// graphics configuration updates via Unreal Engine 4 .sav binary patching, and shadow tuning.
+/// Coordinates GameLoop emulator connectivity, PUBG Mobile version detection,
+/// and graphics settings persistence in Unreal Engine 4 save files.
 /// </summary>
 public sealed class GameLoopService : IGameLoopService
 {
@@ -73,25 +73,17 @@ public sealed class GameLoopService : IGameLoopService
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
     }
 
-    /// <summary>
-    /// Currently loaded and connected PUBG Mobile package name, or null when disconnected.
-    /// </summary>
     public string? CurrentPackage { get; private set; }
 
     /// <summary>
-    /// True after ADB is ready and a supported PUBG package is detected.
-    /// Profile-file loading is a separate step because game updates can change
-    /// or temporarily remove those files without disconnecting the emulator.
+    /// Indicates whether ADB is connected and a supported PUBG package is detected.
     /// </summary>
     public bool IsGameLoopConnected => _isGameLoopConnected;
 
-    /// <summary>
-    /// Returns true if an active .sav buffer is loaded and a target PUBG package is active.
-    /// </summary>
     public bool IsConnected => _activeSavContent is not null && !string.IsNullOrWhiteSpace(CurrentPackage);
 
     /// <summary>
-    /// Resets the connection state and clears in-memory save data.
+    /// Resets connection state and clears in-memory save data.
     /// </summary>
     public void Disconnect()
     {
@@ -101,7 +93,7 @@ public sealed class GameLoopService : IGameLoopService
     }
 
     /// <summary>
-    /// Checks prerequisites, waits for ADB boot, and enumerates installed PUBG Mobile packages.
+    /// Checks prerequisites, waits for ADB boot, and detects installed PUBG Mobile packages.
     /// </summary>
     public async Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken)
     {
@@ -152,9 +144,7 @@ public sealed class GameLoopService : IGameLoopService
             return new ConnectionResult(false, "No supported PUBG Mobile version was found.", installedVersions);
         }
 
-        // From this point on the emulator connection is valid. Loading the
-        // graphics profile below is best-effort because PUBG updates can
-        // change its storage layout without affecting ADB connectivity.
+        // ADB connection is established; graphics profile loading is best-effort.
         _isGameLoopConnected = true;
 
         if (installedVersions.Count == 1)
@@ -171,7 +161,7 @@ public sealed class GameLoopService : IGameLoopService
     }
 
     /// <summary>
-    /// Pulls and loads the Active.sav and UserCustom.ini configuration files for the specified package.
+    /// Loads the graphics configuration files for the specified package.
     /// </summary>
     public async Task<OperationResult> LoadVersionAsync(string packageName, CancellationToken cancellationToken)
     {
@@ -245,7 +235,7 @@ public sealed class GameLoopService : IGameLoopService
     };
 
     /// <summary>
-    /// Retrieves the current shadow status ("Enable" or "Disable") from UserCustom.ini.
+    /// Retrieves the current shadow setting ("Enable" or "Disable") from UserCustom.ini.
     /// </summary>
     public async Task<string> GetShadowAsync(CancellationToken cancellationToken)
     {
@@ -279,7 +269,7 @@ public sealed class GameLoopService : IGameLoopService
     }
 
     /// <summary>
-    /// Applies the selected graphics quality, framerate, style, and shadow settings to the active PUBG Mobile installation.
+    /// Applies selected graphics settings to the active PUBG Mobile installation.
     /// </summary>
     public async Task<OperationResult> ApplyGraphicsAsync(GraphicsSelection selection, CancellationToken cancellationToken)
     {
@@ -341,8 +331,7 @@ public sealed class GameLoopService : IGameLoopService
 
     private OperationResult UpdateGraphicsSavProperties(byte qualityByte, byte fpsByte, byte styleByte)
     {
-        // Some PUBG/GameLoop builds omit the lobby/menu fields. The battle
-        // field is the important one; optional fields must not block an update.
+        // BattleRenderQuality is primary; optional lobby fields may not exist in all versions.
         var qualityUpdated = false;
         foreach (var property in new[] { "ArtQuality", "LobbyRenderQuality", "BattleRenderQuality" })
         {
@@ -495,12 +484,27 @@ public sealed class GameLoopService : IGameLoopService
 
     public static bool IsGameLoopRunning()
     {
-        return AppConstants.Emulator.RunningCheckProcessNames.Any(name => Process.GetProcessesByName(name).Length > 0);
+        foreach (var name in AppConstants.Emulator.RunningCheckProcessNames)
+        {
+            var processes = Process.GetProcessesByName(name);
+            var isRunning = processes.Length > 0;
+            foreach (var process in processes)
+            {
+                process.Dispose();
+            }
+
+            if (isRunning)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void PrepareWorkingFiles() => _storage.PrepareWorkingFiles();
 
-    #region Internal & Private Seams (Preserved for Tests & Backward Compatibility)
+    #region Test Seams
 
     private byte ReadProperty(string name)
     {

@@ -36,7 +36,6 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="180" />
                     </Grid.ColumnDefinitions>
-                    <!-- Cyan Hairline Accent at Top of Shell -->
                     <Border Grid.ColumnSpan="3" Height="1" VerticalAlignment="Top" IsHitTestVisible="False">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -89,7 +88,6 @@
 
             <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource SidebarBackground}" BorderBrush="#1B2936" BorderThickness="0,0,1,0">
                 <DockPanel>
-                    <!-- GAMELOOP LINK Card with Obsidian Glass styling -->
                     <Border DockPanel.Dock="Bottom" Margin="14,14,14,18" Padding="14" BorderBrush="#1C2F40" BorderThickness="1" CornerRadius="10" Background="{StaticResource ConnectionCardBackgroundBrush}">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -98,21 +96,18 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <!-- Header Row: Title & Badge -->
                             <Grid Grid.Row="0">
                                 <TextBlock Text="GAMELOOP LINK" Foreground="#64748B" FontSize="9.5" FontWeight="Bold" />
                                 <Border Background="#09141D" BorderBrush="#172938" BorderThickness="1" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
                                     <TextBlock Text="LOCAL TOOL" Foreground="#00D2FF" FontSize="8.5" FontWeight="Bold" />
                                 </Border>
                             </Grid>
-                            <!-- Status Row: Dynamic Glowing Dot + Status Text -->
                             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,11,0,0" VerticalAlignment="Center">
                                 <Border Width="18" Height="18" CornerRadius="9" Background="#081017" BorderBrush="#162736" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,9,0">
                                     <Ellipse x:Name="SidebarConnectionDot" Width="7" Height="7" Fill="{StaticResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
                                 <TextBlock x:Name="SidebarConnectionText" Text="NOT CONNECTED" Foreground="{StaticResource TextPrimary}" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
-                            <!-- Emulator & ADB Detail Container -->
                             <Border Grid.Row="2" Background="#081119" BorderBrush="#152432" BorderThickness="1" CornerRadius="7" Padding="11,8" Margin="0,11,0,0">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -124,7 +119,6 @@
                                     <TextBlock Grid.Row="1" x:Name="SidebarAdbText" Text="ADB: Offline" Foreground="#64748B" FontSize="11.5" VerticalAlignment="Center" />
                                 </Grid>
                             </Border>
-                            <!-- Upgraded Refresh Connection Button -->
                             <Button Grid.Row="3" x:Name="RefreshConnectionButton" Content="↻  Refresh Connection" Click="ConnectButton_Click" Style="{StaticResource SidebarRefreshButtonStyle}" FontSize="12" Margin="0,11,0,0" />
                         </Grid>
                     </Border>
@@ -177,7 +171,6 @@
             <Grid Grid.Row="1" Grid.Column="1" Background="{StaticResource PageBackground}">
                 <Grid x:Name="GraphicsView" Margin="34,20,34,18" ClipToBounds="True">
                     <Grid.Resources>
-                        <!-- Modern Cyber/Esports Cyan Accent Palette for Graphics Page -->
                         <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
                         <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
                         <SolidColorBrush x:Key="AccentHover" Color="#38BDF8" />
@@ -212,7 +205,6 @@
                             <GradientStop Color="#0369A1" Offset="1" />
                         </LinearGradientBrush>
 
-                        <!-- Segmented Control Button Style -->
                         <Style x:Key="GraphicsSegmentButtonStyle" TargetType="RadioButton">
                             <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
                             <Setter Property="Background" Value="Transparent" />
@@ -265,7 +257,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- Style Preview Card Button Style -->
                         <Style x:Key="GraphicsStyleCardButton" TargetType="ToggleButton">
                             <Setter Property="Background" Value="#0B131B" />
                             <Setter Property="BorderBrush" Value="#1E2E3C" />
@@ -281,7 +272,6 @@
                                                 Background="{TemplateBinding Background}"
                                                 SnapsToDevicePixels="True">
                                             <Grid>
-                                                <!-- Rounded Corner Clipped Container -->
                                                 <Border CornerRadius="7" ClipToBounds="True">
                                                     <Border.OpacityMask>
                                                         <VisualBrush Stretch="None" AlignmentX="Left" AlignmentY="Top">
@@ -294,7 +284,6 @@
                                                     </Border.OpacityMask>
                                                     <Grid>
                                                         <ContentPresenter />
-                                                        <!-- Bottom vignette gradient for contrast -->
                                                         <Border VerticalAlignment="Bottom" Height="46" IsHitTestVisible="False">
                                                             <Border.Background>
                                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -306,10 +295,8 @@
                                                     </Grid>
                                                 </Border>
 
-                                                <!-- Hover Overlay -->
                                                 <Border x:Name="HoverOverlay" CornerRadius="7" Background="#1200D2FF" Opacity="0" IsHitTestVisible="False" />
 
-                                                <!-- Selected Badge in Top Right Corner -->
                                                 <Border x:Name="SelectedBadge"
                                                         Width="24" Height="24"
                                                         HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -352,7 +339,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- Primary CTA Apply Settings Button Style -->
                         <Style x:Key="GraphicsApplyButtonStyle" TargetType="Button">
                             <Setter Property="Foreground" Value="#061219" />
                             <Setter Property="FontFamily" Value="Segoe UI" />
@@ -420,7 +406,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- Connect Button Style for Graphics Page -->
                         <Style x:Key="GraphicsConnectButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="Transparent" />
                             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
@@ -455,7 +440,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- ComboBox Style for Graphics Page -->
                         <Style x:Key="GraphicsComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
                             <Setter Property="ItemContainerStyle">
                                 <Setter.Value>
@@ -643,7 +627,6 @@
 
                 <Grid x:Name="OptimizerView" Visibility="Collapsed" Margin="34,14,34,10" ClipToBounds="True">
                     <Grid.Resources>
-                        <!-- Modern Cyber/Esports Electric Cyan Palette for Optimizer Page -->
                         <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
                         <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
                         <SolidColorBrush x:Key="AccentHover" Color="#38BDF8" />
@@ -677,7 +660,6 @@
                             <GradientStop Color="#0369A1" Offset="1" />
                         </LinearGradientBrush>
 
-                        <!-- Hero Primary Action Button Style (Cyan Glow CTA) -->
                         <Style x:Key="OptimizerHeroButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="{StaticResource PrimaryCtaBackground}" />
                             <Setter Property="Foreground" Value="#051019" />
@@ -734,7 +716,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- Tool Action Button Style (Clean Cache, Windows Boost) -->
                         <Style x:Key="OptimizerToolButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="#0B131B" />
                             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
@@ -782,7 +763,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- Outline Button Style for Optimizer View -->
                         <Style x:Key="OptimizerOutlineButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="#0D1620" />
                             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
@@ -823,7 +803,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- Danger Button Style for Force Close -->
                         <Style x:Key="OptimizerDangerButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="#140E12" />
                             <Setter Property="Foreground" Value="#FF6060" />
@@ -898,7 +877,6 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Hardware Metric Dashboard -->
                     <Border Grid.Row="1" Margin="18,0,18,12">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -915,7 +893,6 @@
                                 <ColumnDefinition Width="1.15*" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Profile & GPU Tile -->
                             <Border Grid.Column="0" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="14,10">
                                 <StackPanel VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
@@ -927,7 +904,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- CPU Tile -->
                             <Border Grid.Column="2" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="CPU" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
@@ -935,7 +911,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Memory Tile -->
                             <Border Grid.Column="4" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="MEMORY" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
@@ -943,7 +918,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Display Tile -->
                             <Border Grid.Column="6" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="DISPLAY" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
@@ -951,7 +925,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Power Tile -->
                             <Border Grid.Column="8" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="POWER" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
@@ -959,7 +932,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Virtualization Tile -->
                             <Border Grid.Column="10" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="VIRTUALIZATION" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
@@ -978,7 +950,6 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
-                                <!-- Smart Optimize Hero Card -->
                                 <Border Background="#0C1722" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="10" Padding="18,16" Margin="0,0,0,14">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -1009,7 +980,6 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- Tools Header & Buttons -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <Border Width="3" Height="16" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,8,0" VerticalAlignment="Center" />
                                     <TextBlock Text="MAINTENANCE TOOLS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
@@ -1034,10 +1004,8 @@
                                     </Button>
                                 </Grid>
 
-                                <!-- Apply All Recommended Hero Action Button -->
                                 <Button x:Name="AllRecommendedButton" Content="↑  APPLY ALL RECOMMENDED" Click="AllRecommendedButton_Click" Style="{StaticResource OptimizerHeroButtonStyle}" HorizontalAlignment="Left" Padding="26,12" Margin="0,2,0,14" />
 
-                                <!-- Performance Session Card -->
                                 <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -1054,7 +1022,6 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Force Close Button -->
                                 <Button x:Name="ForceCloseButton" AutomationProperties.Name="FORCE CLOSE GAMELOOP" Click="ForceCloseButton_Click" Style="{StaticResource OptimizerDangerButtonStyle}" HorizontalAlignment="Stretch">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="" FontFamily="Segoe MDL2 Assets" FontSize="15" Margin="0,0,9,0" VerticalAlignment="Center" />
@@ -1066,7 +1033,6 @@
                             <Border Grid.Column="1" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
 
                             <StackPanel Grid.Column="2">
-                                <!-- Recommended Plan Card -->
                                 <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -1102,7 +1068,6 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Activity Card -->
                                 <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -1111,8 +1076,12 @@
                                         </StackPanel>
                                         <TextBlock Text="Actions report their result here. Restart GameLoop when a setting requests it." Foreground="{StaticResource TextSecondary}" FontSize="12.5" TextWrapping="Wrap" Margin="0,0,0,12" LineHeight="17" />
                                         <TextBlock Text="STATUS" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
-                                        <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                        <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
                                             <TextBlock x:Name="OptimizerStatusText" Text="Ready" Foreground="#38BDF8" FontSize="13" TextWrapping="Wrap" />
+                                        </Border>
+                                        <TextBlock Text="DETAILS" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                        <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                            <TextBlock x:Name="OptimizerActivityText" Text="No boost run yet. Each step reports Applied, Skipped, or Failed here." Foreground="{StaticResource TextSecondary}" FontSize="12" TextWrapping="Wrap" />
                                         </Border>
                                     </StackPanel>
                                 </Border>
@@ -1123,7 +1092,6 @@
 
                 <Grid x:Name="NetworkView" Visibility="Collapsed" Margin="34,14,34,10" ClipToBounds="True">
                     <Grid.Resources>
-                        <!-- Modern Cyber/Esports Electric Cyan Palette for Network Page -->
                         <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
                         <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
                         <SolidColorBrush x:Key="AccentHover" Color="#38BDF8" />
@@ -1160,7 +1128,6 @@
                             <GradientStop Color="#0369A1" Offset="1" />
                         </LinearGradientBrush>
 
-                        <!-- Hero Primary Action Button Style -->
                         <Style x:Key="NetworkHeroButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="{StaticResource PrimaryCtaBackground}" />
                             <Setter Property="Foreground" Value="#051019" />
@@ -1217,7 +1184,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- Outline Button Style for Network View -->
                         <Style x:Key="NetworkOutlineButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="#0D1620" />
                             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
@@ -1258,7 +1224,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- ComboBox Style for Network View -->
                         <Style x:Key="NetworkComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
                             <Setter Property="Background" Value="#0B131B" />
                             <Setter Property="BorderBrush" Value="#1C2E3E" />
@@ -1306,7 +1271,6 @@
                     <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource NetworkAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
                     <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource NetworkCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
 
-                    <!-- Header -->
                     <Grid Grid.Row="0" Margin="18,12,18,16">
                         <StackPanel Orientation="Horizontal">
                             <Border Width="4" Height="48" Background="{StaticResource Accent}" CornerRadius="2" Margin="0,0,14,0" Effect="{StaticResource AccentGlowEffect}" />
@@ -1324,7 +1288,6 @@
                         </Border>
                     </Grid>
 
-                    <!-- Main Cards -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="18,0,18,16">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -1333,7 +1296,6 @@
                                 <ColumnDefinition Width="1.08*" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- DNS Changer Card -->
                             <Border Grid.Column="0" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -1346,7 +1308,6 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- Header Row -->
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
@@ -1368,7 +1329,6 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
 
-                                    <!-- Telemetry Status Card -->
                                     <Border Grid.Row="4" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
@@ -1379,7 +1339,6 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <!-- Feature Chips -->
                                     <WrapPanel Grid.Row="5" Margin="0,0,0,16">
                                         <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
                                             <TextBlock Text="⚡ Low Jitter Direct Route" Foreground="#8A9CAE" FontSize="11" />
@@ -1395,7 +1354,6 @@
 
                             <Border Grid.Column="1" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
 
-                            <!-- iPad View Card -->
                             <Border Grid.Column="2" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -1408,7 +1366,6 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- Header Row -->
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
@@ -1430,7 +1387,6 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
 
-                                    <!-- Resolution Preview Card -->
                                     <Border Grid.Row="4" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
@@ -1442,7 +1398,6 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <!-- Feature Chips -->
                                     <WrapPanel Grid.Row="5" Margin="0,0,0,16">
                                         <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
                                             <TextBlock Text="📐 Expanded Camera FOV" Foreground="#8A9CAE" FontSize="11" />
@@ -1452,7 +1407,6 @@
                                         </Border>
                                     </WrapPanel>
 
-                                    <!-- Action Buttons -->
                                     <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
                                         <Button x:Name="ResetIpadButton" Content="RESET" Click="ResetIpadButton_Click" Style="{StaticResource NetworkOutlineButtonStyle}" Margin="0,0,10,0" />
                                         <Button x:Name="ChangeIpadButton" Content="APPLY IPAD VIEW" Click="ChangeIpadButton_Click" Style="{StaticResource NetworkHeroButtonStyle}" IsEnabled="False" />
@@ -1501,7 +1455,6 @@
                                           Opacity="0.45"
                                           Direction="270" />
 
-                        <!-- Hero Primary Action Button Style -->
                         <Style x:Key="ShortcutsHeroButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="{StaticResource ShortcutsPrimaryCtaBackground}" />
                             <Setter Property="Foreground" Value="#051019" />
@@ -1558,7 +1511,6 @@
                             </Setter>
                         </Style>
 
-                        <!-- ComboBox Style for Shortcuts View with DisplayMemberPath support -->
                         <Style x:Key="ShortcutsComboBoxStyle" TargetType="ComboBox">
                             <Setter Property="Background" Value="#0B131B" />
                             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
@@ -1666,7 +1618,6 @@
                     <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource ShortcutsAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
                     <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource ShortcutsCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
 
-                    <!-- Header -->
                     <Grid Grid.Row="0" Margin="18,12,18,16">
                         <StackPanel Orientation="Horizontal">
                             <Border Width="4" Height="48" Background="{StaticResource Accent}" CornerRadius="2" Margin="0,0,14,0" Effect="{StaticResource AccentGlowEffect}" />
@@ -1684,7 +1635,6 @@
                         </Border>
                     </Grid>
 
-                    <!-- Main Cards -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="18,0,18,16">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -1693,7 +1643,6 @@
                                 <ColumnDefinition Width="0.88*" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Create a Shortcut Card -->
                             <Border Grid.Column="0" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -1705,7 +1654,6 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- Card Header -->
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
@@ -1718,13 +1666,11 @@
 
                                     <TextBlock Grid.Row="1" Text="Choose the PUBG Mobile version to launch directly through GameLoop AppMarket." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,16" LineHeight="18" />
 
-                                    <!-- Game Version Selection -->
                                     <StackPanel Grid.Row="2">
                                         <TextBlock Text="GAME VERSION" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
                                         <ComboBox x:Name="ShortcutComboBox" Style="{StaticResource ShortcutsComboBoxStyle}" SelectionChanged="ShortcutComboBox_SelectionChanged" />
                                     </StackPanel>
 
-                                    <!-- Selected Profile Preview Card -->
                                     <Border Grid.Row="3" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,16,0,16">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -1732,7 +1678,6 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Game Icon with glowing border -->
                                             <Border Grid.Column="0" Width="52" Height="52" Background="#081018" BorderBrush="#223B4E" BorderThickness="1" CornerRadius="8" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,14,0">
                                                 <Border.Effect>
                                                     <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.2" />
@@ -1740,7 +1685,6 @@
                                                 <Image x:Name="ShortcutIcon" Width="36" Height="36" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </Border>
 
-                                            <!-- Details -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
                                                     <Border Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,8,0">
@@ -1758,7 +1702,6 @@
                                         </Grid>
                                     </Border>
 
-                                    <!-- Action Features Chips -->
                                     <WrapPanel Grid.Row="4" Margin="0,0,0,16">
                                         <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
                                             <TextBlock Text="⚡ Native AppMarket Launcher" Foreground="#8A9CAE" FontSize="11" />
@@ -1768,14 +1711,12 @@
                                         </Border>
                                     </WrapPanel>
 
-                                    <!-- Primary CTA Button -->
                                     <Button Grid.Row="5" x:Name="CreateShortcutButton" Content="CREATE DESKTOP SHORTCUT" Click="CreateShortcutButton_Click" Style="{StaticResource ShortcutsHeroButtonStyle}" HorizontalAlignment="Right" IsEnabled="False" />
                                 </Grid>
                             </Border>
 
                             <Border Grid.Column="1" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
 
-                            <!-- How It Works Card -->
                             <Border Grid.Column="2" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -1785,7 +1726,6 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- Card Header -->
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
@@ -1798,16 +1738,13 @@
 
                                     <TextBlock Grid.Row="1" Text="The shortcut uses GameLoop's own launcher, so the selected version opens with its verified package parameters." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,20" LineHeight="18" />
 
-                                    <!-- Stepper Container -->
                                     <StackPanel Grid.Row="2">
-                                        <!-- Step 1 -->
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="32" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Step 1 Badge & Line -->
                                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                                 <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="14">
                                                     <Border.Effect>
@@ -1818,21 +1755,18 @@
                                                 <Border Width="1.5" Height="28" Background="#1C2E3E" HorizontalAlignment="Center" Margin="0,4,0,4" />
                                             </StackPanel>
 
-                                            <!-- Step 1 Details -->
                                             <StackPanel Grid.Column="1" Margin="12,2,0,0">
                                                 <TextBlock Text="Select a version" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontWeight="SemiBold" />
                                                 <TextBlock Text="Choose one of the detected PUBG Mobile packages installed in GameLoop." Foreground="{StaticResource TextSecondary}" FontSize="12" TextWrapping="Wrap" LineHeight="16" Margin="0,3,0,0" />
                                             </StackPanel>
                                         </Grid>
 
-                                        <!-- Step 2 -->
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="32" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Step 2 Badge & Line -->
                                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                                 <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="14">
                                                     <Border.Effect>
@@ -1843,21 +1777,18 @@
                                                 <Border Width="1.5" Height="28" Background="#1C2E3E" HorizontalAlignment="Center" Margin="0,4,0,4" />
                                             </StackPanel>
 
-                                            <!-- Step 2 Details -->
                                             <StackPanel Grid.Column="1" Margin="12,2,0,0">
                                                 <TextBlock Text="Create the launcher" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontWeight="SemiBold" />
                                                 <TextBlock Text="Nexora places a clean, official shortcut directly on your Windows desktop." Foreground="{StaticResource TextSecondary}" FontSize="12" TextWrapping="Wrap" LineHeight="16" Margin="0,3,0,0" />
                                             </StackPanel>
                                         </Grid>
 
-                                        <!-- Step 3 -->
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="32" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Step 3 Badge -->
                                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                                 <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="14">
                                                     <Border.Effect>
@@ -1867,7 +1798,6 @@
                                                 </Border>
                                             </StackPanel>
 
-                                            <!-- Step 3 Details -->
                                             <StackPanel Grid.Column="1" Margin="12,2,0,0">
                                                 <TextBlock Text="Launch when you need it" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontWeight="SemiBold" />
                                                 <TextBlock Text="Open PUBG Mobile directly with one click without navigating through emulator menus." Foreground="{StaticResource TextSecondary}" FontSize="12" TextWrapping="Wrap" LineHeight="16" Margin="0,3,0,0" />
@@ -1875,7 +1805,6 @@
                                         </Grid>
                                     </StackPanel>
 
-                                    <!-- Safety Note Card -->
                                     <Border Grid.Row="3" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,22,0,0">
                                         <StackPanel Orientation="Horizontal">
                                             <Border Width="18" Height="18" Background="#0C251F" BorderBrush="#10B981" BorderThickness="1" CornerRadius="9" VerticalAlignment="Center" Margin="0,0,10,0">

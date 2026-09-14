@@ -31,12 +31,11 @@ public sealed class LiveGameLoopVerificationTests
     [Trait("Category", "LiveFunctionalVerification")]
     public void DynamicPathResolution_ResolvesGameLoopPathsFromRegistry_WithoutHardcodedDrives()
     {
-        // Arrange
         var registry = new RegistryService();
         var runner = new ProcessRunner();
         var processService = new GameLoopProcessService(runner, registry);
 
-        // Act: Resolve paths dynamically via registry branches
+        // Resolve paths dynamically via registry branches
         var appMarketPath = registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchAppMarket);
         var uiPath = registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
         var gameLoopRoot = processService.GetGameLoopRoot();
@@ -45,7 +44,7 @@ public sealed class LiveGameLoopVerificationTests
         _output.WriteLine($"[Diagnostic] UI Path: {uiPath}");
         _output.WriteLine($"[Diagnostic] GameLoop Root: {gameLoopRoot}");
 
-        // Assert: Ensure paths are resolved dynamically and exist on disk
+        // Ensure paths are resolved dynamically and exist on disk
         appMarketPath.Should().NotBeNullOrWhiteSpace("AppMarket install path must be resolved from registry");
         Directory.Exists(appMarketPath!).Should().BeTrue($"Resolved AppMarket path '{appMarketPath}' must exist on disk");
 
@@ -69,7 +68,7 @@ public sealed class LiveGameLoopVerificationTests
     [Trait("Category", "LiveFunctionalVerification")]
     public async Task Step1_LiveConnectionAndDiagnostics_SuccessfullyConnectsAndLoadsPubgSettings()
     {
-        // Arrange: Build services using composition root / DI container
+        // Build services using composition root / DI container
         var services = new ServiceCollection();
         App.ConfigureServices(services);
         using var provider = services.BuildServiceProvider();
@@ -78,39 +77,32 @@ public sealed class LiveGameLoopVerificationTests
         var adbClient = provider.GetRequiredService<IAdbClient>();
         var registryService = provider.GetRequiredService<IRegistryService>();
 
-        // 1. Process Liveness Check
         var isRunning = GameLoopService.IsGameLoopRunning();
         _output.WriteLine($"[Diagnostic] GameLoop Running: {isRunning}");
         isRunning.Should().BeTrue("GameLoop emulator process (AndroidEmulatorEn / AndroidEmulatorEx / AndroidEmulator) must be active");
 
-        // 2. ADB Enabled Check
         var adbStatus = registryService.GetUserDword(AppConstants.Registry.ValueAdbDisable);
         _output.WriteLine($"[Diagnostic] AdbDisable Value: {adbStatus}");
         adbStatus.Should().NotBeNull("GameLoop AdbDisable registry setting must exist");
         adbStatus.Should().Be(0, "AdbDisable must be 0 (enabled) for ADB bridge communication");
 
-        // 3. ADB Boot & Daemon Liveness Check
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         var bootFinished = await adbClient.WaitForBootAsync(cts.Token);
         _output.WriteLine($"[Diagnostic] ADB Boot Complete: {bootFinished}");
         bootFinished.Should().BeTrue("GameLoop Android subsystem must report dev.bootcomplete = 1");
 
-        // 4. GameLoop Service Connection Execution
         var connectionResult = await gameLoopService.ConnectAsync(cts.Token);
         connectionResult.Should().NotBeNull();
         _output.WriteLine($"[Diagnostic] Connection Success: {connectionResult.Success}, Message: {connectionResult.Message}");
         connectionResult.Success.Should().BeTrue($"ConnectAsync must succeed: {connectionResult.Message}");
 
-        // 5. Version & Package Enumeration
         _output.WriteLine($"[Diagnostic] Installed Packages Detected: {string.Join(", ", connectionResult.InstalledVersions.Select(v => $"{v.DisplayName} ({v.PackageName})"))}");
         connectionResult.InstalledVersions.Should().NotBeEmpty("At least one installed PUBG Mobile version should be detected");
         connectionResult.InstalledVersions.Should().Contain(v => v.PackageName == "com.tencent.ig", "PUBG Mobile Global must be installed");
 
-        // 6. Connected State & In-Memory Save Loaded
         gameLoopService.IsConnected.Should().BeTrue("GameLoopService must be in connected state with Active.sav loaded");
         gameLoopService.CurrentPackage.Should().Be("com.tencent.ig");
 
-        // 7. Settings Reader Verification
         var quality = gameLoopService.GetGraphicsQuality();
         var fps = gameLoopService.GetFrameRate();
         var style = gameLoopService.GetGraphicsStyle();
@@ -128,7 +120,6 @@ public sealed class LiveGameLoopVerificationTests
     [Trait("Category", "LiveFunctionalVerification")]
     public async Task Step2_GraphicsSettingsPage_LiveApplicationAndVerification_NonDestructive()
     {
-        // Arrange
         var services = new ServiceCollection();
         App.ConfigureServices(services);
         using var provider = services.BuildServiceProvider();
@@ -138,11 +129,9 @@ public sealed class LiveGameLoopVerificationTests
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
 
-        // 1. Ensure connected to PUBG Mobile Global
         var connectResult = await gameLoopService.ConnectAsync(cts.Token);
         connectResult.Success.Should().BeTrue("Must connect to GameLoop before graphics modification");
 
-        // 2. Read live initial settings (Quality, Frame Rate, Style, Shadow)
         var originalQuality = gameLoopService.GetGraphicsQuality();
         var originalFps = gameLoopService.GetFrameRate();
         var originalStyle = gameLoopService.GetGraphicsStyle();
@@ -150,7 +139,6 @@ public sealed class LiveGameLoopVerificationTests
 
         _output.WriteLine($"[Original Live Settings] Quality: {originalQuality}, FPS: {originalFps}, Style: {originalStyle}, Shadow: {originalShadow}");
 
-        // 3. Define target test preset (Smooth + Extreme / 60 FPS + Colorful + Disabled Shadow)
         var targetQuality = originalQuality == "Smooth" ? "Balanced" : "Smooth";
         var targetFps = originalFps == "Extreme" ? "Ultra Extreme" : "Extreme";
         var targetStyle = originalStyle == "Colorful" ? "Classic" : "Colorful";
@@ -165,19 +153,16 @@ public sealed class LiveGameLoopVerificationTests
 
         _output.WriteLine($"[Applying Target Preset] Quality: {targetQuality}, FPS: {targetFps}, Style: {targetStyle}, Shadow: {targetShadow}");
 
-        // 4. Apply graphics settings via GameLoopService
         var applyResult = await gameLoopService.ApplyGraphicsAsync(targetSelection, cts.Token);
         applyResult.Success.Should().BeTrue($"ApplyGraphicsAsync must succeed: {applyResult.Message}");
         _output.WriteLine($"[ApplyGraphicsAsync Result] {applyResult.Message}");
 
-        // 5. Verify in-memory state updated cleanly
         gameLoopService.GetGraphicsQuality().Should().Be(targetQuality);
         gameLoopService.GetFrameRate().Should().Be(targetFps);
         gameLoopService.GetGraphicsStyle().Should().Be(targetStyle);
         var liveShadow = await gameLoopService.GetShadowAsync(cts.Token);
         liveShadow.Should().Be("Disable");
 
-        // 6. Verify remote Active.sav integrity via fresh ADB pull and Ue4SavEditor inspection
         var tempSavPath = Path.Combine(Path.GetTempPath(), $"live_verify_{Guid.NewGuid():N}.sav");
         try
         {
@@ -213,7 +198,6 @@ public sealed class LiveGameLoopVerificationTests
             if (File.Exists(tempSavPath)) File.Delete(tempSavPath);
         }
 
-        // 7. Non-destructive Restoration of original settings
         var originalSelection = new GraphicsSelection(
             originalQuality,
             originalFps,
@@ -234,7 +218,6 @@ public sealed class LiveGameLoopVerificationTests
     [Trait("Category", "LiveFunctionalVerification")]
     public async Task Step3_PerformanceCenter_LiveHardwarePlanAndRegistryOptimization_NonDestructive()
     {
-        // Arrange
         var services = new ServiceCollection();
         App.ConfigureServices(services);
         using var provider = services.BuildServiceProvider();
@@ -246,7 +229,6 @@ public sealed class LiveGameLoopVerificationTests
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-        // 1. Live Hardware Detection: Verify GetSnapshotAsync detects host hardware
         var hardware = await performanceEngine.GetHardwareSnapshotAsync(cts.Token);
         _output.WriteLine($"[Hardware Snapshot] CPU: {hardware.CpuName} ({hardware.PhysicalCores} cores, {hardware.LogicalCores} threads)");
         _output.WriteLine($"[Hardware Snapshot] RAM: {hardware.TotalMemoryGb} GB");
@@ -260,7 +242,6 @@ public sealed class LiveGameLoopVerificationTests
         hardware.GpuName.Should().NotBeNullOrWhiteSpace("GPU model must be detected");
         hardware.RefreshRateHz.Should().BeGreaterThanOrEqualTo(60, "Display refresh rate >= 60Hz");
 
-        // 2. Recommended Plan Generation
         var plan = performanceEngine.GetRecommendedPlan(hardware);
         _output.WriteLine($"[Recommended Plan] Tier: {plan.Tier}, Memory: {plan.EmulatorMemoryMb} MB, CPU Cores: {plan.EmulatorCpuCores}");
         _output.WriteLine($"[Recommended Plan] Content Scale: {plan.ContentScale}, FXAA: {plan.FxaaQuality}, Target FPS: {plan.RecommendedFps}");
@@ -278,7 +259,6 @@ public sealed class LiveGameLoopVerificationTests
         displayModel.SmartPlanSummary.Should().Contain(plan.RecommendedFps);
         _output.WriteLine($"[UI Display Formatter] {displayModel.SmartPlanSummary}");
 
-        // 3. Registry & Performance Tweaks (Non-Destructive)
         var settingKeys = new List<string>
         {
             "VSyncEnabled",
@@ -336,7 +316,6 @@ public sealed class LiveGameLoopVerificationTests
             _output.WriteLine("[Registry State Restored] Successfully rolled back modified HKCU keys to original values.");
         }
 
-        // 4. Session Management (Apply & Restore Non-Destructively)
         // 4a. Verify PowerSessionService directly for Windows power plan tuning
         var powerSession = new PowerSessionService(processRunner);
         var powerApplyResult = powerSession.Apply(hardware);
@@ -361,7 +340,6 @@ public sealed class LiveGameLoopVerificationTests
     [Trait("Category", "LiveFunctionalVerification")]
     public async Task Step4_NetworkAndView_LiveDnsPingAndIpadLayoutVerification_NonDestructive()
     {
-        // Arrange
         var services = new ServiceCollection();
         App.ConfigureServices(services);
         using var provider = services.BuildServiceProvider();
@@ -372,7 +350,6 @@ public sealed class LiveGameLoopVerificationTests
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-        // 1. DNS Latency Engine: Ping catalog DNS providers with real-time latency
         DnsCatalog.Entries.Should().NotBeEmpty("DNS Catalog must have entries");
         var googleDns = DnsCatalog.Entries.First(e => e.Primary == "8.8.8.8");
         var cloudflareDns = DnsCatalog.Entries.First(e => e.Primary == "1.1.1.1");
@@ -394,7 +371,6 @@ public sealed class LiveGameLoopVerificationTests
         cancelledPing.Should().BeNull("Cancelled ping attempt must safely return null without hanging or throwing unhandled exception");
         _output.WriteLine("[DNS Latency] Cancellation token correctly respected.");
 
-        // 2. iPad View Presets & GameLoop Execution Guard
         IpadPresetCatalog.Presets.Should().HaveCount(10, "Catalog should define 10 iPad resolution profiles");
         var competitivePreset = IpadPresetCatalog.Presets.First(p => p.Label.StartsWith("Competitive 4:3"));
         competitivePreset.Should().NotBeNull();
@@ -409,7 +385,6 @@ public sealed class LiveGameLoopVerificationTests
         guardResult.Message.Should().Contain("Close GameLoop before applying iPad View");
         _output.WriteLine($"[Execution Guard Verified] {guardResult.Message}");
 
-        // 3. Staged Resolution & Keymap Patching & Clean Reset (Non-Destructive)
         var tempKeymapDir = Path.Combine(Path.GetTempPath(), $"ipad_test_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempKeymapDir);
 

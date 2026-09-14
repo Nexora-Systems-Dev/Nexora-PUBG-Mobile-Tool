@@ -5,7 +5,7 @@ using Nexora.Shared.Kernel;
 namespace Nexora.Services.Performance;
 
 /// <summary>
-/// Verifies Windows Defender service state and configures process/folder exclusions
+/// Verifies Windows Defender service state and configures exclusions
 /// for the GameLoop emulator installation directory.
 /// </summary>
 public sealed class DefenderExclusionService
@@ -22,7 +22,7 @@ public sealed class DefenderExclusionService
     }
 
     /// <summary>
-    /// Checks if Windows Defender is active and adds the GameLoop install directory to the Defender exclusion list.
+    /// Checks whether Windows Defender is active and adds the verified GameLoop install directory to exclusions.
     /// </summary>
     public OperationResult AddDefenderExclusion()
     {
@@ -31,18 +31,21 @@ public sealed class DefenderExclusionService
             "if ($null -eq $service) { 'Unavailable' } else { \"$($service.Status)|$($service.StartType)\" }");
 
         var defenderState = defenderService.StandardOutput.Trim();
-        if (!defenderService.Succeeded ||
-            defenderState.Contains("Stopped", StringComparison.OrdinalIgnoreCase) ||
-            defenderState.Contains("Disabled", StringComparison.OrdinalIgnoreCase) ||
-            defenderState.Contains("Unavailable", StringComparison.OrdinalIgnoreCase))
+        if (ShouldSkipDefender(defenderState, defenderService.Succeeded))
         {
-            return OperationResult.Ok("Windows Defender is disabled or unavailable; exclusion skipped.");
+            return OperationResult.Skip("Windows Defender is disabled or unavailable; exclusion skipped.");
         }
 
-        var gameLoopPath = _processService.GetGameLoopRoot();
+        // Use only the registry-sourced path under HKLM to avoid path spoofing.
+        var gameLoopPath = _processService.GetGameLoopRootFromRegistry();
         if (string.IsNullOrWhiteSpace(gameLoopPath))
         {
-            return OperationResult.Fail("GameLoop installation path was not found.");
+            return OperationResult.Fail("GameLoop installation path was not found in the registry.");
+        }
+
+        if (!IsTrustedGameLoopPath(gameLoopPath))
+        {
+            return OperationResult.Fail("The resolved GameLoop path is outside the expected installation directory.");
         }
 
         var script = $"Add-MpPreference -ExclusionPath {ProcessText.Quote(gameLoopPath)} -Force";
@@ -51,5 +54,39 @@ public sealed class DefenderExclusionService
         return result.Succeeded
             ? OperationResult.Ok("GameLoop optimizer exclusion applied.")
             : OperationResult.Fail($"Could not update the Windows Defender exclusion. {ProcessText.GetError(result)}");
+    }
+
+    /// <summary>
+    /// Determines whether the Defender exclusion step must be skipped
+    /// because the WinDefend service is stopped, disabled, or unavailable.
+    /// </summary>
+    public static bool ShouldSkipDefender(string? defenderState, bool querySucceeded)
+    {
+        if (!querySucceeded) return true;
+        if (string.IsNullOrWhiteSpace(defenderState)) return true;
+
+        return defenderState.Contains("Stopped", StringComparison.OrdinalIgnoreCase) ||
+            defenderState.Contains("Disabled", StringComparison.OrdinalIgnoreCase) ||
+            defenderState.Contains("Unavailable", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Validates that <paramref name="resolvedPath"/> contains the expected
+    /// GameLoop installation folder name as a distinct directory segment.
+    /// </summary>
+    internal static bool IsTrustedGameLoopPath(string resolvedPath)
+    {
+        if (string.IsNullOrWhiteSpace(resolvedPath)) return false;
+
+        try
+        {
+            var fullPath = Path.GetFullPath(resolvedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var segments = fullPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            return segments.Any(segment => string.Equals(segment, AppConstants.Emulator.InstallFolderName, StringComparison.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

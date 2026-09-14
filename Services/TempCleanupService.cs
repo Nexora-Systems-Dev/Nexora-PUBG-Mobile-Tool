@@ -88,9 +88,7 @@ public sealed class TempCleanupService : ITempCleanupService
         foreach (var child in children)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            // Best-effort sweep: one locked file inside no longer spares the
-            // whole subtree — everything deletable is removed. The location
-            // is reported as skipped only if anything actually survives.
+            // Best-effort sweep: remove deletable files and record any surviving directories as skipped.
             FileUtilities.TryDeleteDirectory(child);
             try { if (Directory.Exists(child)) skipped.Add(child); } catch { skipped.Add(child); }
         }

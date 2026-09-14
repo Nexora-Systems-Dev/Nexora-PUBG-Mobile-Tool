@@ -1,14 +1,13 @@
 namespace Nexora.Shared.Kernel;
 
 /// <summary>
-/// Provides resilient filesystem utilities that handle locked, read-only, or transient files safely.
+/// File system utilities for resilient file and directory deletion.
 /// </summary>
 public static class FileUtilities
 {
     /// <summary>
-    /// Best-effort recursive removal of a directory and all of its contents.
-    /// Clears read-only attributes first, deletes everything deletable, and ignores
-    /// unreadable or genuinely locked entries without throwing exceptions.
+    /// Recursively removes a directory and its contents on a best-effort basis,
+    /// clearing read-only attributes and suppressing IO errors for locked files.
     /// </summary>
     public static void TryDeleteDirectory(string path)
     {
@@ -20,7 +19,7 @@ public static class FileUtilities
         }
         catch
         {
-            // Best-effort cleanup only: never crash caller and never report on locked items.
+            // Suppress errors during best-effort directory deletion.
         }
     }
 

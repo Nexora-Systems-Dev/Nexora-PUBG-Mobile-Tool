@@ -56,10 +56,7 @@ public sealed class AdbClient : IAdbClient
                 return false;
             }
 
-            // GameLoop can briefly restart its Android bridge while PUBG is
-            // force-stopped/relaunched. Re-select the live serial before the
-            // next transfer instead of treating that short race as a hard
-            // graphics-apply failure.
+            // Refresh device serial before retrying in case the bridge restarted.
             await Task.Delay(AppConstants.Timeouts.AdbTransferRetryDelay, cancellationToken);
             TrySelectDevice(cancellationToken);
         }
@@ -69,9 +66,7 @@ public sealed class AdbClient : IAdbClient
 
     public async Task<bool> WaitForBootAsync(CancellationToken cancellationToken)
     {
-        // Check before device selection: TrySelectDevice spawns adb
-        // processes (devices/connect probes), so a canceled token must exit
-        // before any of that work starts.
+        // Check cancellation before device selection runs child adb processes.
         cancellationToken.ThrowIfCancellationRequested();
         if (!TrySelectDevice(cancellationToken))
         {
@@ -127,8 +122,7 @@ public sealed class AdbClient : IAdbClient
             return true;
         }
 
-        // GameLoop exposes its Android bridge on TCP 5555 on some installations.
-        // Establish the local connection only when the emulator is already running.
+        // Connect to local loopback port if GameLoop exposes bridge on TCP 5555.
         cancellationToken.ThrowIfCancellationRequested();
         Run("connect", AppConstants.Adb.LoopbackEndpoint);
         cancellationToken.ThrowIfCancellationRequested();
@@ -184,7 +178,7 @@ public sealed class AdbClient : IAdbClient
         }
         catch
         {
-            // A missing adb process is the same state as a successfully stopped one.
+            // Ignore errors if ADB was not running.
         }
     }
 
@@ -205,7 +199,7 @@ public sealed class AdbClient : IAdbClient
             }
         }
 
-        // Running process fallback: discover adb from active emulator executable location
+        // Fall back to active emulator process paths if registry lookup did not locate ADB.
         foreach (var name in AppConstants.Emulator.RunningCheckProcessNames)
         {
             try
@@ -228,7 +222,7 @@ public sealed class AdbClient : IAdbClient
                     }
                     catch
                     {
-                        // Protected process access denied
+                        // Ignore processes where module path access is denied.
                     }
                     finally
                     {
@@ -238,13 +232,11 @@ public sealed class AdbClient : IAdbClient
             }
             catch
             {
-                // Access denied or platform restriction
+                // Ignore process enumeration errors.
             }
         }
 
-        // Some GameLoop installations do not expose InstallPath in the
-        // registry branch used by the original tool. Keep the same local
-        // discovery behavior by checking the standard UI locations too.
+        // Check standard Program Files installation paths.
         foreach (var programFiles in new[]
         {
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),

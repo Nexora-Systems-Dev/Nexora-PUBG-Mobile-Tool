@@ -9,11 +9,7 @@ using Xunit;
 namespace Nexora.Tests.Services;
 
 /// <summary>
-/// Verifies the P2-Step-2 boundary contract: package names are rejected by
-/// a strict pattern before reaching ADB shell or filesystem commands, DNS
-/// addresses must parse as IPs before any PowerShell runs, and coordinate
-/// math is culture-invariant. Rejection paths are hermetic by construction:
-/// validation runs before any process, registry, or filesystem side effect.
+/// Verifies boundary validation for package names, network configurations, and coordinate formatting.
 /// </summary>
 public sealed class BoundaryValidationTests
 {
@@ -25,10 +21,8 @@ public sealed class BoundaryValidationTests
     [InlineData("com.example_app.game1")]
     public void IsValidAndroidPackageName_AcceptsWellFormedNames(string packageName)
     {
-        // Act
         var valid = AppConstants.Validation.IsValidAndroidPackageName(packageName);
 
-        // Assert
         valid.Should().BeTrue();
     }
 
@@ -53,10 +47,8 @@ public sealed class BoundaryValidationTests
     [InlineData("com.evil$(id)")]          // command substitution
     public void IsValidAndroidPackageName_RejectsMalformedNames(string? packageName)
     {
-        // Act
         var valid = AppConstants.Validation.IsValidAndroidPackageName(packageName);
 
-        // Assert
         valid.Should().BeFalse();
     }
 
@@ -68,13 +60,11 @@ public sealed class BoundaryValidationTests
     [InlineData("a")]
     public async Task LoadVersionAsync_FailsFast_ForInvalidPackageName(string packageName)
     {
-        // Arrange
         var service = new GameLoopService(new RegistryService(), new AdbClient(new ProcessRunner(), new RegistryService()));
 
-        // Act: must return before PrepareWorkingFiles, PullAsync, or any ADB spawn.
+        // Must return before PrepareWorkingFiles, PullAsync, or any ADB spawn.
         var result = await service.LoadVersionAsync(packageName, CancellationToken.None);
 
-        // Assert
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("Invalid");
     }
@@ -85,26 +75,21 @@ public sealed class BoundaryValidationTests
     [InlineData("")]
     public void FindInstalledPackages_Throws_ForInvalidPackageName(string packageName)
     {
-        // Arrange
         var adb = new AdbClient(new ProcessRunner(), new RegistryService());
 
-        // Act: validation precedes every Run call, so no ADB process spawns.
+        // Validation precedes every Run call, so no ADB process spawns.
         var act = () => adb.FindInstalledPackages(new[] { packageName }, CancellationToken.None);
 
-        // Assert
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void FindInstalledPackages_ReturnsEmpty_ForEmptyInput()
     {
-        // Arrange
         var adb = new AdbClient(new ProcessRunner(), new RegistryService());
 
-        // Act
         var installed = adb.FindInstalledPackages(Array.Empty<string>(), CancellationToken.None);
 
-        // Assert
         installed.Should().BeEmpty();
     }
 
@@ -116,13 +101,11 @@ public sealed class BoundaryValidationTests
     [InlineData("8.8.8.8", "8.8.8.8.8")]
     public void ChangeDns_FailsFast_ForInvalidAddresses(string primary, string secondary)
     {
-        // Arrange
         var network = new NetworkToolsService(new ProcessRunner());
 
-        // Act: must return before any PowerShell process spawns.
+        // Must return before any PowerShell process spawns.
         var result = network.ChangeDns(primary, secondary);
 
-        // Assert
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("Invalid");
     }
@@ -130,16 +113,13 @@ public sealed class BoundaryValidationTests
     [Fact]
     public void ShiftCoordinate_UsesInvariantCulture_UnderCommaDecimalLocale()
     {
-        // Arrange: fr-FR uses ',' as the decimal separator, where the old
-        // double.Parse(target.X) threw on asset values like "1.25".
+        // fr-FR uses ',' as the decimal separator; ensures values like "1.25" parse correctly.
         var previous = CultureInfo.CurrentCulture;
         CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
         try
         {
-            // Act
             var shifted = IpadLayoutService.ShiftCoordinate("1.25", 0.25);
 
-            // Assert
             shifted.Should().Be("1.5");
         }
         finally
@@ -151,10 +131,9 @@ public sealed class BoundaryValidationTests
     [Fact]
     public void ShiftCoordinate_ReturnsOriginal_ForUnparsableValue()
     {
-        // Arrange + Act
         var shifted = IpadLayoutService.ShiftCoordinate("not-a-number", 0.1);
 
-        // Assert: best-effort nudge must never corrupt the attribute.
+        // Best-effort nudge must never corrupt the attribute.
         shifted.Should().Be("not-a-number");
     }
 }
