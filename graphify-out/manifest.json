@@ -18,9 +18,9 @@
     "semantic_hash": "05e9e8a9c648f0b27bd6bd4f12f22007"
   },
   "Configuration/AppConstants.cs": {
-    "mtime": 1789346753.318438,
-    "seen": 1789346832.1501496,
-    "ast_hash": "40366950fb46652ee049921e7f3e0018",
+    "mtime": 1789346972.7542489,
+    "seen": 1789347020.7981446,
+    "ast_hash": "57cf9f90ffb4f31278438cf4a1eed95f",
     "semantic_hash": ""
   },
   "Configuration/IpadLayoutOptions.cs": {
@@ -228,9 +228,9 @@
     "semantic_hash": "25c7692eead3e34e13e216bd30e17093"
   },
   "Nexora.csproj": {
-    "mtime": 1789346753.318438,
-    "seen": 1789346832.1501496,
-    "ast_hash": "ae0ac2470d25378e4d73e4d7ec9c7780",
+    "mtime": 1789346972.7542489,
+    "seen": 1789347020.7981446,
+    "ast_hash": "4332ba3ab5e5ddb786f3fd7508b27869",
     "semantic_hash": ""
   },
   "Nexora.slnx": {
@@ -462,9 +462,9 @@
     "semantic_hash": "fcb1d2402283e7a273851e2000155ce5"
   },
   "scripts/package-release.ps1": {
-    "mtime": 1789346753.318438,
-    "seen": 1789346832.1501496,
-    "ast_hash": "42878c6c7829a432c1e40e11351e50b4",
+    "mtime": 1789346972.7592282,
+    "seen": 1789347020.7981446,
+    "ast_hash": "0202033dd6c02b031e42752f51c104f1",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1789346753.318438,
-    "seen": 1789346832.1501496,
-    "ast_hash": "037e935bdaef64d08f72ff2c13510604",
+    "mtime": 1789346972.7592282,
+    "seen": 1789347020.7981446,
+    "ast_hash": "ad1c9e896f02e0c60a391a91b1dae649",
     "semantic_hash": ""
   },
   "Assets/Styles/Classic.png": {

@@ -18,9 +18,9 @@
     "semantic_hash": "05e9e8a9c648f0b27bd6bd4f12f22007"
   },
   "Configuration/AppConstants.cs": {
-    "mtime": 1789343469.5572872,
-    "seen": 1789345229.4855993,
-    "ast_hash": "e75ac1dd1631945f5efb427c3a0d3304",
+    "mtime": 1789346753.318438,
+    "seen": 1789346832.1501496,
+    "ast_hash": "40366950fb46652ee049921e7f3e0018",
     "semantic_hash": ""
   },
   "Configuration/IpadLayoutOptions.cs": {
@@ -90,15 +90,15 @@
     "semantic_hash": "a9042920e1159660778b644ffd3e3425"
   },
   "MainWindow.xaml": {
-    "mtime": 1789344105.92239,
-    "seen": 1789345229.4856246,
-    "ast_hash": "c9f691abfb604c0965f7d6b18d339b6d",
+    "mtime": 1789346303.1590958,
+    "seen": 1789346832.1501496,
+    "ast_hash": "f41e674e746295501c63debfdc1d48dc",
     "semantic_hash": ""
   },
   "MainWindow.xaml.cs": {
-    "mtime": 1789344119.4041078,
-    "seen": 1789345229.4856262,
-    "ast_hash": "b1d4808bf56cc34965f0dfb0faaf34ae",
+    "mtime": 1789346576.9107,
+    "seen": 1789346832.1501496,
+    "ast_hash": "9e33ba107f48db3690b44f49d0d85cc7",
     "semantic_hash": ""
   },
   "Nexora.Tests/Catalogs/CatalogTests.cs": {
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "Nexora.Tests/Performance/PerformanceExecutionReportTests.cs": {
-    "mtime": 1789344278.2155683,
-    "seen": 1789345229.4856348,
-    "ast_hash": "5b562760c2295e2394cefac44d4dcc88",
+    "mtime": 1789346339.5064154,
+    "seen": 1789346832.1501496,
+    "ast_hash": "1248017487cd98f182cebb00589d6083",
     "semantic_hash": ""
   },
   "Nexora.Tests/Performance/PerformancePlanBuilderTests.cs": {
@@ -228,9 +228,9 @@
     "semantic_hash": "25c7692eead3e34e13e216bd30e17093"
   },
   "Nexora.csproj": {
-    "mtime": 1789341476.7114625,
-    "seen": 1789341559.0635734,
-    "ast_hash": "e6dd1ba44208c4b3454b413a2c977a1b",
+    "mtime": 1789346753.318438,
+    "seen": 1789346832.1501496,
+    "ast_hash": "ae0ac2470d25378e4d73e4d7ec9c7780",
     "semantic_hash": ""
   },
   "Nexora.slnx": {
@@ -306,9 +306,9 @@
     "semantic_hash": "e1690d427dca4c6480741cb8c5bf06a8"
   },
   "Services/Performance/DefenderExclusionService.cs": {
-    "mtime": 1789343602.3938835,
-    "seen": 1789345229.4856963,
-    "ast_hash": "0822c0788fbb785af492e6c7176f5652",
+    "mtime": 1789346217.6477933,
+    "seen": 1789346832.1501496,
+    "ast_hash": "5861d8d83cdf8b53d8e095466ee887cb",
     "semantic_hash": ""
   },
   "Services/Performance/GameLoopProcessService.cs": {
@@ -318,15 +318,15 @@
     "semantic_hash": ""
   },
   "Services/Performance/GameLoopRegistryOptimizer.cs": {
-    "mtime": 1789343632.1421006,
-    "seen": 1789345229.4856992,
-    "ast_hash": "d13ab767ddd8dc951599664c43f2b4dd",
+    "mtime": 1789346284.258712,
+    "seen": 1789346832.1501496,
+    "ast_hash": "c76257d7bc8cd36c723a10078f3c5d0c",
     "semantic_hash": ""
   },
   "Services/Performance/GpuRoutingService.cs": {
-    "mtime": 1789343649.7288225,
-    "seen": 1789345229.4857006,
-    "ast_hash": "1977aeb7b2dae0f395bd35b049dd2fa2",
+    "mtime": 1789346562.3352084,
+    "seen": 1789346832.1501496,
+    "ast_hash": "6d903167d6f0923edfe9dfcb7ceafc28",
     "semantic_hash": ""
   },
   "Services/Performance/HardwareDetectionService.cs": {
@@ -342,15 +342,15 @@
     "semantic_hash": ""
   },
   "Services/Performance/NvidiaOptimizerService.cs": {
-    "mtime": 1789343663.898235,
-    "seen": 1789345229.4857051,
-    "ast_hash": "eade3b10219b787d5da4688e1782274e",
+    "mtime": 1789346566.2114766,
+    "seen": 1789346832.1501496,
+    "ast_hash": "8f244b62d4f9f25ea6e5ca5b222fd638",
     "semantic_hash": ""
   },
   "Services/Performance/PerformanceExecutionReport.cs": {
-    "mtime": 1789343666.2885106,
-    "seen": 1789345229.4857066,
-    "ast_hash": "7962a2c9cdf62cdc2477e8162acb98fd",
+    "mtime": 1789346177.4917016,
+    "seen": 1789346832.1501496,
+    "ast_hash": "b6bc352da41ccbb78ded6a3bb5b153f4",
     "semantic_hash": ""
   },
   "Services/Performance/PerformancePlanBuilder.cs": {
@@ -366,9 +366,9 @@
     "semantic_hash": ""
   },
   "Services/Performance/ProcessPriorityService.cs": {
-    "mtime": 1789343694.551146,
-    "seen": 1789345229.4857113,
-    "ast_hash": "034a4e5808eace7c5a41240e145a078a",
+    "mtime": 1789346546.6545918,
+    "seen": 1789346832.1501496,
+    "ast_hash": "f41d9dbda117e7b313a5a4b53d67ab7f",
     "semantic_hash": ""
   },
   "Services/ShortcutService.cs": {
@@ -390,9 +390,9 @@
     "semantic_hash": ""
   },
   "Services/WindowsToolsService.cs": {
-    "mtime": 1789343595.1575892,
-    "seen": 1789345229.4857185,
-    "ast_hash": "626a5ded47fc4260f678cd273b25d24a",
+    "mtime": 1789346288.9937525,
+    "seen": 1789346832.1501496,
+    "ast_hash": "911311aae3f7d5def35df1cf6c96e5c9",
     "semantic_hash": ""
   },
   "Shared/Infrastructure/IRegistryService.cs": {
@@ -420,10 +420,10 @@
     "semantic_hash": ""
   },
   "Shared/Kernel/OperationResult.cs": {
-    "mtime": 1788886352.547626,
-    "seen": 1789078195.1203387,
-    "ast_hash": "6f1b9edfd07850a3f103152ea81ea1bc",
-    "semantic_hash": "6f1b9edfd07850a3f103152ea81ea1bc"
+    "mtime": 1789346164.2961476,
+    "seen": 1789346832.1501496,
+    "ast_hash": "b6d3b2f79e62dd6723649736ce8a9227",
+    "semantic_hash": ""
   },
   "Shared/Kernel/ProcessRunner.cs": {
     "mtime": 1789343490.6982875,
@@ -462,9 +462,9 @@
     "semantic_hash": "fcb1d2402283e7a273851e2000155ce5"
   },
   "scripts/package-release.ps1": {
-    "mtime": 1789341411.9957547,
-    "seen": 1789341559.0636601,
-    "ast_hash": "250e4a326d761d63f4eef217852236eb",
+    "mtime": 1789346753.318438,
+    "seen": 1789346832.1501496,
+    "ast_hash": "42878c6c7829a432c1e40e11351e50b4",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1789000329.684252,
-    "seen": 1789078537.1913455,
-    "ast_hash": "3110017b3809e9db89b825da70751fa3",
+    "mtime": 1789346753.318438,
+    "seen": 1789346832.1501496,
+    "ast_hash": "037e935bdaef64d08f72ff2c13510604",
     "semantic_hash": ""
   },
   "Assets/Styles/Classic.png": {
@@ -606,9 +606,9 @@
     "semantic_hash": ""
   },
   "Nexora.Tests/Services/NvidiaOptimizerServiceTests.cs": {
-    "mtime": 1789344278.2329419,
-    "seen": 1789345229.4856558,
-    "ast_hash": "8368b852570c2c3b525dbb67c150d73d",
+    "mtime": 1789346343.0887296,
+    "seen": 1789346832.1501496,
+    "ast_hash": "d22b681d814c726a0de70862f44f8164",
     "semantic_hash": ""
   },
   "Nexora.Tests/Services/UpdateIntegrityTests.cs": {
@@ -621,6 +621,18 @@
     "mtime": 1789344278.2390692,
     "seen": 1789345229.485664,
     "ast_hash": "7ff1daad5a883816d7a1b3e5a46c7f18",
+    "semantic_hash": ""
+  },
+  "Nexora.Tests/Performance/WindowsGpuBoostReportingTests.cs": {
+    "mtime": 1789346583.4886613,
+    "seen": 1789346832.1501496,
+    "ast_hash": "abf589a83caf5cdfc053877e41ea4fa1",
+    "semantic_hash": ""
+  },
+  "UI/Presentation/ActivityReportFormatter.cs": {
+    "mtime": 1789346294.0057218,
+    "seen": 1789346832.1501496,
+    "ast_hash": "d668ffc32bff91735deaa6c2df2a4b31",
     "semantic_hash": ""
   }
 }

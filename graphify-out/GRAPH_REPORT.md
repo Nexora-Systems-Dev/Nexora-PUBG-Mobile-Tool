@@ -5,22 +5,22 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1233 nodes · 2754 edges · 84 communities (64 shown, 18 thin omitted)
+- 1234 nodes · 2754 edges · 82 communities (62 shown, 18 thin omitted)
 - Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 357 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0ca0c7cc`
+- Built from commit: `21d61dd2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- .GameLoopProcessService_IsGameLoopPath_MatchesExpectedPaths
+- GameLoopProcessService
 - Nexora.Shared.Kernel
 - PerformanceExecutionReport
-- AsyncHygieneTests
-- HardwareDetectionService
 - .BuildServiceProvider_ResolvesAllInterfacesSuccessfully
+- HardwareDetectionService
+- AdbClient
 - UpdateInfo
 - Window
 - ProcessPriorityService
@@ -28,14 +28,14 @@
 - WindowChromeBehavior
 - Application
 - DnsCatalog
-- RoutedEventArgs
-- TempCleanupService
+- Button
+- TempCleanupOptions
 - GameLoopServiceLogicTests
 - MainWindow
 - .SettingRadioButton_Checked
 - ProcessRunner
 - What You Must Do When Invoked
-- .Fail
+- IProcessRunner
 - .Format
 - UpdateReplacementTests
 - AppConstants
@@ -50,17 +50,17 @@
 - Grid
 - RegistryService
 - Nexora PUBG Mobile Tool
-- GameLoopProcessService
+- .AddDefenderExclusion
 - Ellipse
 - .Step3_PerformanceCenter_LiveHardwarePlanAndRegistryOptimization_NonDestructive
 - .OptimizeForNvidia
 - SidebarColumn
-- IRegistryService
+- .MaximizeButton_Click
 - KoreanResolutionPanel
 - PART_Popup
 - ShortcutIcon
 - graphify reference: extra exports and benchmark
-- .SendAsync
+- .Run
 - graphify reference: query, path, explain
 - .Build
 - graphify reference: add a URL and watch a folder
@@ -75,14 +75,13 @@
 - IGameLoopPerformanceEngine
 - .ConfigureServices
 - UpdateIntegrityTests
-- AdbCancellationTests
+- TimeSpan
 - .UpdateShadowFile
-- .RefreshOptimizerProfileAsync
 - .ConnectAsync
 - .RunToolAsync
 - GpuVendor
 - GameLoopWorkingStorage
-- .OptimizeGameLoopRegistry
+- .ApplyHighPerformance
 - GameLoopService
 - IGameLoopService
 - IpadLayoutOptions
@@ -93,8 +92,7 @@
 - .IsTrustedDownloadUrl_AcceptsTrustedGitHubHosts
 - .ChangeIpadButton_Click
 - .Ok
-- .Format
-- .SelectContent
+- .ApplyLoadedSettingsAsync
 - OperationCanceledException
 - Skipped
 
@@ -103,18 +101,18 @@
 2. `OperationResult` - 85 edges
 3. `MainWindow` - 59 edges
 4. `Nexora.Shared.Kernel` - 50 edges
-5. `WindowsToolsService` - 48 edges
-6. `ProcessRunner` - 48 edges
+5. `ProcessRunner` - 48 edges
+6. `WindowsToolsService` - 48 edges
 7. `GameLoopService` - 41 edges
 8. `TextBlock` - 36 edges
 9. `Nexora.Configuration` - 35 edges
 10. `Nexora.Services` - 31 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `IpadLayoutService` --references--> `IpadLayoutOptions`  [EXTRACTED]
-  Services/IpadLayoutService.cs → Configuration/IpadLayoutOptions.cs
-- `GameLoopService` --references--> `GameLoopWorkingStorage`  [EXTRACTED]
-  Services/GameLoopService.cs → Features/GameLoop/GameLoopWorkingStorage.cs
+- `TempCleanupService` --references--> `TempCleanupOptions`  [EXTRACTED]
+  Services/TempCleanupService.cs → Configuration/TempCleanupOptions.cs
+- `TempCleanupService` --references--> `IRegistryService`  [EXTRACTED]
+  Services/TempCleanupService.cs → Shared/Infrastructure/IRegistryService.cs
 - `MainWindow` --inherits--> `Window`  [EXTRACTED]
   MainWindow.xaml.cs → MainWindow.xaml
 - `MainWindow` --references--> `IGameLoopService`  [EXTRACTED]
@@ -125,27 +123,31 @@
 ## Import Cycles
 - None detected.
 
-## Communities (84 total, 18 thin omitted)
+## Communities (82 total, 18 thin omitted)
+
+### Community 0 - "GameLoopProcessService"
+Cohesion: 0.17
+Nodes (8): InlineData, Theory, CancellationToken, List, Process, RegistryService, Task, GameLoopProcessService
 
 ### Community 1 - "Nexora.Shared.Kernel"
 Cohesion: 0.08
-Nodes (15): Nexora.Configuration, Nexora.Features.GameLoop, Nexora.Tests.Configuration, Nexora.Services, Nexora.UI.Presentation, Nexora, Nexora.Tests.Performance, Nexora.Shared.Kernel (+7 more)
+Nodes (17): Nexora.Configuration, Nexora.Features.GameLoop, Nexora.Tests.Configuration, Nexora.Services, Nexora.UI.Presentation, Nexora, Nexora.Tests.Performance, Nexora.Shared.Kernel (+9 more)
 
 ### Community 2 - "PerformanceExecutionReport"
 Cohesion: 0.17
 Nodes (10): IReadOnlyList, PerformanceExecutionReport, AppliedCount, FailedCount, Failures, SkippedCount, Steps, Succeeded (+2 more)
 
-### Community 3 - "AsyncHygieneTests"
-Cohesion: 0.30
-Nodes (6): Fact, OperationCanceledException, Task, AsyncHygieneTests, CancellationToken, Task
+### Community 3 - ".BuildServiceProvider_ResolvesAllInterfacesSuccessfully"
+Cohesion: 0.21
+Nodes (8): CancellationToken, Fact, Task, DependencyInjectionTests, StubUpdateService, CancellationToken, Task, IUpdateService
 
 ### Community 4 - "HardwareDetectionService"
-Cohesion: 0.23
-Nodes (8): DevMode, DllImport, HardwareSnapshot, JsonElement, DevMode, HardwareDetectionService, SystemPowerStatus, SystemPowerStatus
+Cohesion: 0.07
+Nodes (25): DevMode, ICollection, ITempCleanupService, Fact, OperationCanceledException, Task, AsyncHygieneTests, CancellationToken (+17 more)
 
-### Community 5 - ".BuildServiceProvider_ResolvesAllInterfacesSuccessfully"
-Cohesion: 0.05
-Nodes (31): ArgumentException, IAdbClient, Fact, InlineData, Task, Theory, BoundaryValidationTests, CancellationToken (+23 more)
+### Community 5 - "AdbClient"
+Cohesion: 0.10
+Nodes (18): ArgumentException, IAdbClient, CancellationToken, Fact, Task, AdbCancellationTests, Fact, InlineData (+10 more)
 
 ### Community 6 - "UpdateInfo"
 Cohesion: 0.27
@@ -160,7 +162,7 @@ Cohesion: 0.12
 Nodes (17): AccessDenied, AlreadyHigh, Candidates, Changed, Fact, Task, TimeSpan, ProcessPriorityShutdownTests (+9 more)
 
 ### Community 9 - "Ue4SavEditor"
-Cohesion: 0.25
+Cohesion: 0.21
 Nodes (5): Ue4SavEditor, RawBuffer, ArgumentNullException, Fact, Ue4SavEditorTests
 
 ### Community 10 - "WindowChromeBehavior"
@@ -175,21 +177,21 @@ Nodes (20): ActiveRail, Application, ButtonBorder, CardBorder, CloseBorder, Comb
 Cohesion: 0.09
 Nodes (20): Nexora.Tests.Catalogs, Nexora.Features.Layout, Nexora.Features.SystemTools.Network, IReadOnlyList, IpadPresetCatalog, Presets, IpadResolutionPreset, Details (+12 more)
 
-### Community 13 - "RoutedEventArgs"
-Cohesion: 0.12
-Nodes (13): ChangeDnsButton, CloseWindowButton, ConnectButton, CreateShortcutButton, ForceCloseButton, MaximizeWindowButton, MinimizeWindowButton, RefreshConnectionButton (+5 more)
+### Community 13 - "Button"
+Cohesion: 0.11
+Nodes (19): AllRecommendedButton, ApplyButton, ChangeDnsButton, ChangeIpadButton, CloseWindowButton, ConnectButton, CreateShortcutButton, ForceCloseButton (+11 more)
 
-### Community 14 - "TempCleanupService"
-Cohesion: 0.16
-Nodes (11): IReadOnlyList, TempCleanupOptions, ShaderCacheFolderName, TargetDirectories, ICollection, ITempCleanupService, Fact, OptionsTests (+3 more)
+### Community 14 - "TempCleanupOptions"
+Cohesion: 0.26
+Nodes (6): IReadOnlyList, TempCleanupOptions, ShaderCacheFolderName, TargetDirectories, Fact, OptionsTests
 
 ### Community 15 - "GameLoopServiceLogicTests"
 Cohesion: 0.22
 Nodes (5): Fact, InlineData, Theory, GameLoopServiceLogicTests, Type
 
 ### Community 16 - "MainWindow"
-Cohesion: 0.18
-Nodes (9): CancelEventArgs, ApplyButton, CancellationToken, CancellationTokenSource, IDisposable, IUpdateService, PubgVersion, Task (+1 more)
+Cohesion: 0.19
+Nodes (6): CancelEventArgs, CancellationTokenSource, IDisposable, IUpdateService, PubgVersion, MainWindow
 
 ### Community 17 - ".SettingRadioButton_Checked"
 Cohesion: 0.22
@@ -203,9 +205,9 @@ Nodes (5): Fact, WindowsToolsExtractionTests, Fact, WindowsToolsServiceTests, Pr
 Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
-### Community 20 - ".Fail"
-Cohesion: 0.17
-Nodes (9): Guid, IEnumerable, TimeSpan, HardwareSnapshot, PowerSessionService, IEnumerable, TimeSpan, ProcessResult (+1 more)
+### Community 20 - "IProcessRunner"
+Cohesion: 0.13
+Nodes (11): IEnumerable, TimeSpan, MockProcessRunner, LastArguments, LastFileName, StartDetachedElevatedCalled, IEnumerable, TimeSpan (+3 more)
 
 ### Community 21 - ".Format"
 Cohesion: 0.09
@@ -213,11 +215,11 @@ Nodes (17): Nexora.Tests.UI, Nexora.Features.Performance, Nexora.UI.Layout, Hard
 
 ### Community 22 - "UpdateReplacementTests"
 Cohesion: 0.14
-Nodes (11): HttpClient, Fact, InlineData, Task, Theory, MockHttpClient, MockProcessRunner, LastArguments (+3 more)
+Nodes (11): HttpClient, HttpMessageHandler, HttpResponseMessage, CancellationToken, Fact, InlineData, Task, Theory (+3 more)
 
 ### Community 23 - "AppConstants"
 Cohesion: 0.17
-Nodes (11): TimeSpan, Adb, AppConstants, Assets, Emulator, Registry, Timeouts, Tools (+3 more)
+Nodes (11): Adb, AppConstants, Assets, Emulator, Registry, Timeouts, Tools, Update (+3 more)
 
 ### Community 24 - "Border"
 Cohesion: 0.17
@@ -229,7 +231,7 @@ Nodes (20): 1.1 Composition Root (`App.xaml.cs`), 1.2 Constructor Injection & Fa
 
 ### Community 26 - "OperationResult"
 Cohesion: 0.06
-Nodes (28): Fact, Task, ShutdownRestorationTests, IIpadLayoutService, CancellationToken, Task, ITempCleanupService, CancellationToken (+20 more)
+Nodes (27): Guid, Fact, Task, ShutdownRestorationTests, IIpadLayoutService, CancellationToken, Task, ITempCleanupService (+19 more)
 
 ### Community 27 - ".StyleButton_Checked"
 Cohesion: 0.29
@@ -241,38 +243,38 @@ Nodes (3): Fact, FileUtilitiesTests, FileUtilities
 
 ### Community 30 - "Nexora.Tests.csproj"
 Cohesion: 0.18
-Nodes (9): net8.0-windows, Microsoft.NET.Sdk, net8.0-windows, Microsoft.NET.Sdk, FluentAssertions (6.12.0), Microsoft.Extensions.DependencyInjection (8.0.0), Microsoft.NET.Test.Sdk (17.11.1), xunit (2.9.2) (+1 more)
+Nodes (9): net8.0-windows, net8.0-windows, Microsoft.NET.Sdk, FluentAssertions (6.12.0), Microsoft.Extensions.DependencyInjection (8.0.0), Microsoft.NET.Test.Sdk (17.11.1), xunit (2.9.2), xunit.runner.visualstudio (2.8.2) (+1 more)
 
 ### Community 31 - "UpdateService"
-Cohesion: 0.23
-Nodes (8): HashSet, IUpdateService, CancellationToken, HttpClient, Task, UpdateService, ZipArchive, ZipArchiveEntry
+Cohesion: 0.21
+Nodes (9): HashSet, HttpRequestMessage, IUpdateService, CancellationToken, HttpClient, Task, UpdateService, ZipArchive (+1 more)
 
 ### Community 32 - "Grid"
 Cohesion: 0.25
 Nodes (8): AboutView, GraphicsView, MainLayoutGrid, NetworkView, OptimizerView, ShortcutsView, TitleBarGrid, Grid
 
 ### Community 33 - "RegistryService"
-Cohesion: 0.18
-Nodes (4): Fact, RegistryServiceExtensionsTests, ShortcutService, RegistryService
+Cohesion: 0.15
+Nodes (5): Fact, RegistryServiceExtensionsTests, ShortcutService, IRegistryService, RegistryService
 
 ### Community 34 - "Nexora PUBG Mobile Tool"
 Cohesion: 0.15
 Nodes (12): Design principles, Development, Dynamic Path Resolution, License, Nexora PUBG Mobile Tool, Operational notes, Project layout, Release package (+4 more)
 
-### Community 35 - "GameLoopProcessService"
+### Community 35 - ".AddDefenderExclusion"
 Cohesion: 0.19
-Nodes (8): Fact, InlineData, Theory, DefenderExclusionTrustTests, RegistryService, DefenderExclusionService, RegistryService, GameLoopProcessService
+Nodes (7): Fact, InlineData, Theory, DefenderExclusionTrustTests, RegistryService, DefenderExclusionService, ProcessText
 
 ### Community 36 - "Ellipse"
 Cohesion: 0.50
 Nodes (4): ConnectionDot, SidebarConnectionDot, TopConnectionDot, Ellipse
 
 ### Community 37 - ".Step3_PerformanceCenter_LiveHardwarePlanAndRegistryOptimization_NonDestructive"
-Cohesion: 0.32
+Cohesion: 0.33
 Nodes (8): Dictionary, ITestOutputHelper, Fact, IAdbClient, INetworkToolsService, Task, LiveGameLoopVerificationTests, Trait
 
 ### Community 38 - ".OptimizeForNvidia"
-Cohesion: 0.24
+Cohesion: 0.25
 Nodes (6): ArgumentNullException, Fact, NvidiaOptimizerServiceTests, List, RegistryService, NvidiaOptimizerService
 
 ### Community 39 - "SidebarColumn"
@@ -282,10 +284,6 @@ Nodes (3): SidebarColumn, TitleBrandColumn, ColumnDefinition
 ### Community 46 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.22
 Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
-
-### Community 47 - ".SendAsync"
-Cohesion: 0.33
-Nodes (5): HttpMessageHandler, HttpRequestMessage, HttpResponseMessage, CancellationToken, MockHttpMessageHandler
 
 ### Community 48 - "graphify reference: query, path, explain"
 Cohesion: 0.33
@@ -308,8 +306,8 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 59 - "IGameLoopPerformanceEngine"
-Cohesion: 0.17
-Nodes (7): PerformanceSessionButton, RestoreSessionButton, CancellationToken, HardwareSnapshot, OptimizerPlan, Task, IGameLoopPerformanceEngine
+Cohesion: 0.14
+Nodes (7): HardwareSnapshot, OptimizerPlan, CancellationToken, HardwareSnapshot, OptimizerPlan, Task, IGameLoopPerformanceEngine
 
 ### Community 60 - ".ConfigureServices"
 Cohesion: 0.12
@@ -319,48 +317,40 @@ Nodes (15): IAdbClient, IIpadLayoutService, INetworkToolsService, ITempCleanupSe
 Cohesion: 0.26
 Nodes (3): Fact, Task, UpdateIntegrityTests
 
-### Community 62 - "AdbCancellationTests"
-Cohesion: 0.42
-Nodes (5): CancellationToken, Fact, Task, AdbCancellationTests, OperationCanceledException
-
 ### Community 63 - ".UpdateShadowFile"
-Cohesion: 0.22
+Cohesion: 0.24
 Nodes (4): IReadOnlyDictionary, UnrealCVarCodec, InlineData, Theory
-
-### Community 64 - ".RefreshOptimizerProfileAsync"
-Cohesion: 0.18
-Nodes (4): AllRecommendedButton, SmartSettingsButton, HardwareSnapshot, OptimizerPlan
 
 ### Community 65 - ".ConnectAsync"
 Cohesion: 0.18
 Nodes (8): ConnectionResult, PubgVersion, CancellationToken, IEnumerable, IReadOnlyList, Task, IAdbClient, DeviceSerial
 
 ### Community 66 - ".RunToolAsync"
-Cohesion: 0.20
-Nodes (5): Button, Func, GameLoopOptimizerButton, TempCleanerButton, TextBlock
+Cohesion: 0.14
+Nodes (4): Button, Func, RoutedEventArgs, TextBlock
 
 ### Community 67 - "GpuVendor"
 Cohesion: 0.25
 Nodes (7): InlineData, Theory, GpuVendor, Amd, Intel, Nvidia, Unknown
 
 ### Community 68 - "GameLoopWorkingStorage"
-Cohesion: 0.20
+Cohesion: 0.18
 Nodes (8): GameLoopWorkingStorage, AssetRoot, ConnectionProbePath, KoreanResolutionAssetPath, PendingSavPath, PreviousSavPath, ShadowSettingsPath, WorkRoot
 
-### Community 69 - ".OptimizeGameLoopRegistry"
-Cohesion: 0.31
+### Community 69 - ".ApplyHighPerformance"
+Cohesion: 0.47
 Nodes (3): IEnumerable, RegistryService, GpuRoutingService
 
 ### Community 70 - "GameLoopService"
-Cohesion: 0.17
+Cohesion: 0.20
 Nodes (9): CancellationToken, GraphicsSelection, IAdbClient, IReadOnlyDictionary, Task, GameLoopService, CurrentPackage, IsConnected (+1 more)
 
 ### Community 71 - "IGameLoopService"
-Cohesion: 0.13
+Cohesion: 0.26
 Nodes (8): CancellationToken, ConnectionResult, GraphicsSelection, Task, IGameLoopService, CurrentPackage, IsConnected, IsGameLoopConnected
 
 ### Community 72 - "IpadLayoutOptions"
-Cohesion: 0.24
+Cohesion: 0.18
 Nodes (7): IpadLayoutOptions, BackupExtension, KeymapDirectory, KeymapFileName, LayoutMapPath, Fact, IpadLayoutServiceTests
 
 ### Community 73 - "IpadLayoutService"
@@ -368,7 +358,7 @@ Cohesion: 0.33
 Nodes (7): IIpadLayoutService, PointPair, JsonElement, List, IpadLayoutService, PointPair, XElement
 
 ### Community 74 - "GameLoopRegistryOptimizer"
-Cohesion: 0.39
+Cohesion: 0.33
 Nodes (4): HardwareSnapshot, OptimizerPlan, RegistryService, GameLoopRegistryOptimizer
 
 ### Community 75 - ".UpdateShortcutPreview"
@@ -379,29 +369,29 @@ Nodes (3): BitmapImage, Nexora.UI.Helpers, IconImageLoader
 Cohesion: 0.29
 Nodes (5): DnsComboBox, IpadComboBox, PubgVersionComboBox, ShortcutComboBox, ComboBox
 
-### Community 78 - ".ChangeIpadButton_Click"
-Cohesion: 0.29
-Nodes (3): IpadResolutionPreset, ChangeIpadButton, SelectionChangedEventArgs
+### Community 81 - ".ApplyLoadedSettingsAsync"
+Cohesion: 0.18
+Nodes (4): CancellationToken, IEnumerable, Task, RadioButton
 
 ## Knowledge Gaps
-- **147 isolated node(s):** `graphify`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)`, `Step 1 - Ensure graphify is installed` (+142 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 298 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **147 isolated node(s):** `Adb`, `Emulator`, `Registry`, `Assets`, `Tools` (+142 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 299 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `MainWindow` connect `MainWindow` to `.RefreshOptimizerProfileAsync`, `Nexora.Shared.Kernel`, `.RunToolAsync`, `Window`, `.StyleButton_Checked`, `IGameLoopService`, `WindowChromeBehavior`, `.UpdateShortcutPreview`, `.DnsComboBox_SelectionChanged`, `RoutedEventArgs`, `.ChangeIpadButton_Click`, `.SelectContent`, `.SettingRadioButton_Checked`, `.Format`, `OperationResult`, `IGameLoopPerformanceEngine`, `.ConfigureServices`?**
-  _High betweenness centrality (0.260) - this node is a cross-community bridge._
-- **Why does `Window` connect `Window` to `Grid`, `.RefreshOptimizerProfileAsync`, `.RunToolAsync`, `Ellipse`, `SidebarColumn`, `KoreanResolutionPanel`, `PART_Popup`, `IGameLoopPerformanceEngine`, `.DnsComboBox_SelectionChanged`, `RoutedEventArgs`, `.ChangeIpadButton_Click`, `ShortcutIcon`, `MainWindow`, `.SettingRadioButton_Checked`, `WindowChromeBehavior`, `.Format`, `Border`, `.StyleButton_Checked`?**
-  _High betweenness centrality (0.151) - this node is a cross-community bridge._
-- **Why does `OperationResult` connect `OperationResult` to `PerformanceExecutionReport`, `.BuildServiceProvider_ResolvesAllInterfacesSuccessfully`, `ProcessPriorityService`, `TempCleanupService`, `GameLoopServiceLogicTests`, `.Fail`, `UpdateService`, `GameLoopProcessService`, `.OptimizeForNvidia`, `IRegistryService`, `.Create`, `IGameLoopPerformanceEngine`, `.UpdateShadowFile`, `.RefreshOptimizerProfileAsync`, `.RunToolAsync`, `.OptimizeGameLoopRegistry`, `GameLoopService`, `IGameLoopService`, `GameLoopRegistryOptimizer`, `.Ok`, `.Format`?**
-  _High betweenness centrality (0.116) - this node is a cross-community bridge._
-- **Are the 8 inferred relationships involving `WindowsToolsService` (e.g. with `.RestorePerformanceSessionAsync_CanBeSynchronouslyAwaited_WithTimeout()` and `.RestorePerformanceSessionAsync_CompletesPromptly()`) actually correct?**
-  _`WindowsToolsService` has 8 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `graphify`, `Usage`, `What graphify is for` to the rest of the system?**
+- **Why does `MainWindow` connect `MainWindow` to `Nexora.Shared.Kernel`, `.RunToolAsync`, `Window`, `.MaximizeButton_Click`, `.StyleButton_Checked`, `WindowChromeBehavior`, `.UpdateShortcutPreview`, `.DnsComboBox_SelectionChanged`, `IGameLoopService`, `.ChangeIpadButton_Click`, `.ApplyLoadedSettingsAsync`, `.SettingRadioButton_Checked`, `.Format`, `OperationResult`, `IGameLoopPerformanceEngine`, `.ConfigureServices`?**
+  _High betweenness centrality (0.289) - this node is a cross-community bridge._
+- **Why does `Window` connect `Window` to `Grid`, `.RunToolAsync`, `Ellipse`, `SidebarColumn`, `.MaximizeButton_Click`, `KoreanResolutionPanel`, `PART_Popup`, `ShortcutIcon`, `.DnsComboBox_SelectionChanged`, `Button`, `IGameLoopPerformanceEngine`, `WindowChromeBehavior`, `MainWindow`, `.SettingRadioButton_Checked`, `.Format`, `Border`, `.StyleButton_Checked`?**
+  _High betweenness centrality (0.191) - this node is a cross-community bridge._
+- **Why does `OperationResult` connect `OperationResult` to `GameLoopProcessService`, `Nexora.Shared.Kernel`, `PerformanceExecutionReport`, `.BuildServiceProvider_ResolvesAllInterfacesSuccessfully`, `HardwareDetectionService`, `ProcessPriorityService`, `GameLoopServiceLogicTests`, `UpdateService`, `RegistryService`, `.AddDefenderExclusion`, `.OptimizeForNvidia`, `.Create`, `IGameLoopPerformanceEngine`, `.UpdateShadowFile`, `.RunToolAsync`, `GameLoopWorkingStorage`, `.ApplyHighPerformance`, `GameLoopService`, `IGameLoopService`, `IpadLayoutOptions`, `GameLoopRegistryOptimizer`, `.Ok`?**
+  _High betweenness centrality (0.126) - this node is a cross-community bridge._
+- **Are the 33 inferred relationships involving `ProcessRunner` (e.g. with `.RestorePerformanceSessionAsync_CanBeSynchronouslyAwaited_WithTimeout()` and `.RestorePerformanceSessionAsync_CompletesPromptly()`) actually correct?**
+  _`ProcessRunner` has 33 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `Adb`, `Emulator`, `Registry` to the rest of the system?**
   _147 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Nexora.Shared.Kernel` be split into smaller, more focused modules?**
-  _Cohesion score 0.08281573498964803 - nodes in this community are weakly interconnected._
-- **Should `.BuildServiceProvider_ResolvesAllInterfacesSuccessfully` be split into smaller, more focused modules?**
-  _Cohesion score 0.050078247261345854 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0762680488707886 - nodes in this community are weakly interconnected._
+- **Should `HardwareDetectionService` be split into smaller, more focused modules?**
+  _Cohesion score 0.07256894049346879 - nodes in this community are weakly interconnected._
