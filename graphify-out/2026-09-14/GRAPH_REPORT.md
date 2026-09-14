@@ -1,7 +1,7 @@
 # Graph Report - Nexora PUBG Mobile Tool c#  (2026-09-14)
 
 ## Corpus Check
-- 97 files · ~61,716 words
+- 97 files · ~58,828 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary

@@ -13,11 +13,11 @@ public static class AppConstants
     /// <summary>
     /// Current release tag matching the project version in Nexora.csproj.
     /// </summary>
-    public const string CurrentVersion = "v1.0.14";
+    public const string CurrentVersion = "v1.0.15";
 
     public static class Update
     {
-        public const string Repository = "mohammad-emad-dev/Nexora-PUBG-Mobile-Tool";
+        public const string Repository = "Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool";
         public const string ReleasesUrl = "https://api.github.com/repos/" + Repository + "/releases/latest";
         public const string UserAgent = "Nexora-PUBG-Mobile-Tool";
         public const string Runtime = "win-x64";

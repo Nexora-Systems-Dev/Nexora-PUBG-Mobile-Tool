@@ -2,7 +2,7 @@
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Tests](https://img.shields.io/badge/tests-161%20passing-2ea44f)](./Nexora.Tests)
-[![Build](https://github.com/mohammad-emad-dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml/badge.svg)](https://github.com/mohammad-emad-dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml)
+[![Build](https://github.com/Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml/badge.svg)](https://github.com/Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-not%20selected-lightgrey)](#license)
 
 Windows desktop application written in C# and WPF for applying selected GameLoop and PUBG Mobile settings. The project keeps each action visible and user-triggered, so the user can review the intended change before applying it.
@@ -78,13 +78,13 @@ The current automated suite contains 161 passing tests. Live GameLoop verificati
 
 Create a self-contained Windows x64 executable and a ZIP package:
 
-    .\scripts\package-release.ps1 -Version v1.0.14
+    .\scripts\package-release.ps1 -Version v1.0.15
 
 The generated files are written to artifacts:
 
-- Nexora-v1.0.14-win-x64.exe — self-contained executable with the .NET runtime.
-- Nexora-v1.0.14-win-x64.zip — portable package with release notes.
-- Nexora-v1.0.14-win-x64-SHA256SUMS.txt — SHA-256 checksums.
+- Nexora-v1.0.15-win-x64.exe — self-contained executable with the .NET runtime.
+- Nexora-v1.0.15-win-x64.zip — portable package with release notes.
+- Nexora-v1.0.15-win-x64-SHA256SUMS.txt — SHA-256 checksums.
 
 artifacts, bin, and obj are excluded from Git.
 
@@ -105,7 +105,7 @@ artifacts, bin, and obj are excluded from Git.
 
 - Settings are not applied until the related action is selected.
 - NVIDIA Profile Inspector or Defender operations can fail because of driver versions, file locks, antivirus policy, or Windows security policy. The result is reported in the UI.
-- The update endpoint checks the latest release from `mohammad-emad-dev/Nexora-PUBG-Mobile-Tool` and downloads the ZIP asset.
+- The update endpoint checks the latest release from `Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool` and downloads the ZIP asset.
 
 ## License
 
