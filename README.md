@@ -1,7 +1,7 @@
 # Nexora PUBG Mobile Tool
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![Tests](https://img.shields.io/badge/tests-161%20passing-2ea44f)](./Nexora.Tests)
+[![Tests](https://img.shields.io/badge/tests-419%20passing-2ea44f)](./Nexora.Tests)
 [![Build](https://github.com/Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml/badge.svg)](https://github.com/Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-not%20selected-lightgrey)](#license)
 
@@ -72,19 +72,21 @@ The normal test suite does not require GameLoop. Live verification tests require
 
 The GitHub Actions workflow in .github/workflows/build.yml runs the same Release build on Windows for pushes and pull requests targeting main.
 
-The current automated suite contains 161 passing tests. Live GameLoop verification is kept separate because it requires a configured emulator and a running local environment.
+The current automated suite contains 419 passing tests. Live GameLoop verification is kept separate because it requires a configured emulator and a running local environment.
 
 ## Release package
 
 Create a self-contained Windows x64 executable and a ZIP package:
 
-    .\scripts\package-release.ps1 -Version v1.0.15
+    .\scripts\package-release.ps1 -Version v1.1.0
 
 The generated files are written to artifacts:
 
-- Nexora-v1.0.15-win-x64.exe — self-contained executable with the .NET runtime.
-- Nexora-v1.0.15-win-x64.zip — portable package with release notes.
-- Nexora-v1.0.15-win-x64-SHA256SUMS.txt — SHA-256 checksums.
+- Nexora-v1.1.0-win-x64.exe — self-contained executable with the .NET runtime.
+- Nexora-v1.1.0-win-x64.zip — portable package with release notes.
+- Nexora-v1.1.0-win-x64-SHA256SUMS.txt — SHA-256 checksums.
+
+Releases are unsigned because no Authenticode certificate is configured yet. The in-app updater reads the checksum from the GitHub release body, not from the checksum asset, so the `SHA-256` line printed by the packaging script must be pasted into the release description or existing installations reject the update.
 
 artifacts, bin, and obj are excluded from Git.
 
@@ -105,7 +107,7 @@ artifacts, bin, and obj are excluded from Git.
 
 - Settings are not applied until the related action is selected.
 - NVIDIA Profile Inspector or Defender operations can fail because of driver versions, file locks, antivirus policy, or Windows security policy. The result is reported in the UI.
-- The update endpoint checks the latest release from `Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool` and downloads the ZIP asset.
+- The update endpoint checks the latest release from `Nexora-Systems-Dev/Nexora-PUBG-Mobile-Tool` and downloads the ZIP asset. Updates apply in place: a helper process waits for the running application to exit, overwrites the executable at its original path, relaunches it, and removes the staging directory.
 
 ## License
 
