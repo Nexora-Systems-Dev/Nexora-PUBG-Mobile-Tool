@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Nexora.Configuration;
+using Nexora.Features.Security;
 using Nexora.Services.Performance;
 using Nexora.Shared.Infrastructure;
 using Nexora.Shared.Kernel;
@@ -20,7 +21,7 @@ public sealed class DefenderExclusionTrustTests
     [InlineData(@"E:\TxGameAssistant\UI")]
     public void IsTrustedGameLoopPath_AcceptsStandardInstallHierarchies(string path)
     {
-        DefenderExclusionService.IsTrustedGameLoopPath(path).Should().BeTrue();
+        DefenderExclusionService.IsTrustedGameLoopPath(path, new EmulatorOptions()).Should().BeTrue();
     }
 
     [Theory]
@@ -35,14 +36,14 @@ public sealed class DefenderExclusionTrustTests
     [InlineData("   ")]
     public void IsTrustedGameLoopPath_RejectsUntrustedOrSystemDirectories(string path)
     {
-        DefenderExclusionService.IsTrustedGameLoopPath(path).Should().BeFalse();
+        DefenderExclusionService.IsTrustedGameLoopPath(path, new EmulatorOptions()).Should().BeFalse();
     }
 
     [Fact]
     public void IsTrustedGameLoopPath_RejectsSystemRootDirectory()
     {
         var systemRoot = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-        DefenderExclusionService.IsTrustedGameLoopPath(systemRoot).Should().BeFalse();
+        DefenderExclusionService.IsTrustedGameLoopPath(systemRoot, new EmulatorOptions()).Should().BeFalse();
     }
 
     [Fact]
@@ -52,7 +53,7 @@ public sealed class DefenderExclusionTrustTests
         // without falling back to inspecting running processes.
         var runner = new ProcessRunner();
         var registry = new RegistryService();
-        var processService = new GameLoopProcessService(runner, registry);
+        var processService = new GameLoopProcessService(runner, new GameLoopPathResolver(registry));
 
         // If no GameLoop install exists at the mock/test environment, it returns null
         var registryPath = processService.GetGameLoopRootFromRegistry();
@@ -61,7 +62,7 @@ public sealed class DefenderExclusionTrustTests
         if (registryPath is not null)
         {
             Directory.Exists(registryPath).Should().BeTrue();
-            DefenderExclusionService.IsTrustedGameLoopPath(registryPath).Should().BeTrue();
+            DefenderExclusionService.IsTrustedGameLoopPath(registryPath, new EmulatorOptions()).Should().BeTrue();
         }
     }
 
@@ -70,7 +71,7 @@ public sealed class DefenderExclusionTrustTests
     {
         var runner = new ProcessRunner();
         var registry = new RegistryService();
-        var service = new DefenderExclusionService(runner, registry);
+        var service = new DefenderExclusionService(runner, new GameLoopProcessService(runner, new GameLoopPathResolver(registry)));
 
         var result = service.AddDefenderExclusion();
 

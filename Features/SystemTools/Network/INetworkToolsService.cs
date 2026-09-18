@@ -1,6 +1,6 @@
 using Nexora.Shared.Kernel;
 
-namespace Nexora.Services;
+namespace Nexora.Features.SystemTools.Network;
 
 /// <summary>
 /// Contract for network configuration and DNS diagnostic operations.
@@ -8,8 +8,6 @@ namespace Nexora.Services;
 public interface INetworkToolsService
 {
     OperationResult ChangeDns(string primary, string secondary);
-
-    int? PingDns(string host);
 
     Task<int?> PingDnsAsync(string host, CancellationToken cancellationToken = default);
 }

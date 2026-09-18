@@ -44,3 +44,5 @@ Desktop.ini
 .agents/
 graphify-out/
 ECC/
+.axme-code/
+.codedev-mcp/

@@ -124,7 +124,7 @@
                     </Border>
                     <StackPanel Margin="0,20,0,0">
                         <TextBlock Text="WORKSPACE" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="SemiBold" Margin="24,0,0,8" />
-                        <RadioButton Tag="Graphics" GroupName="Navigation" IsChecked="True" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54">
+                        <RadioButton Tag="Graphics" GroupName="Navigation" IsChecked="True" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54" AutomationProperties.Name="Graphics">
                             <StackPanel Orientation="Horizontal">
                                 <Grid Width="34" Height="22">
                                     <Path Data="M 3,4 L 17,4 L 17,14 L 3,14 Z M 6,17 L 14,17 M 10,14 L 10,17 M 5,11 L 8,8 L 11,10 L 15,6" Width="18" Height="18" Stretch="Fill" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.3" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
@@ -132,15 +132,23 @@
                                 <TextBlock Text="Graphics" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
-                        <RadioButton Tag="Optimizer" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54">
+                        <RadioButton Tag="Optimizer" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54" AutomationProperties.Name="Optimizer">
                             <StackPanel Orientation="Horizontal">
                                 <Grid Width="34" Height="22">
-                                    <TextBlock Text="" FontFamily="Segoe MDL2 Assets" FontSize="16" TextAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="16" TextAlignment="Center" VerticalAlignment="Center" />
                                 </Grid>
                                 <TextBlock Text="Optimizer" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
-                        <RadioButton Tag="Network" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54">
+                        <RadioButton Tag="Tuning" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54" AutomationProperties.Name="Tuning">
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Width="34" Height="22">
+                                    <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="16" TextAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock Text="Tuning" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton Tag="Network" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54" AutomationProperties.Name="Network &amp; View">
                             <StackPanel Orientation="Horizontal">
                                 <Grid Width="34" Height="22">
                                     <Path Data="M 5,7 L 8,7 C 9.3,7 10,8 10,9 C 10,10 9.3,11 8,11 L 5,11 C 3.7,11 3,10 3,9 C 3,8 3.7,7 5,7 M 12,11 L 15,11 C 16.3,11 17,12 17,13 C 17,14 16.3,15 15,15 L 12,15 C 10.7,15 10,14 10,13 C 10,12 10.7,11 12,11 M 9,10 L 11,12" Width="18" Height="18" Stretch="Fill" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.3" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
@@ -148,7 +156,7 @@
                                 <TextBlock Text="Network &amp; View" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
-                        <RadioButton Tag="Shortcuts" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54">
+                        <RadioButton Tag="Shortcuts" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54" AutomationProperties.Name="Shortcuts">
                             <StackPanel Orientation="Horizontal">
                                 <Grid Width="34" Height="22">
                                     <TextBlock Text="" FontFamily="Segoe MDL2 Assets" FontSize="16" TextAlignment="Center" VerticalAlignment="Center" />
@@ -156,7 +164,7 @@
                                 <TextBlock Text="Shortcuts" VerticalAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
-                        <RadioButton Tag="About" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54">
+                        <RadioButton Tag="About" GroupName="Navigation" Click="NavigationButton_Click" Style="{StaticResource NavButtonStyle}" Height="54" AutomationProperties.Name="About">
                             <StackPanel Orientation="Horizontal">
                                 <Grid Width="34" Height="22">
                                     <TextBlock Text="" FontFamily="Segoe MDL2 Assets" FontSize="16" TextAlignment="Center" VerticalAlignment="Center" />
@@ -1086,6 +1094,145 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </Grid>
+
+                <Grid x:Name="TuningView" Visibility="Collapsed" Margin="34,14,34,10" ClipToBounds="True">
+                    <Grid.Resources>
+                        <LinearGradientBrush x:Key="TuningTopBorderBrush" StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#0000D2FF" Offset="0" />
+                            <GradientStop Color="#9000D2FF" Offset="0.5" />
+                            <GradientStop Color="#0000D2FF" Offset="1" />
+                        </LinearGradientBrush>
+                    </Grid.Resources>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.RowSpan="2" Background="{StaticResource OptimizerPageBackgroundBrush}" BorderBrush="#1B2B37" BorderThickness="1" CornerRadius="18" IsHitTestVisible="False" />
+                    <Border Grid.RowSpan="2" Height="1" Background="{StaticResource TuningTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
+                    <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource OptimizerAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
+                    <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource OptimizerCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
+
+                    <Grid Grid.Row="0" Margin="18,12,18,12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                            <TextBlock Text="EMULATOR TUNING" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                            <Border Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="MANUAL REGISTRY" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Grid.Row="1" Text="Set processor cores, memory, and emulator internals. Values are forced into the GameLoop registry and take effect after an emulator restart." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,10" LineHeight="18" />
+                        <Border Grid.Row="2" Background="#171106" BorderBrush="#8A6D1B" BorderThickness="1" CornerRadius="8" Padding="14,10">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{StaticResource Warning}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock x:Name="TuningNoticeText" Text="GameLoop must be closed before applying settings." Foreground="{StaticResource Warning}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Loading affordance for QA F-002/F-008: collapsed unless a refresh is
+                         in flight. Lives in the fixed header row, is hit-test invisible, and
+                         takes no layout space, so the scrolling content below never reflows. -->
+                    <ProgressBar x:Name="TuningLoadingBar" Grid.Row="0" Height="2"
+                                 VerticalAlignment="Bottom" Margin="20,0,20,-1"
+                                 IsIndeterminate="True" IsHitTestVisible="False"
+                                 Visibility="Collapsed" BorderThickness="0"
+                                 Foreground="#00D2FF" Background="Transparent" />
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="18,0,20,2">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Column="0" Grid.Row="0">
+                                <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="PERFORMANCE" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <Grid Margin="0,8,0,4">
+                                            <TextBlock Text="Processor (CPU cores)" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TuningCpuText" Text="4 cores" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <Slider x:Name="TuningCpuSlider" Minimum="1" Maximum="8" TickFrequency="1" IsSnapToTickEnabled="True" Value="4" ValueChanged="TuningCpuSlider_ValueChanged" Margin="0,0,0,12" />
+                                        <Grid Margin="0,0,0,4">
+                                            <TextBlock Text="Memory" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="TuningMemoryText" Text="4096 MB" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <Slider x:Name="TuningMemorySlider" Minimum="1024" Maximum="16384" TickFrequency="512" IsSnapToTickEnabled="True" Value="4096" ValueChanged="TuningMemorySlider_ValueChanged" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="SYSTEM" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <CheckBox x:Name="TuningAdbCheck" Content="ADB debugging" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="True" Margin="0,10,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <Border Grid.Column="1" Grid.Row="0" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
+
+                            <StackPanel Grid.Column="2" Grid.Row="0">
+                                <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="GRAPHICS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <TextBlock Text="SCREEN DPI" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,10,0,6" />
+                                        <ComboBox x:Name="TuningDpiComboBox" Style="{StaticResource InputComboBoxStyle}" Margin="0,0,0,6">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontFamily="Segoe UI" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <CheckBox x:Name="TuningRenderCacheCheck" Content="Enable rendering cache" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="True" Margin="0,8,0,0" />
+                                        <CheckBox x:Name="TuningGlobalCacheCheck" Content="Force global rendering cache" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="True" Margin="0,8,0,0" />
+                                        <CheckBox x:Name="TuningDiscreteGpuCheck" Content="Prioritize discrete graphics card" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="True" Margin="0,8,0,0" />
+                                        <CheckBox x:Name="TuningRenderOptimizeCheck" Content="Enable rendering optimization" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="True" Margin="0,8,0,0" />
+                                        <CheckBox x:Name="TuningVSyncCheck" Content="Enable vertical sync (V-Sync)" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="False" Margin="0,8,0,0" />
+                                        <CheckBox x:Name="TuningAntiAliasingCheck" Content="Anti-aliasing" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="True" Margin="0,8,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <Border Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="APPLY" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                        <TextBlock x:Name="TuningStatusText" Text="Open this page to load the emulator's current settings." Foreground="#38BDF8" FontSize="13" TextWrapping="Wrap" />
+                                    </Border>
+                                    <TextBlock Text="To apply settings, click the button." Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,10" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button x:Name="TuningEndTaskButton" Content="END TASK" Click="TuningEndTaskButton_Click" Style="{StaticResource ToolButtonStyle}" Margin="0,0,10,0" />
+                                        <Button x:Name="TuningApplyButton" Content="APPLY SETTINGS" Click="TuningApplyButton_Click" Style="{StaticResource PrimaryButtonStyle}" IsEnabled="False" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
                         </Grid>
                     </ScrollViewer>
                 </Grid>

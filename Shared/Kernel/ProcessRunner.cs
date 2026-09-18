@@ -10,6 +10,13 @@ public sealed record ProcessResult(int ExitCode, string StandardOutput, string S
 
 public sealed class ProcessRunner : IProcessRunner
 {
+    private readonly GameLoopOptions _gameLoop;
+
+    public ProcessRunner(GameLoopOptions? gameLoop = null)
+    {
+        _gameLoop = gameLoop ?? new GameLoopOptions();
+    }
+
     public ProcessResult Run(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null)
     {
         using var process = new Process
@@ -37,7 +44,7 @@ public sealed class ProcessRunner : IProcessRunner
                 return new ProcessResult(-1, string.Empty, "Process did not start.", false);
             }
 
-            var waitTime = timeout ?? AppConstants.Timeouts.DefaultProcessTimeout;
+            var waitTime = timeout ?? _gameLoop.Timeouts.DefaultProcessTimeout;
             if (!process.WaitForExit((int)waitTime.TotalMilliseconds))
             {
                 try { process.Kill(true); } catch { /* Ignore if already exited. */ }

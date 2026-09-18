@@ -1,41 +1,33 @@
 using System.Globalization;
 using System.Text;
-using Nexora.Shared.Kernel;
 
 namespace Nexora.Features.GameLoop;
 
 /// <summary>
-/// Encodes, decodes, and updates XOR-79 obfuscated Unreal Engine Console Variables (CVars) in UserCustom.ini files.
+/// Pure codec for XOR-79 obfuscated Unreal Engine Console Variables (CVars):
+/// encodes, decodes, and applies shadow presets to in-memory UserCustom.ini lines.
+/// File side effects live in <see cref="ShadowSettingsStore"/>.
 /// </summary>
 public static class UnrealCVarCodec
 {
     public const byte XorCipherKey = 0x79;
     public const string CVarPrefix = "+CVars=";
 
-    private static readonly IReadOnlyDictionary<string, string> EnabledShadowCVars =
-        new Dictionary<string, string>(StringComparer.Ordinal)
+    private static readonly IReadOnlySet<string> ShadowCVarNames =
+        new HashSet<string>(StringComparer.Ordinal)
         {
-            ["r.UserShadowSwitch"] = "1",
-            ["r.ShadowQuality"] = "1",
-            ["r.Mobile.DynamicObjectShadow"] = "1",
-            ["r.Shadow.MaxCSMResolution"] = "1",
-            ["r.Shadow.DistanceScale"] = "1",
-            ["r.Shadow.CSM.MaxMobileCascades"] = "1"
-        };
-
-    private static readonly IReadOnlyDictionary<string, string> DisabledShadowCVars =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["r.UserShadowSwitch"] = "0",
-            ["r.ShadowQuality"] = "0",
-            ["r.Mobile.DynamicObjectShadow"] = "0",
-            ["r.Shadow.MaxCSMResolution"] = "0",
-            ["r.Shadow.DistanceScale"] = "0",
-            ["r.Shadow.CSM.MaxMobileCascades"] = "0"
+            "r.UserShadowSwitch",
+            "r.ShadowQuality",
+            "r.Mobile.DynamicObjectShadow",
+            "r.Shadow.MaxCSMResolution",
+            "r.Shadow.DistanceScale",
+            "r.Shadow.CSM.MaxMobileCascades"
         };
 
     /// <summary>
     /// Encodes a CVar name and value pair into an XOR-79 hexadecimal string.
+    /// ASCII only: the XOR cipher operates on single bytes, so non-ASCII
+    /// characters cannot round-trip and are rejected rather than silently truncated.
     /// </summary>
     public static string EncodeCVar(string name, string value)
     {
@@ -43,6 +35,11 @@ public static class UnrealCVarCodec
         var encoded = new StringBuilder(plainText.Length * 2);
         foreach (var character in plainText)
         {
+            if (character > 127)
+            {
+                throw new ArgumentException($"CVar text must be ASCII; U+{(int)character:X4} is not encodable by the XOR-79 byte cipher.");
+            }
+
             encoded.Append(((byte)character ^ XorCipherKey).ToString("X2"));
         }
 
@@ -78,7 +75,7 @@ public static class UnrealCVarCodec
     /// </summary>
     public static bool TryApplyShadowPreset(string[] lines, bool enable, out string[] updatedLines)
     {
-        var values = enable ? EnabledShadowCVars : DisabledShadowCVars;
+        var targetValue = enable ? "1" : "0";
         var result = (string[])lines.Clone();
         var changed = false;
 
@@ -93,38 +90,23 @@ public static class UnrealCVarCodec
             var encoded = trimmed[CVarPrefix.Length..];
             var decoded = DecodeCVar(encoded);
             var separator = decoded.IndexOf('=');
-            if (separator < 0 || !values.TryGetValue(decoded[..separator], out var targetValue))
+            if (separator < 0)
+            {
+                continue;
+            }
+
+            var varName = decoded[..separator];
+            if (!ShadowCVarNames.Contains(varName))
             {
                 continue;
             }
 
             var indentationLength = result[index].Length - result[index].TrimStart().Length;
-            var varName = decoded[..separator];
             result[index] = result[index][..indentationLength] + CVarPrefix + EncodeCVar(varName, targetValue);
             changed = true;
         }
 
         updatedLines = result;
         return changed;
-    }
-
-    /// <summary>
-    /// Updates the shadow settings in a local UserCustom.ini file.
-    /// </summary>
-    public static OperationResult UpdateShadowFile(string filePath, bool enable)
-    {
-        if (!File.Exists(filePath))
-        {
-            return OperationResult.Fail("Could not read the PUBG shadow settings.");
-        }
-
-        var lines = File.ReadAllLines(filePath);
-        if (!TryApplyShadowPreset(lines, enable, out var updatedLines))
-        {
-            return OperationResult.Fail("The PUBG shadow setting was not found.");
-        }
-
-        File.WriteAllLines(filePath, updatedLines, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        return OperationResult.Ok(enable ? "Shadow enabled." : "Shadow disabled.");
     }
 }

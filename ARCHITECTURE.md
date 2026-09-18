@@ -6,7 +6,7 @@ Runs with elevated administrator privileges (`app.manifest` execution level `req
 
 Solution layout: `Nexora.slnx`
 - **Application:** `Nexora.csproj`
-- **Automated Test Suite:** `Nexora.Tests/Nexora.Tests.csproj` (160 standard tests passing; five optional Live Emulator Verification tests require a configured running GameLoop instance).
+- **Automated Test Suite:** `Nexora.Tests/Nexora.Tests.csproj` (416 standard tests passing; five optional Live Emulator Verification tests require a configured running GameLoop instance).
 
 ---
 
@@ -25,37 +25,43 @@ Nexora is structured around modern Enterprise Coding Conventions (ECC), utilizin
                                        │ (Constructor Injection / Interfaces)
 ┌──────────────────────────────────────▼──────────────────────────────────────┐
 │                            Application Services                             │
-│  IGameLoopService            IAdbClient             IUpdateService          │
-│  IWindowsToolsService        INetworkToolsService   IShortcutService        │
-│  ITempCleanupService         IIpadLayoutService                             │
+│  IGameLoopConnection         IAdbClient             IUpdateService          │
+│  IShortcutService            INetworkToolsService   ITempCleanupService     │
+│  IGraphicsProfileStore                                                       │
+│  IIpadLayoutService          IGameLoopProcessService IGameLoopPathResolver  │
 │  IGameLoopPerformanceEngine (Facade)                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                         Performance & Engine Domain                         │
 │  IHardwareDetectionService   IPerformancePlanBuilder                        │
 │  IGameLoopRegistryOptimizer  IGpuRoutingService                             │
 │  IPowerSessionService        IProcessPriorityService                        │
-│  GameLoopProcessService                                                     │
+│  PerformanceEngineFacade                                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                           Domain & Feature Models                           │
-│  Features/GameLoop: Ue4SavEditor, UnrealCVarCodec, PubgVersionCatalog       │
-│  Features/Layout: IpadPresetCatalog                                         │
-│  Features/SystemTools/Network: DnsCatalog                                   │
-│  Configuration: TempCleanupOptions, IpadLayoutOptions, AppConstants         │
+│  Features/GameLoop: Ue4SavEditor, UnrealCVarCodec, PubgVersionCatalog,      │
+│    ShortcutService, GameLoopWorkingStorage                                  │
+│  Features/Layout: IpadLayoutService, IpadPresetCatalog                      │
+│  Features/SystemTools: TempCleanupService                                   │
+│  Features/SystemTools/Network: NetworkToolsService, DnsCatalog              │
+│  Features/Security: DefenderExclusionService                                │
+│  Configuration: TempCleanupOptions, IpadLayoutOptions, GameLoopOptions,     │
+│    EmulatorOptions, UpdateOptions, AppConstants (identity only)              │
 └──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ (Reads & Executes)
+                                        │ (Reads & Executes)
 ┌──────────────────────────────────────▼──────────────────────────────────────┐
 │                        Shared Kernel & Infrastructure                       │
 │  Shared/Kernel: ProcessRunner (IProcessRunner), ProcessResult, ProcessText  │
-│  Shared/Infrastructure: RegistryService (IRegistryService)                  │
+│  Shared/Infrastructure: RegistryService (IUserRegistry + IMachineRegistry),   │
+│    GameLoopPathResolver (IGameLoopPathResolver)                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.1 Composition Root (`App.xaml.cs`)
 The application bootstraps its dependencies inside `App.OnStartup` using `Microsoft.Extensions.DependencyInjection`.
 
-- **Singleton Services:** Heavyweight and state-coordinating components (`IProcessRunner`, `IRegistryService`, `IAdbClient`, `IGameLoopService`, `IUpdateService`, `ITempCleanupService`, `IIpadLayoutService`, `INetworkToolsService`, and `WindowsToolsService`).
-- **Options Registration:** Strongly typed configuration records (`TempCleanupOptions`, `IpadLayoutOptions`) registered as singletons for dynamic customization.
-- **Interface Substitution:** `WindowsToolsService` implements and registers both `IWindowsToolsService` and `IGameLoopPerformanceEngine`, providing a unified facade for system and performance operations.
+- **Singleton Services:** Heavyweight and state-coordinating components (`IProcessRunner`, `IUserRegistry` + `IMachineRegistry` both forwarded to one `RegistryService`, `IGameLoopProcessService`, `IGameLoopPathResolver`, `IAdbClient`, `IGameLoopConnection` + `IGraphicsProfileStore` (both forwarded to one `GameLoopService`), `IUpdateService`, `IEmulatorSettingsService`, `ITempCleanupService`, `IIpadLayoutService`, `INetworkToolsService`, `IShortcutService` (factory-built with the emulator asset root), `PerformanceEngineFacade`).
+- **Options Registration:** Strongly typed configuration records (`TempCleanupOptions`, `IpadLayoutOptions`, `GameLoopOptions`, `EmulatorOptions`, `UpdateOptions`) registered as singletons for dynamic customization. Services take them via nullable ctor params defaulting to `new()` (designer-safe fallback pattern); `AppConstants` retains only identity/version/validation.
+- **Dissolved Windows-tools facade:** the former `SystemToolsFacade` (`IWindowsToolsService`) was split and deleted — `MainWindow` takes the five focused contracts directly (`ITempCleanupService`, `INetworkToolsService`, `IGameLoopProcessService`, `IShortcutService`, `IIpadLayoutService`). The iPad running-guard moved into `IpadLayoutService` so no composition path can skip it. `PerformanceEngineFacade` implements `IGameLoopPerformanceEngine` (performance optimization); don't reintroduce a coordinating facade without updating all registrations.
 - **Transient Views:** `MainWindow` is registered as transient, resolved through the service provider, and displayed upon startup.
 - **Controlled Teardown:** `App.OnExit` explicitly disposes the `ServiceProvider`, triggering graceful shutdown across active services.
 
@@ -63,9 +69,18 @@ The application bootstraps its dependencies inside `App.OnStartup` using `Micros
 `MainWindow` strictly consumes dependencies via its primary constructor:
 ```csharp
 public MainWindow(
-    IGameLoopService? gameLoop = null,
-    IWindowsToolsService? windowsTools = null,
-    IUpdateService? updates = null)
+    IGameLoopConnection? connection = null,
+    IGraphicsProfileStore? graphics = null,
+    ITempCleanupService? tempCleanup = null,
+    INetworkToolsService? networkTools = null,
+    IGameLoopProcessService? processService = null,
+    IShortcutService? shortcuts = null,
+    IIpadLayoutService? ipadLayout = null,
+    IGameLoopPerformanceEngine? performanceEngine = null,
+    IUpdateService? updates = null,
+    GameLoopOptions? gameLoopOptions = null,
+    IAdbClient? adb = null,
+    IEmulatorSettingsService? tuning = null)
 ```
 When invoked without parameters (such as in XAML designer tooling or isolated test harnesses), sensible fallback instances are constructed, maintaining maximum testability without breaking XAML runtime constraints.
 
@@ -85,7 +100,7 @@ To guarantee flawless operation across non-standard, custom, or multi-drive envi
 │    -> Reads "InstallPath" to identify UI and AppMarket root directories     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 2. Running Process Inspection (Active Fallback)                             │
-│    Enumerates AppConstants.Emulator.RunningCheckProcessNames:               │
+│    Enumerates EmulatorOptions.Emulator.RunningCheckProcessNames:             │
 │    ["AndroidEmulatorEn", "AndroidEmulator", "AppMarket", "aow_exe", ...]    │
 │    -> Inspects Process.MainModule.FileName                                  │
 │    -> Resolves Directory.GetParent(...) to derive emulator base root        │
@@ -115,7 +130,7 @@ Nexora adheres strictly to non-blocking asynchronous programming:
 
 ### 3.2 Shutdown Safety & Resource Hygiene
 - **`ProcessPriorityService.StopMonitorAsync()`**: Guarantees a bounded monitor loop shutdown within 2 seconds without deadlocking the UI thread.
-- **Window Teardown:** `MainWindow.OnClosed` disposes all connection cancellation tokens and detaches native window hooks (`WindowChromeBehavior`).
+- **Window Teardown:** `MainWindow.Window_Closing` defers close under a bounded 5s `ShutdownRestoreTimeout`, restores power + priority via `RestorePerformanceSessionAsync`, then calls `Close()` in `finally`; it disposes connection/tool cancellation tokens and detaches `WindowChromeBehavior`.
 - **Temporary Staging Isolation:** `UpdateService` creates per-attempt GUID staging trees (`%TEMP%/NexoraUpdate-<Guid>`) swept in a guaranteed `finally` block and purges stale directories older than 24 hours.
 
 ### 3.3 Strongly Typed Options
@@ -124,7 +139,7 @@ System behaviors are decoupled into strongly typed, injectable options classes l
 | Options Class | Configurable Properties | Default Values |
 |---|---|---|
 | `TempCleanupOptions` | `TargetDirectories`<br>`ShaderCacheFolderName` | User `%TEMP%`, `%WINDIR%\Temp`, `%WINDIR%\Prefetch`<br>`"ShaderCache"` |
-| `IpadLayoutOptions` | `LayoutMapPath`<br>`KeymapDirectory`<br>`KeymapFileName`<br>`BackupExtension` | `Assets/ipad_layout_map.json`<br>`%APPDATA%\AndroidTbox`<br>`"TVM_100.xml"`<br>`".mkbackup"` |
+| `IpadLayoutOptions` | `LayoutMapPath`<br>`KeymapDirectory`<br>`KeymapFileName`<br>`BackupExtension`<br>`LegacyBackupExtension` | `Assets/ipad_layout_map.json`<br>`%APPDATA%\AndroidTbox`<br>`"TVM_100.xml"`<br>`".nexora-backup"`<br>`".mkbackup"` (legacy read fallback, never written or deleted) |
 
 ---
 
@@ -181,25 +196,26 @@ Nexora contains a dedicated, non-destructive live verification suite ([`LiveGame
 
 ### 5.3 Non-Destructive Registry & Power Session Management
 - **`GameLoopRegistryOptimizer`:** Safely applies CPU core counts, memory size (`VMMemorySizeInMB`), DirectX/OpenGL renderers, and ADB flags in `HKCU\SOFTWARE\Tencent\MobileGamePC`. All live verification tests snapshot initial DWORD states and restore them in guaranteed `finally` blocks.
+- **`EmulatorSettingsService` (manual Tuning page):** User-chosen counterpart to Smart Settings — processor, memory, DPI, render/global caches, discrete GPU (paired `GraphicsCardEnabled` + `SetGraphicsCard`), render optimization, V-Sync, ADB (inverted `AdbDisable` mapped in one place), and anti-aliasing. All ten value names live in `EmulatorTuningCatalog`; every write is clamped to real hardware and verified by read-back; Apply refuses while GameLoop runs (`"Close GameLoop before applying emulator tuning..."`). Full spec in `EMULATOR-TUNING-PLAN.md`.
 - **`PowerSessionService`:** Activates Windows high-performance power plan GUIDs during gameplay sessions and safely restores the host machine's original active power plan upon session teardown.
 
 ### 5.4 iPad View Execution Guard
 - **Concurrency Protection:** GameLoop maintains exclusive file locks on keymap XML files (`TVM_100.xml`) while running and overwrites registry resolution keys upon emulator exit.
-- **Safety Guard:** `WindowsToolsService.SetIpadResolution` verifies active emulator processes via `ProcessManagementService.FindGameLoopProcesses()`. If active, it safely rejects the operation:
+- **Safety Guard:** `IpadLayoutService.SetIpadResolution` verifies active emulator processes via `GameLoopProcessService.FindGameLoopProcesses()`. If active, it safely rejects the operation:
   > *"Close GameLoop before applying iPad View (it locks keymap files and will overwrite your settings on exit), then apply it again."*
-- **Atomic Backup & Rollback:** When applied with GameLoop closed, `IpadLayoutService` generates `TVM_100.xml.mkbackup` prior to modifying button layout coordinates. Calling `.Reset()` restores the original XML file, deletes the backup, and rolls back registry resolutions.
+- **Atomic Backup & Rollback:** When applied with GameLoop closed, `IpadLayoutService` generates `TVM_100.xml.nexora-backup` prior to modifying button layout coordinates. Calling `.ResetIpadResolution()` restores the original XML file, deletes the backup, and rolls back registry resolutions; a legacy `TVM_100.xml.mkbackup` left by older versions still restores (and is never auto-deleted).
 
 ---
 
 ## 6. Verification & Test Suite Summary
 
 - **Build Quality:** `dotnet build Nexora.slnx` → 0 Errors, 0 Warnings (`<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`).
-- **Automated Test Suite:** `dotnet test Nexora.slnx --filter "Category!=LiveFunctionalVerification"` → **205 standard tests passing**.
+- **Automated Test Suite:** `dotnet test Nexora.slnx --filter "Category!=LiveFunctionalVerification"` → **416 standard tests passing**.
   - **Live GameLoop Verification:** five opt-in tests cover connection and diagnostics, graphics settings and SavEditor, Performance Center and hardware telemetry, DNS latency and iPad layout guards, and dynamic path resolution. Run them with `--filter "Category=LiveFunctionalVerification"` on a configured GameLoop machine.
   - **Security & Integrity Tests:** Authenticode signature validation, publisher pinning, GitHub domain verification, dual-format SHA-256 extraction, and untrusted update rejection.
   - **Defender Exclusion Trust Tests:** Registry-only path resolution, TxGameAssistant directory segment validation, and rejection of system directories and prefix spoofing.
   - **Shutdown Teardown Tests:** Bounded synchronous wait for session restoration, safe exception handling, and avoidance of process hangs or UI deadlocks.
   - **Async Hygiene Tests:** Cancellation token adherence, non-blocking asynchronous execution, and process priority monitor shutdown.
   - **Boundary Validation Tests:** Malformed Android package rejection, culture-invariant coordinate shifting, and invalid IP address handling.
-  - **Service-Level Seam Tests:** Dedicated unit tests for `NvidiaOptimizerService`, `IpadLayoutService`, `FileUtilities`, and `CatalogTests`.
+  - **Service-Level Seam Tests:** Dedicated unit tests for `NvidiaOptimizerService`, `IpadLayoutService`, `EmulatorSettingsService` (manual Tuning page: load/apply/verify, hardware clamping, running-guard), `FileUtilities`, and `CatalogTests`.
   - **Dependency Injection Tests:** Composition Root resolution, transient view lifetimes, and mock service substitutability.

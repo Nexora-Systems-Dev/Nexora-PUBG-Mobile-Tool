@@ -17,8 +17,6 @@ public sealed class Ue4SavEditor
 
     public byte[] ToBytes() => (byte[])_content.Clone();
 
-    public byte[] RawBuffer => _content;
-
     /// <summary>
     /// Reads the byte value following an IntProperty header.
     /// </summary>

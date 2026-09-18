@@ -1,4 +1,6 @@
 using Nexora.Configuration;
+using Nexora.Shared.Infrastructure;
+using Nexora.Shared.Kernel;
 
 namespace Nexora.Features.GameLoop;
 
@@ -7,29 +9,32 @@ namespace Nexora.Features.GameLoop;
 /// </summary>
 public sealed class GameLoopWorkingStorage
 {
+    private readonly IFileSystem _fileSystem;
+    private readonly EmulatorOptions _emulator;
     private readonly string _assetRoot;
     private readonly string _workRoot;
 
-    public GameLoopWorkingStorage(string? assetRoot = null, string? workRoot = null)
+    public GameLoopWorkingStorage(IFileSystem fileSystem, IWorkRootProvider roots, EmulatorOptions? emulator = null)
     {
-        _assetRoot = assetRoot ?? Path.Combine(AppContext.BaseDirectory, AppConstants.Assets.DirectoryName);
-        _workRoot = workRoot ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            AppConstants.Assets.WorkFolderName);
+        _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        if (roots is null) throw new ArgumentNullException(nameof(roots));
+        _emulator = emulator ?? new EmulatorOptions();
+        _assetRoot = roots.AssetRoot;
+        _workRoot = roots.WorkRoot;
     }
 
     public string AssetRoot => _assetRoot;
     public string WorkRoot => _workRoot;
 
-    public string PreviousSavPath => Path.Combine(_workRoot, AppConstants.Assets.PreviousSavFileName);
-    public string PendingSavPath => Path.Combine(_workRoot, AppConstants.Assets.PendingSavFileName);
-    public string ShadowSettingsPath => Path.Combine(_workRoot, AppConstants.Assets.ShadowSettingsFileName);
-    public string ConnectionProbePath => Path.Combine(_workRoot, AppConstants.Assets.ConnectionProbeFileName);
-    public string KoreanResolutionAssetPath => Path.Combine(_assetRoot, AppConstants.Assets.KoreanResolutionFileName);
+    public string PreviousSavPath => Path.Combine(_workRoot, _emulator.Assets.PreviousSavFileName);
+    public string PendingSavPath => Path.Combine(_workRoot, _emulator.Assets.PendingSavFileName);
+    public string ShadowSettingsPath => Path.Combine(_workRoot, _emulator.Assets.ShadowSettingsFileName);
+    public string ConnectionProbePath => Path.Combine(_workRoot, _emulator.Assets.ConnectionProbeFileName);
+    public string KoreanResolutionAssetPath => Path.Combine(_assetRoot, _emulator.Assets.KoreanResolutionFileName);
 
     public void EnsureDirectoryCreated()
     {
-        Directory.CreateDirectory(_workRoot);
+        _fileSystem.CreateDirectory(_workRoot);
     }
 
     /// <summary>
@@ -40,19 +45,19 @@ public sealed class GameLoopWorkingStorage
         EnsureDirectoryCreated();
         var filesToSeed = new[]
         {
-            AppConstants.Assets.PreviousSavFileName,
-            AppConstants.Assets.PendingSavFileName,
-            AppConstants.Assets.ShadowSettingsFileName,
-            AppConstants.Assets.ConnectionProbeFileName
+            _emulator.Assets.PreviousSavFileName,
+            _emulator.Assets.PendingSavFileName,
+            _emulator.Assets.ShadowSettingsFileName,
+            _emulator.Assets.ConnectionProbeFileName
         };
 
         foreach (var name in filesToSeed)
         {
             var source = Path.Combine(_assetRoot, name);
             var destination = Path.Combine(_workRoot, name);
-            if (File.Exists(source) && !File.Exists(destination))
+            if (_fileSystem.Exists(source) && !_fileSystem.Exists(destination))
             {
-                File.Copy(source, destination);
+                _fileSystem.Copy(source, destination);
             }
         }
     }

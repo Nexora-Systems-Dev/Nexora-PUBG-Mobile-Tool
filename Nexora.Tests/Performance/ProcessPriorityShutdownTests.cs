@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using FluentAssertions;
 using Nexora.Services.Performance;
+using Nexora.Shared.Infrastructure;
+using Nexora.Shared.Kernel;
 using Xunit;
 
 namespace Nexora.Tests.Performance;
@@ -12,12 +14,20 @@ public sealed class ProcessPriorityShutdownTests
 {
     private static readonly TimeSpan CompletionLimit = TimeSpan.FromSeconds(10);
 
+    private static ProcessPriorityService CreateService()
+    {
+        var store = new ProcessPrioritySnapshotStore();
+        var processService = new GameLoopProcessService(new ProcessRunner(), new GameLoopPathResolver(new RegistryService()));
+        var applier = new ProcessPriorityApplier(store, processService);
+        return new ProcessPriorityService(store, applier, new ProcessPriorityMonitor(store, applier));
+    }
+
     [Fact]
     public async Task StopMonitorAsync_CompletesPromptly_WhenMonitorRunning()
     {
         // Apply with a non-matching root starts the monitor loop
         // without touching any real process.
-        var service = new ProcessPriorityService();
+        var service = CreateService();
         service.Apply("Z:\\nexora-test-nonexistent-root");
 
         var act = () => service.StopMonitorAsync();
@@ -29,7 +39,7 @@ public sealed class ProcessPriorityShutdownTests
     [Fact]
     public async Task StopMonitorAsync_NoOp_WhenNeverStarted()
     {
-        var service = new ProcessPriorityService();
+        var service = CreateService();
 
         var act = () => service.StopMonitorAsync();
 
@@ -39,7 +49,7 @@ public sealed class ProcessPriorityShutdownTests
     [Fact]
     public void Restore_AfterApply_ReturnsOk_WithoutBlocking()
     {
-        var service = new ProcessPriorityService();
+        var service = CreateService();
         service.Apply("Z:\\nexora-test-nonexistent-root");
 
         // Ensure StopMonitor returns promptly without blocking.
@@ -55,7 +65,7 @@ public sealed class ProcessPriorityShutdownTests
     public void PruneDeadSnapshots_RemovesDeadPidEntries()
     {
         // Int.MaxValue can never be a live PID.
-        var service = new ProcessPriorityService();
+        var service = CreateService();
         service.AddSnapshotForTesting(int.MaxValue, null, "aow_exe", ProcessPriorityClass.Normal);
 
         var removed = service.PruneDeadSnapshots();
@@ -68,7 +78,7 @@ public sealed class ProcessPriorityShutdownTests
     public void PruneDeadSnapshots_KeepsLiveProcessEntry()
     {
         using var current = Process.GetCurrentProcess();
-        var service = new ProcessPriorityService();
+        var service = CreateService();
         service.AddSnapshotForTesting(current.Id, null, current.ProcessName, ProcessPriorityClass.Normal);
 
         var removed = service.PruneDeadSnapshots();
@@ -83,7 +93,7 @@ public sealed class ProcessPriorityShutdownTests
         // Same PID but a different identity means the OS recycled
         // the PID after the original process exited; the stale entry must go.
         using var current = Process.GetCurrentProcess();
-        var service = new ProcessPriorityService();
+        var service = CreateService();
         service.AddSnapshotForTesting(current.Id, null, "definitely-not-this-process", ProcessPriorityClass.Normal);
 
         var removed = service.PruneDeadSnapshots();

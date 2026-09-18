@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Nexora.Configuration;
+using Nexora.Features.SystemTools;
+using Nexora.Features.SystemTools.Network;
 using Nexora.Services;
 using Nexora.Services.Performance;
 using Nexora.Shared.Infrastructure;
@@ -107,11 +109,21 @@ public sealed class AsyncHygieneTests
     }
 
     [Fact]
-    public async Task WindowsToolsService_AsyncSeams_ExecuteSuccessfully()
+    public async Task PerformanceEngineFacade_AsyncSeams_ExecuteSuccessfully()
     {
         var runner = new ProcessRunner();
         var registry = new RegistryService();
-        var facade = new WindowsToolsService(runner, registry);
+        var pathResolver = new GameLoopPathResolver(registry);
+        var processService = new GameLoopProcessService(runner, pathResolver);
+        var priorityStore = new ProcessPrioritySnapshotStore();
+        var priorityApplier = new ProcessPriorityApplier(priorityStore, processService);
+        var facade = new PerformanceEngineFacade(
+            runner,
+            registry,
+            registry,
+            processService,
+            new TempCleanupService(registry),
+            new ProcessPriorityService(priorityStore, priorityApplier, new ProcessPriorityMonitor(priorityStore, priorityApplier)));
 
         var snapshot = await facade.GetHardwareSnapshotAsync();
         snapshot.Should().NotBeNull();

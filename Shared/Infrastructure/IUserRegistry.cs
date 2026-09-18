@@ -1,9 +1,11 @@
 namespace Nexora.Shared.Infrastructure;
 
 /// <summary>
-/// Interface for Windows registry access across current user and local machine hives.
+/// Current-user registry access: GameLoop vendor DWORDs, Nexora
+/// application settings (with permanent pre-rebrand read fallback),
+/// and arbitrary current-user string values (GPU preferences, AppCompat flags).
 /// </summary>
-public interface IRegistryService
+public interface IUserRegistry
 {
     int? GetUserDword(string name);
 
@@ -14,12 +16,6 @@ public interface IRegistryService
     void SetAppSettingDword(string name, int value);
 
     void DeleteAppSetting(string name);
-
-    string? GetLocalString(string name, string branch = "");
-
-    bool SetLocalMachineDword(string subKeyPath, string name, int value);
-
-    int? GetLocalMachineDword(string subKeyPath, string name);
 
     bool SetCurrentUserString(string subKeyPath, string name, string value);
 

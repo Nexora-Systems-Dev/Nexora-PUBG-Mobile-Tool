@@ -1,3 +1,4 @@
+using System.Reflection;
 using FluentAssertions;
 using Nexora.Configuration;
 using Nexora.Services.Performance;
@@ -18,12 +19,13 @@ public sealed class NvidiaOptimizerServiceTests
     {
         var runner = new ProcessRunner();
         var registry = new RegistryService();
+        var processService = new GameLoopProcessService(runner, new GameLoopPathResolver(registry));
 
-        var actRunnerNull = () => new NvidiaOptimizerService(null!, registry);
-        var actRegistryNull = () => new NvidiaOptimizerService(runner, null!);
+        var actRunnerNull = () => new NvidiaOptimizerService(null!, processService);
+        var actProcessNull = () => new NvidiaOptimizerService(runner, null!);
 
         actRunnerNull.Should().Throw<ArgumentNullException>().WithParameterName("runner");
-        actRegistryNull.Should().Throw<ArgumentNullException>().WithParameterName("registry");
+        actProcessNull.Should().Throw<ArgumentNullException>().WithParameterName("processService");
     }
 
     [Fact]
@@ -33,7 +35,7 @@ public sealed class NvidiaOptimizerServiceTests
         // safely without throwing and returns either Ok (not needed/applied) or Fail.
         var runner = new ProcessRunner();
         var registry = new RegistryService();
-        var service = new NvidiaOptimizerService(runner, registry);
+        var service = new NvidiaOptimizerService(runner, new GameLoopProcessService(runner, new GameLoopPathResolver(registry)));
 
         var result = service.OptimizeForNvidia();
 
@@ -46,6 +48,72 @@ public sealed class NvidiaOptimizerServiceTests
     }
 
     [Fact]
+    public void ResolveProfileTargets_PreservesCaseAndFollowsOptionOrder()
+    {
+        // Only two of the four default images exist; both kept with
+        // on-disk spelling, in configured preference order, missing skipped.
+        var installDir = CreateInstallDir();
+        try
+        {
+            File.WriteAllText(Path.Combine(installDir, "aow_exe.exe"), "x");
+            File.WriteAllText(Path.Combine(installDir, "AndroidEmulator.exe"), "x");
+
+            var targets = InvokeResolveProfileTargets(CreateService(), installDir);
+
+            targets.Should().Equal(
+                Path.GetFullPath(Path.Combine(installDir, "AndroidEmulator.exe")),
+                Path.GetFullPath(Path.Combine(installDir, "aow_exe.exe")));
+        }
+        finally
+        {
+            Directory.Delete(installDir, true);
+        }
+    }
+
+    [Fact]
+    public void ResolveProfileTargets_UsesConfiguredImageNames()
+    {
+        // A name outside the defaults proves the list comes from options.
+        var installDir = CreateInstallDir();
+        try
+        {
+            File.WriteAllText(Path.Combine(installDir, "CustomEmu.exe"), "x");
+            var emulator = new EmulatorOptions
+            {
+                Emulator = new EmulatorOptions.EmulatorSettings
+                {
+                    NvidiaProfileImageNames = ["CustomEmu.exe"]
+                }
+            };
+
+            var targets = InvokeResolveProfileTargets(CreateService(emulator), installDir);
+
+            targets.Should().ContainSingle()
+                .Which.Should().Be(Path.GetFullPath(Path.Combine(installDir, "CustomEmu.exe")));
+        }
+        finally
+        {
+            Directory.Delete(installDir, true);
+        }
+    }
+
+    private static NvidiaOptimizerService CreateService(EmulatorOptions? emulator = null) =>
+        new(
+            new ProcessRunner(),
+            new GameLoopProcessService(new ProcessRunner(), new GameLoopPathResolver(new RegistryService())),
+            emulator: emulator);
+
+    private static string CreateInstallDir() =>
+        Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "NexoraNvidiaTargets-" + Guid.NewGuid().ToString("N"))).FullName;
+
+    private static List<string> InvokeResolveProfileTargets(NvidiaOptimizerService service, string installDir)
+    {
+        var method = typeof(NvidiaOptimizerService).GetMethod("ResolveProfileTargets", BindingFlags.NonPublic | BindingFlags.Instance);
+        method.Should().NotBeNull("production method 'ResolveProfileTargets' must exist");
+        return (List<string>)method!.Invoke(service, [installDir])!;
+    }
+
+    [Fact]
     public void OptimizeForNvidia_FailsSafely_WhenAssetsMissing()
     {
         // Use an isolated empty temp directory as asset root
@@ -55,7 +123,7 @@ public sealed class NvidiaOptimizerServiceTests
         {
             var runner = new ProcessRunner();
             var registry = new RegistryService();
-            var service = new NvidiaOptimizerService(runner, registry, emptyAssetRoot);
+            var service = new NvidiaOptimizerService(runner, new GameLoopProcessService(runner, new GameLoopPathResolver(registry)), assetRoot: emptyAssetRoot);
 
             var result = service.OptimizeForNvidia();
 

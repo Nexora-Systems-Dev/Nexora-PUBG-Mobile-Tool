@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using FluentAssertions;
 using Nexora.Configuration;
+using Nexora.Features.SystemTools;
 using Nexora.Services;
+using Nexora.Services.Performance;
 using Nexora.Shared.Infrastructure;
 using Nexora.Shared.Kernel;
 using Xunit;
@@ -14,19 +16,34 @@ namespace Nexora.Tests.Performance;
 /// </summary>
 public sealed class ShutdownRestorationTests
 {
+    private static PerformanceEngineFacade CreateEngine()
+    {
+        var runner = new ProcessRunner();
+        var registry = new RegistryService();
+        var pathResolver = new GameLoopPathResolver(registry);
+        var processService = new GameLoopProcessService(runner, pathResolver);
+        var priorityStore = new ProcessPrioritySnapshotStore();
+        var priorityApplier = new ProcessPriorityApplier(priorityStore, processService);
+        return new PerformanceEngineFacade(
+            runner,
+            registry,
+            registry,
+            processService,
+            new TempCleanupService(registry),
+            new ProcessPriorityService(priorityStore, priorityApplier, new ProcessPriorityMonitor(priorityStore, priorityApplier)));
+    }
+
     [Fact]
     public void ShutdownRestoreTimeout_IsConfiguredToSafeBound()
     {
         // 5 seconds: adequate for powercfg + priority restore, safe against indefinite hangs.
-        AppConstants.Timeouts.ShutdownRestoreTimeout.Should().Be(TimeSpan.FromSeconds(5));
+        new GameLoopOptions().Timeouts.ShutdownRestoreTimeout.Should().Be(TimeSpan.FromSeconds(5));
     }
 
     [Fact]
     public async Task RestorePerformanceSessionAsync_CompletesPromptly()
     {
-        var runner = new ProcessRunner();
-        var registry = new RegistryService();
-        var toolsService = new WindowsToolsService(runner, registry);
+        var toolsService = CreateEngine();
 
         var stopwatch = Stopwatch.StartNew();
         var task = toolsService.RestorePerformanceSessionAsync();
@@ -36,24 +53,31 @@ public sealed class ShutdownRestorationTests
         stopwatch.Stop();
 
         result.Should().NotBeNull();
-        stopwatch.Elapsed.Should().BeLessThan(AppConstants.Timeouts.ShutdownRestoreTimeout);
+        stopwatch.Elapsed.Should().BeLessThan(new GameLoopOptions().Timeouts.ShutdownRestoreTimeout);
     }
 
     [Fact]
-    public async Task RestorePerformanceSessionAsync_CanBeSynchronouslyAwaited_WithTimeout()
+    public async Task RestorePerformanceSessionAsync_CompletesWithinBoundedShutdownToken()
     {
-        // Simulates the exact Window_Closing shutdown sequence:
-        // task.Wait(AppConstants.Timeouts.ShutdownRestoreTimeout)
-        var runner = new ProcessRunner();
-        var registry = new RegistryService();
-        var toolsService = new WindowsToolsService(runner, registry);
+        // Mirrors the Window_Closing shutdown sequence: restore runs under a
+        // bounded CancellationTokenSource(ShutdownRestoreTimeout), never .Wait().
+        var toolsService = CreateEngine();
 
-        var completedInTime = await Task.Run(() =>
-        {
-            var restoreTask = toolsService.RestorePerformanceSessionAsync();
-            return restoreTask.Wait(AppConstants.Timeouts.ShutdownRestoreTimeout);
-        });
+        using var shutdownCts = new CancellationTokenSource(new GameLoopOptions().Timeouts.ShutdownRestoreTimeout);
+        var result = await toolsService.RestorePerformanceSessionAsync(shutdownCts.Token);
 
-        completedInTime.Should().BeTrue();
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task RestorePerformanceSessionAsync_ThrowsImmediately_WhenCancelledBeforeStart()
+    {
+        var toolsService = CreateEngine();
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => toolsService.RestorePerformanceSessionAsync(cts.Token));
     }
 }

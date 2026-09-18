@@ -33,11 +33,12 @@ public sealed class LiveGameLoopVerificationTests
     {
         var registry = new RegistryService();
         var runner = new ProcessRunner();
-        var processService = new GameLoopProcessService(runner, registry);
+        var processService = new GameLoopProcessService(runner, new GameLoopPathResolver(registry));
+        var gameLoop = new GameLoopOptions();
 
         // Resolve paths dynamically via registry branches
-        var appMarketPath = registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchAppMarket);
-        var uiPath = registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
+        var appMarketPath = registry.GetLocalString(gameLoop.Registry.ValueInstallPath, gameLoop.Registry.BranchAppMarket);
+        var uiPath = registry.GetLocalString(gameLoop.Registry.ValueInstallPath, gameLoop.Registry.BranchUI);
         var gameLoopRoot = processService.GetGameLoopRoot();
 
         _output.WriteLine($"[Diagnostic] AppMarket Path: {appMarketPath}");
@@ -59,7 +60,7 @@ public sealed class LiveGameLoopVerificationTests
         appMarketPath!.StartsWith(gameLoopRoot!, StringComparison.OrdinalIgnoreCase).Should().BeTrue();
 
         // Verify that adb.exe exists within the dynamically discovered UI folder
-        var adbBinary = Path.Combine(uiPath, AppConstants.Adb.FileName);
+        var adbBinary = Path.Combine(uiPath, gameLoop.Adb.FileName);
         File.Exists(adbBinary).Should().BeTrue($"adb.exe must exist in resolved UI directory '{adbBinary}'");
         _output.WriteLine($"[Diagnostic] ADB Binary Path: {adbBinary}");
     }
@@ -73,15 +74,29 @@ public sealed class LiveGameLoopVerificationTests
         App.ConfigureServices(services);
         using var provider = services.BuildServiceProvider();
 
-        var gameLoopService = provider.GetRequiredService<IGameLoopService>();
+        var gameLoopService = provider.GetRequiredService<GameLoopService>();
         var adbClient = provider.GetRequiredService<IAdbClient>();
-        var registryService = provider.GetRequiredService<IRegistryService>();
+        var registryService = provider.GetRequiredService<IUserRegistry>();
+        var processService = provider.GetRequiredService<IGameLoopProcessService>();
 
-        var isRunning = GameLoopService.IsGameLoopRunning();
+        var running = processService.FindGameLoopProcesses();
+        bool isRunning;
+        try
+        {
+            isRunning = running.Count > 0;
+        }
+        finally
+        {
+            foreach (var process in running)
+            {
+                process.Dispose();
+            }
+        }
+
         _output.WriteLine($"[Diagnostic] GameLoop Running: {isRunning}");
         isRunning.Should().BeTrue("GameLoop emulator process (AndroidEmulatorEn / AndroidEmulatorEx / AndroidEmulator) must be active");
 
-        var adbStatus = registryService.GetUserDword(AppConstants.Registry.ValueAdbDisable);
+        var adbStatus = registryService.GetUserDword(new GameLoopOptions().Registry.ValueAdbDisable);
         _output.WriteLine($"[Diagnostic] AdbDisable Value: {adbStatus}");
         adbStatus.Should().NotBeNull("GameLoop AdbDisable registry setting must exist");
         adbStatus.Should().Be(0, "AdbDisable must be 0 (enabled) for ADB bridge communication");
@@ -124,7 +139,7 @@ public sealed class LiveGameLoopVerificationTests
         App.ConfigureServices(services);
         using var provider = services.BuildServiceProvider();
 
-        var gameLoopService = provider.GetRequiredService<IGameLoopService>();
+        var gameLoopService = provider.GetRequiredService<GameLoopService>();
         var adbClient = provider.GetRequiredService<IAdbClient>();
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
@@ -138,6 +153,13 @@ public sealed class LiveGameLoopVerificationTests
         var originalShadow = await gameLoopService.GetShadowAsync(cts.Token);
 
         _output.WriteLine($"[Original Live Settings] Quality: {originalQuality}, FPS: {originalFps}, Style: {originalStyle}, Shadow: {originalShadow}");
+
+        // A connected emulator with a loaded version must expose readable settings;
+        // without them neither the round-trip below nor the restore at the end is meaningful.
+        if (originalQuality is null || originalFps is null || originalStyle is null)
+        {
+            Assert.Fail("Live emulator graphics profile was unreadable; cannot verify or restore settings.");
+        }
 
         var targetQuality = originalQuality == "Smooth" ? "Balanced" : "Smooth";
         var targetFps = originalFps == "Extreme" ? "Ultra Extreme" : "Extreme";
@@ -166,7 +188,7 @@ public sealed class LiveGameLoopVerificationTests
         var tempSavPath = Path.Combine(Path.GetTempPath(), $"live_verify_{Guid.NewGuid():N}.sav");
         try
         {
-            var remoteSavPath = $"/sdcard/Android/data/{gameLoopService.CurrentPackage}/files/UE4Game/ShadowTrackerExtra/ShadowTrackerExtra/Saved/SaveGames/Active.sav";
+            var remoteSavPath = RemotePaths.For(gameLoopService.CurrentPackage).ActiveSavPath;
             var pullSuccess = await adbClient.PullAsync(remoteSavPath, tempSavPath, cts.Token);
 
             pullSuccess.Should().BeTrue("Fresh Active.sav must pull successfully from remote emulator");
@@ -175,22 +197,14 @@ public sealed class LiveGameLoopVerificationTests
             remoteSavBytes.Length.Should().BeGreaterThan(1000, "Active.sav should be a valid non-empty SaveGame file");
 
             var savEditor = new Ue4SavEditor(remoteSavBytes);
-            var qualityMap = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Smooth"] = 0x01, ["Balanced"] = 0x02, ["HD"] = 0x03, ["HDR"] = 0x04, ["Ultra HDR"] = 0x05, ["Extreme HDR"] = 0x06
-            };
-            var fpsMap = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Low"] = 0x02, ["Medium"] = 0x03, ["High"] = 0x04, ["Ultra"] = 0x05, ["Extreme"] = 0x06, ["Extreme+"] = 0x07, ["Ultra Extreme"] = 0x08
-            };
-            var styleMap = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Classic"] = 0x01, ["Colorful"] = 0x02, ["Realistic"] = 0x03, ["Soft"] = 0x04, ["Movie"] = 0x06
-            };
+            // Canonical maps live in PubgVersionCatalog — never a local copy.
+            PubgVersionCatalog.TryGetQualityValue(targetQuality, out var expectedQuality).Should().BeTrue();
+            PubgVersionCatalog.TryGetFrameRateValue(targetFps, out var expectedFps).Should().BeTrue();
+            PubgVersionCatalog.TryGetStyleValue(targetStyle, out var expectedStyle).Should().BeTrue();
 
-            savEditor.ReadProperty("BattleRenderQuality").Should().Be(qualityMap[targetQuality]);
-            savEditor.ReadProperty("BattleFPS").Should().Be(fpsMap[targetFps]);
-            savEditor.ReadProperty("BattleRenderStyle").Should().Be(styleMap[targetStyle]);
+            savEditor.ReadProperty("BattleRenderQuality").Should().Be(expectedQuality);
+            savEditor.ReadProperty("BattleFPS").Should().Be(expectedFps);
+            savEditor.ReadProperty("BattleRenderStyle").Should().Be(expectedStyle);
             _output.WriteLine($"[Remote Active.sav Verified] BattleRenderQuality: 0x{savEditor.ReadProperty("BattleRenderQuality"):X2}, BattleFPS: 0x{savEditor.ReadProperty("BattleFPS"):X2}, BattleRenderStyle: 0x{savEditor.ReadProperty("BattleRenderStyle"):X2}");
         }
         finally
@@ -223,9 +237,10 @@ public sealed class LiveGameLoopVerificationTests
         using var provider = services.BuildServiceProvider();
 
         var performanceEngine = provider.GetRequiredService<IGameLoopPerformanceEngine>();
-        var registry = provider.GetRequiredService<IRegistryService>();
-        var processRunner = provider.GetRequiredService<IProcessRunner>() as ProcessRunner ?? new ProcessRunner();
-        var registryOptimizer = new GameLoopRegistryOptimizer(processRunner, registry as RegistryService ?? new RegistryService());
+        var userRegistry = provider.GetRequiredService<IUserRegistry>();
+        var machineRegistry = provider.GetRequiredService<IMachineRegistry>();
+        var processRunner = provider.GetRequiredService<IProcessRunner>();
+        var registryOptimizer = new GameLoopRegistryOptimizer(userRegistry, machineRegistry, new GameLoopProcessService(processRunner, new GameLoopPathResolver(machineRegistry)));
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
@@ -269,12 +284,12 @@ public sealed class LiveGameLoopVerificationTests
             "LocalShaderCacheEnabled",
             "ShaderCacheEnabled",
             "RenderOptimizeEnabled",
-            AppConstants.Registry.ValueAdbDisable,
+            new GameLoopOptions().Registry.ValueAdbDisable,
             "VMMemorySizeInMB",
             "VMCpuCount"
         };
 
-        foreach (var version in GameLoopService.PubgVersions.Keys)
+        foreach (var version in PubgVersionCatalog.PubgVersions.Keys)
         {
             settingKeys.Add($"{version}_ContentScale");
             settingKeys.Add($"{version}_RenderQuality");
@@ -284,7 +299,7 @@ public sealed class LiveGameLoopVerificationTests
         var originalRegistry = new Dictionary<string, int?>(StringComparer.Ordinal);
         foreach (var key in settingKeys)
         {
-            originalRegistry[key] = registry.GetUserDword(key);
+            originalRegistry[key] = userRegistry.GetUserDword(key);
         }
 
         try
@@ -295,13 +310,13 @@ public sealed class LiveGameLoopVerificationTests
             _output.WriteLine($"[Registry Optimizer Result] {optimizerResult.Message}");
 
             // Verify GameLoop preferences were written accurately into HKCU without Win32 exceptions
-            registry.GetUserDword("VMMemorySizeInMB").Should().Be(plan.EmulatorMemoryMb);
-            registry.GetUserDword("VMCpuCount").Should().Be(plan.EmulatorCpuCores);
-            registry.GetUserDword(AppConstants.Registry.ValueAdbDisable).Should().Be(0);
-            registry.GetUserDword("GraphicsCardEnabled").Should().Be(1);
-            registry.GetUserDword("SetGraphicsCard").Should().Be(1);
-            registry.GetUserDword("RenderOptimizeEnabled").Should().Be(1);
-            _output.WriteLine($"[Verified Registry] VMMemorySizeInMB: {registry.GetUserDword("VMMemorySizeInMB")} MB, VMCpuCount: {registry.GetUserDword("VMCpuCount")} cores, GraphicsCardEnabled: {registry.GetUserDword("GraphicsCardEnabled")}");
+            userRegistry.GetUserDword("VMMemorySizeInMB").Should().Be(plan.EmulatorMemoryMb);
+            userRegistry.GetUserDword("VMCpuCount").Should().Be(plan.EmulatorCpuCores);
+            userRegistry.GetUserDword(new GameLoopOptions().Registry.ValueAdbDisable).Should().Be(0);
+            userRegistry.GetUserDword("GraphicsCardEnabled").Should().Be(1);
+            userRegistry.GetUserDword("SetGraphicsCard").Should().Be(1);
+            userRegistry.GetUserDword("RenderOptimizeEnabled").Should().Be(1);
+            _output.WriteLine($"[Verified Registry] VMMemorySizeInMB: {userRegistry.GetUserDword("VMMemorySizeInMB")} MB, VMCpuCount: {userRegistry.GetUserDword("VMCpuCount")} cores, GraphicsCardEnabled: {userRegistry.GetUserDword("GraphicsCardEnabled")}");
         }
         finally
         {
@@ -310,7 +325,7 @@ public sealed class LiveGameLoopVerificationTests
             {
                 if (value.HasValue)
                 {
-                    registry.SetUserDword(key, value.Value);
+                    userRegistry.SetUserDword(key, value.Value);
                 }
             }
             _output.WriteLine("[Registry State Restored] Successfully rolled back modified HKCU keys to original values.");
@@ -345,8 +360,8 @@ public sealed class LiveGameLoopVerificationTests
         using var provider = services.BuildServiceProvider();
 
         var networkTools = provider.GetRequiredService<INetworkToolsService>();
-        var windowsTools = provider.GetRequiredService<IWindowsToolsService>();
-        var registry = provider.GetRequiredService<IRegistryService>();
+        var ipadLayout = provider.GetRequiredService<IIpadLayoutService>();
+        var userRegistry = provider.GetRequiredService<IUserRegistry>();
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
@@ -380,7 +395,7 @@ public sealed class LiveGameLoopVerificationTests
         _output.WriteLine($"[iPad Preset] Selected: {competitivePreset.DisplayName} ({competitivePreset.Width}x{competitivePreset.Height}) - {competitivePreset.Details}");
 
         // Verify execution guard: GameLoop is currently running, so SetIpadResolution MUST guard and reject
-        var guardResult = windowsTools.SetIpadResolution(competitivePreset.Width, competitivePreset.Height);
+        var guardResult = ipadLayout.SetIpadResolution(competitivePreset.Width, competitivePreset.Height);
         guardResult.Success.Should().BeFalse("Applying iPad resolution while GameLoop is active must be blocked");
         guardResult.Message.Should().Contain("Close GameLoop before applying iPad View");
         _output.WriteLine($"[Execution Guard Verified] {guardResult.Message}");
@@ -407,30 +422,30 @@ public sealed class LiveGameLoopVerificationTests
             KeymapFileName = "TVM_100.xml"
         };
 
-        var ipadService = new IpadLayoutService(registry, customOptions);
+        var ipadService = new IpadLayoutService(userRegistry, new PhysicalFileSystem(), customOptions);
 
         // Record initial VMResWidth / VMResHeight in HKCU
-        var originalResWidth = registry.GetUserDword("VMResWidth");
-        var originalResHeight = registry.GetUserDword("VMResHeight");
+        var originalResWidth = userRegistry.GetUserDword("VMResWidth");
+        var originalResHeight = userRegistry.GetUserDword("VMResHeight");
 
         try
         {
             // Apply iPad resolution
-            var applyResult = ipadService.Apply(competitivePreset.Width, competitivePreset.Height);
-            applyResult.Success.Should().BeTrue($"ipadService.Apply must succeed: {applyResult.Message}");
+            var applyResult = ipadService.SetIpadResolution(competitivePreset.Width, competitivePreset.Height);
+            applyResult.Success.Should().BeTrue($"ipadService.SetIpadResolution must succeed: {applyResult.Message}");
             _output.WriteLine($"[IpadLayout Apply Result] {applyResult.Message}");
 
             // Verify backup file was created
-            File.Exists(customOptions.GetBackupFilePath()).Should().BeTrue("Backup file TVM_100.xml.mkbackup must be created");
+            File.Exists(customOptions.GetBackupFilePath()).Should().BeTrue("Backup file TVM_100.xml.nexora-backup must be created");
 
             // Verify registry values were set
-            registry.GetUserDword("VMResWidth").Should().Be(competitivePreset.Width);
-            registry.GetUserDword("VMResHeight").Should().Be(competitivePreset.Height);
-            _output.WriteLine($"[Verified Registry Resolution] VMResWidth: {registry.GetUserDword("VMResWidth")}, VMResHeight: {registry.GetUserDword("VMResHeight")}");
+            userRegistry.GetUserDword("VMResWidth").Should().Be(competitivePreset.Width);
+            userRegistry.GetUserDword("VMResHeight").Should().Be(competitivePreset.Height);
+            _output.WriteLine($"[Verified Registry Resolution] VMResWidth: {userRegistry.GetUserDword("VMResWidth")}, VMResHeight: {userRegistry.GetUserDword("VMResHeight")}");
 
             // Reset iPad resolution
-            var resetResult = ipadService.Reset();
-            resetResult.Success.Should().BeTrue($"ipadService.Reset must succeed: {resetResult.Message}");
+            var resetResult = ipadService.ResetIpadResolution();
+            resetResult.Success.Should().BeTrue($"ipadService.ResetIpadResolution must succeed: {resetResult.Message}");
             _output.WriteLine($"[IpadLayout Reset Result] {resetResult.Message}");
 
             // Verify backup file was deleted upon reset
@@ -439,8 +454,8 @@ public sealed class LiveGameLoopVerificationTests
         finally
         {
             // Clean up registry if needed
-            if (originalResWidth.HasValue) registry.SetUserDword("VMResWidth", originalResWidth.Value);
-            if (originalResHeight.HasValue) registry.SetUserDword("VMResHeight", originalResHeight.Value);
+            if (originalResWidth.HasValue) userRegistry.SetUserDword("VMResWidth", originalResWidth.Value);
+            if (originalResHeight.HasValue) userRegistry.SetUserDword("VMResHeight", originalResHeight.Value);
             if (Directory.Exists(tempKeymapDir)) Directory.Delete(tempKeymapDir, true);
             _output.WriteLine("[Cleanup] Staged keymap directory deleted and HKCU resolution restored.");
         }

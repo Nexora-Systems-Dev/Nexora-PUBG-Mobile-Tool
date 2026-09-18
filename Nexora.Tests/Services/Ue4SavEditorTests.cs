@@ -29,6 +29,29 @@ public sealed class Ue4SavEditorTests
     }
 
     [Fact]
+    public void Ue4SavEditor_ReadProperty_ReturnsDefault_ForEmptyBuffer()
+    {
+        var editor = new Ue4SavEditor(Array.Empty<byte>());
+
+        editor.ReadProperty("BattleFPS", defaultValue: 7).Should().Be(7);
+        editor.ChangeProperty("BattleFPS", 0x06).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Ue4SavEditor_ChangeProperty_ReturnsFalse_WhenValueByteTruncated()
+    {
+        // Header present but the value byte missing: in-place edit must refuse,
+        // never write out of range or grow the stream.
+        var header = Ue4SavEditor.CreateHeader("BattleFPS");
+        var before = (byte[])header.Clone();
+        var editor = new Ue4SavEditor(header);
+
+        editor.ChangeProperty("BattleFPS", 0x06).Should().BeFalse();
+        editor.ToBytes().Should().Equal(before);
+        editor.ToBytes().Length.Should().Be(header.Length);
+    }
+
+    [Fact]
     public void Ue4SavEditor_ReadAndChangeProperty_RoundTripsCorrectly()
     {
         var header = Ue4SavEditor.CreateHeader("BattleFPS");
@@ -92,6 +115,13 @@ public sealed class Ue4SavEditorTests
 
         disableSuccess.Should().BeTrue();
         disabledLines[1].Should().EndWith("49"); // '0' ^ 0x79 = 0x49
+    }
+
+    [Fact]
+    public void UnrealCVarCodec_EncodeCVar_RejectsNonAsciiInsteadOfTruncating()
+    {
+        var act = () => UnrealCVarCodec.EncodeCVar("r.ShadowQuality", "１");
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]

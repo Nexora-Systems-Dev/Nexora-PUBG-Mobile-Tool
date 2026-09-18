@@ -1,19 +1,16 @@
 namespace Nexora.Features.SystemTools.Network;
 
-public sealed record DnsEntry(string Label, string Primary, string Secondary)
-{
-    public string ShortName => Label.Split(" - ")[0];
-}
+public sealed record DnsEntry(string Label, string Primary, string Secondary, string ShortName);
 
 public static class DnsCatalog
 {
     public static IReadOnlyList<DnsEntry> Entries { get; } = new[]
     {
-        new DnsEntry("Google DNS - 8.8.8.8", "8.8.8.8", "8.8.4.4"),
-        new DnsEntry("Cloudflare DNS - 1.1.1.1", "1.1.1.1", "1.0.0.1"),
-        new DnsEntry("Quad9 DNS - 9.9.9.9", "9.9.9.9", "149.112.112.112"),
-        new DnsEntry("Cisco Umbrella - 208.67.222.222", "208.67.222.222", "208.67.220.220"),
-        new DnsEntry("Yandex DNS - 77.88.8.1", "77.88.8.1", "77.88.8.8")
+        new DnsEntry("Google DNS - 8.8.8.8", "8.8.8.8", "8.8.4.4", "Google DNS"),
+        new DnsEntry("Cloudflare DNS - 1.1.1.1", "1.1.1.1", "1.0.0.1", "Cloudflare DNS"),
+        new DnsEntry("Quad9 DNS - 9.9.9.9", "9.9.9.9", "149.112.112.112", "Quad9 DNS"),
+        new DnsEntry("Cisco Umbrella - 208.67.222.222", "208.67.222.222", "208.67.220.220", "Cisco Umbrella"),
+        new DnsEntry("Yandex DNS - 77.88.8.1", "77.88.8.1", "77.88.8.8", "Yandex DNS")
     };
 
     private static readonly IReadOnlyDictionary<string, DnsEntry> ByLabel =

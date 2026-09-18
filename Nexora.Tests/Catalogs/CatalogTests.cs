@@ -24,9 +24,9 @@ public sealed class CatalogTests
     }
 
     [Theory]
-    [InlineData("google dns - 8.8.8.8", "8.8.8.8", "8.8.4.4")]
-    [InlineData("CLOUDFLARE DNS - 1.1.1.1", "1.1.1.1", "1.0.0.1")]
-    public void DnsCatalog_Lookup_IsCaseInsensitive(string label, string primary, string secondary)
+    [InlineData("google dns - 8.8.8.8", "8.8.8.8", "8.8.4.4", "Google DNS")]
+    [InlineData("CLOUDFLARE DNS - 1.1.1.1", "1.1.1.1", "1.0.0.1", "Cloudflare DNS")]
+    public void DnsCatalog_Lookup_IsCaseInsensitive(string label, string primary, string secondary, string shortName)
     {
         var found = DnsCatalog.TryGet(label, out var entry);
 
@@ -34,7 +34,7 @@ public sealed class CatalogTests
         entry.Should().NotBeNull();
         entry!.Primary.Should().Be(primary);
         entry.Secondary.Should().Be(secondary);
-        entry.ShortName.Should().BeEquivalentTo(label.Split(" - ")[0]);
+        entry.ShortName.Should().Be(shortName);
     }
 
     [Theory]
@@ -77,5 +77,41 @@ public sealed class CatalogTests
         var found = IpadPresetCatalog.FindByDisplayName(displayName);
 
         found.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("Smooth", (byte)0x01)]
+    [InlineData("Balanced", (byte)0x02)]
+    [InlineData("Extreme HDR", (byte)0x06)]
+    public void PubgCatalog_QualityLookup_MatchesCanonicalBytes(string name, byte expected)
+    {
+        Nexora.Features.GameLoop.PubgVersionCatalog.TryGetQualityValue(name, out var value).Should().BeTrue();
+        value.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("Extreme", (byte)0x06)]
+    [InlineData("Ultra Extreme", (byte)0x08)]
+    public void PubgCatalog_FrameRateLookup_MatchesCanonicalBytes(string name, byte expected)
+    {
+        Nexora.Features.GameLoop.PubgVersionCatalog.TryGetFrameRateValue(name, out var value).Should().BeTrue();
+        value.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("Movie", (byte)0x06)]
+    [InlineData("Classic", (byte)0x01)]
+    public void PubgCatalog_StyleLookup_MatchesCanonicalBytes(string name, byte expected)
+    {
+        Nexora.Features.GameLoop.PubgVersionCatalog.TryGetStyleValue(name, out var value).Should().BeTrue();
+        value.Should().Be(expected);
+    }
+
+    [Fact]
+    public void PubgCatalog_Lookups_FailSafely_ForUnknownNames()
+    {
+        Nexora.Features.GameLoop.PubgVersionCatalog.TryGetQualityValue("Nope", out _).Should().BeFalse();
+        Nexora.Features.GameLoop.PubgVersionCatalog.TryGetFrameRateValue("Nope", out _).Should().BeFalse();
+        Nexora.Features.GameLoop.PubgVersionCatalog.TryGetStyleValue("Nope", out _).Should().BeFalse();
     }
 }

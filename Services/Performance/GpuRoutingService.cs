@@ -1,3 +1,4 @@
+using Nexora.Configuration;
 using Nexora.Shared.Infrastructure;
 using Nexora.Shared.Kernel;
 
@@ -11,11 +12,13 @@ public sealed class GpuRoutingService
     private const string UserGpuPreferencesPath =
         @"SOFTWARE\Microsoft\DirectX\UserGpuPreferences";
 
-    private readonly RegistryService _registry;
+    private readonly IUserRegistry _registry;
+    private readonly EmulatorOptions _emulator;
 
-    public GpuRoutingService(RegistryService? registry = null)
+    public GpuRoutingService(IUserRegistry registry, EmulatorOptions? emulator = null)
     {
-        _registry = registry ?? new RegistryService();
+        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _emulator = emulator ?? new EmulatorOptions();
     }
 
     public OperationResult ApplyHighPerformance(string? installPath, IEnumerable<string> executableNames)
@@ -24,6 +27,13 @@ public sealed class GpuRoutingService
         if (installDirectory is null)
         {
             return OperationResult.Fail("GameLoop installation path was not found.");
+        }
+
+        // Fail-closed like the Defender exclusion bar: a future caller must
+        // never route an arbitrary directory into UserGpuPreferences.
+        if (!IsTrustedInstallPath(installDirectory, _emulator))
+        {
+            return OperationResult.Fail("The resolved GameLoop path is outside the expected installation directory.");
         }
 
         try
@@ -80,6 +90,27 @@ public sealed class GpuRoutingService
         if (string.IsNullOrWhiteSpace(value)) return false;
         // Tolerate older builds writing "GpuPreference=2" without the trailing semicolon.
         return string.Equals(value.Trim().TrimEnd(';'), "GpuPreference=2", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Validates that <paramref name="installDirectory"/> contains the expected
+    /// GameLoop installation folder name as a distinct directory segment —
+    /// the same fail-closed bar as the Defender exclusion trust check.
+    /// </summary>
+    internal static bool IsTrustedInstallPath(string? installDirectory, EmulatorOptions emulator)
+    {
+        if (string.IsNullOrWhiteSpace(installDirectory)) return false;
+
+        try
+        {
+            var fullPath = Path.GetFullPath(installDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var segments = fullPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            return segments.Any(segment => string.Equals(segment, (emulator ?? throw new ArgumentNullException(nameof(emulator))).Emulator.InstallFolderName, StringComparison.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string? ResolveInstallDirectory(string? installPath)

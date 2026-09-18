@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Nexora.Tests.Services;
 
-public sealed class RegistryServiceExtensionsTests
+public sealed class RegistryServiceTests
 {
     private const string TestSubKey = @"SOFTWARE\NexoraUnitTests\SubKeyTest";
 

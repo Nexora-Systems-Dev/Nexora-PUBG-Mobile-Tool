@@ -10,12 +10,19 @@ namespace Nexora.Services.Performance;
 /// </summary>
 public sealed class PowerSessionService
 {
-    private readonly ProcessRunner _runner;
+    private readonly IProcessRunner _runner;
     private Guid? _previousPowerScheme;
 
-    public PowerSessionService(ProcessRunner runner)
+    private const string BalancedSchemeAlias = "SCHEME_BALANCED";
+    private const string HighPerformanceSchemeAlias = "SCHEME_MIN";
+
+    private static readonly Regex PowerSchemeGuidRegex = new(
+        "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        RegexOptions.Compiled);
+
+    public PowerSessionService(IProcessRunner runner)
     {
-        _runner = runner;
+        _runner = runner ?? throw new ArgumentNullException(nameof(runner));
     }
 
     public OperationResult Apply(HardwareSnapshot hardware)
@@ -23,7 +30,7 @@ public sealed class PowerSessionService
         if (_previousPowerScheme is null)
         {
             var active = _runner.Run("powercfg.exe", new[] { "/getactivescheme" });
-            var match = Regex.Match(active.StandardOutput, @"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+            var match = PowerSchemeGuidRegex.Match(active.StandardOutput);
             if (!active.Succeeded || !match.Success || !Guid.TryParse(match.Value, out var previous))
             {
                 return OperationResult.Fail("Could not identify the active Windows power mode, so no power changes were made.");
@@ -32,16 +39,15 @@ public sealed class PowerSessionService
             _previousPowerScheme = previous;
         }
 
-        var scheme = hardware.IsLaptop && !hardware.IsOnAcPower
-            ? "SCHEME_BALANCED"
-            : "SCHEME_MIN";
+        var batterySafe = hardware.IsLaptop && !hardware.IsOnAcPower;
+        var scheme = batterySafe ? BalancedSchemeAlias : HighPerformanceSchemeAlias;
         var result = _runner.Run("powercfg.exe", new[] { "/setactive", scheme });
         if (!result.Succeeded)
         {
             return OperationResult.Fail($"Could not activate the Windows power policy. {GetError(result)}");
         }
 
-        return hardware.IsLaptop && !hardware.IsOnAcPower
+        return batterySafe
             ? OperationResult.Ok("Battery-safe performance session active with Windows Balanced power policy.")
             : OperationResult.Ok("High-performance Windows power policy active for GameLoop.");
     }

@@ -1,7 +1,11 @@
 using System.Globalization;
 using FluentAssertions;
 using Nexora.Configuration;
+using Nexora.Features.GameLoop;
+using Nexora.Features.Layout;
+using Nexora.Features.SystemTools.Network;
 using Nexora.Services;
+using Nexora.Services.Performance;
 using Nexora.Shared.Infrastructure;
 using Nexora.Shared.Kernel;
 using Xunit;
@@ -60,7 +64,12 @@ public sealed class BoundaryValidationTests
     [InlineData("a")]
     public async Task LoadVersionAsync_FailsFast_ForInvalidPackageName(string packageName)
     {
-        var service = new GameLoopService(new RegistryService(), new AdbClient(new ProcessRunner(), new RegistryService()));
+        var service = new GameLoopService(
+            new RegistryService(),
+            new AdbClient(new ProcessRunner(), new GameLoopPathResolver(new RegistryService())),
+            new GameLoopWorkingStorage(new PhysicalFileSystem(), new GameLoopWorkRootProvider()),
+            new PhysicalFileSystem(),
+            new GameLoopProcessService(new ProcessRunner(), new GameLoopPathResolver(new RegistryService())));
 
         // Must return before PrepareWorkingFiles, PullAsync, or any ADB spawn.
         var result = await service.LoadVersionAsync(packageName, CancellationToken.None);
@@ -75,7 +84,7 @@ public sealed class BoundaryValidationTests
     [InlineData("")]
     public void FindInstalledPackages_Throws_ForInvalidPackageName(string packageName)
     {
-        var adb = new AdbClient(new ProcessRunner(), new RegistryService());
+        var adb = new AdbClient(new ProcessRunner(), new GameLoopPathResolver(new RegistryService()));
 
         // Validation precedes every Run call, so no ADB process spawns.
         var act = () => adb.FindInstalledPackages(new[] { packageName }, CancellationToken.None);
@@ -86,7 +95,7 @@ public sealed class BoundaryValidationTests
     [Fact]
     public void FindInstalledPackages_ReturnsEmpty_ForEmptyInput()
     {
-        var adb = new AdbClient(new ProcessRunner(), new RegistryService());
+        var adb = new AdbClient(new ProcessRunner(), new GameLoopPathResolver(new RegistryService()));
 
         var installed = adb.FindInstalledPackages(Array.Empty<string>(), CancellationToken.None);
 

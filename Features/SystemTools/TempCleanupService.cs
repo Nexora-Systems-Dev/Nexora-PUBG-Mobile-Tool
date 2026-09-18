@@ -1,21 +1,22 @@
 using Nexora.Configuration;
+using Nexora.Services;
 using Nexora.Shared.Infrastructure;
 using Nexora.Shared.Kernel;
 
-namespace Nexora.Services;
+namespace Nexora.Features.SystemTools;
 
 public sealed class TempCleanupService : ITempCleanupService
 {
-    private readonly IRegistryService _registry;
+    private readonly IMachineRegistry _registry;
     private readonly TempCleanupOptions _options;
+    private readonly GameLoopOptions _gameLoop;
 
-    public TempCleanupService(IRegistryService registry, TempCleanupOptions? options = null)
+    public TempCleanupService(IMachineRegistry registry, TempCleanupOptions? options = null, GameLoopOptions? gameLoop = null)
     {
-        _registry = registry;
+        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _options = options ?? new TempCleanupOptions();
+        _gameLoop = gameLoop ?? new GameLoopOptions();
     }
-
-    public OperationResult CleanTemp() => CleanTempCore(CancellationToken.None);
 
     public Task<OperationResult> CleanTempAsync(CancellationToken cancellationToken = default)
     {
@@ -33,7 +34,7 @@ public sealed class TempCleanupService : ITempCleanupService
                 ClearChildren(directory, skipped, cancellationToken);
             }
 
-            var installPath = _registry.GetLocalString(AppConstants.Registry.ValueInstallPath, AppConstants.Registry.BranchUI);
+            var installPath = _registry.GetLocalString(_gameLoop.Registry.ValueInstallPath, _gameLoop.Registry.BranchUI);
             if (!string.IsNullOrWhiteSpace(installPath))
             {
                 cancellationToken.ThrowIfCancellationRequested();

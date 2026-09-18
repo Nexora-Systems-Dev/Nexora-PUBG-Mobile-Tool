@@ -12,4 +12,12 @@ public sealed record GraphicsSelection(
     string FrameRate,
     string Style,
     bool EnableShadow,
-    bool EnableKoreanFullHd);
+    bool EnableKoreanFullHd)
+{
+    /// <summary>
+    /// Fallback selection when no UI option is checked. The three names must
+    /// exist in the <see cref="PubgVersionCatalog"/> value maps; both toggles
+    /// default off. Drift surfaces at apply time via TryResolveGraphicsValues.
+    /// </summary>
+    public static GraphicsSelection Defaults { get; } = new("Smooth", "Low", "Classic", false, false);
+}

@@ -1,0 +1,18 @@
+namespace Nexora.Shared.Infrastructure;
+
+/// <summary>
+/// Resolves GameLoop emulator installation paths using the
+/// registry → running-process → ProgramFiles discovery pipeline.
+/// </summary>
+public interface IGameLoopPathResolver
+{
+    string? GetRootFromRegistry();
+
+    string? GetRoot();
+
+    string? GetUiPath();
+
+    string? GetAppMarketPath();
+
+    bool IsGameLoopPath(string? executablePath, string? gameLoopRoot);
+}

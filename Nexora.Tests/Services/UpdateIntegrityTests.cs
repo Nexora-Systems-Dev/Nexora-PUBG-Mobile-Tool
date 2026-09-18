@@ -36,13 +36,37 @@ public sealed class UpdateIntegrityTests
         UpdateService.IsTrustedDownloadUrl(url).Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData("dotnet")]
+    [InlineData("dotnet.exe")]
+    [InlineData("testhost")]
+    [InlineData("testhost.exe")]
+    [InlineData("TestHost.dll")]
+    [InlineData("C:/Program Files/dotnet/dotnet.exe")]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void IsTestHostPath_RejectsHostsAndBlankPaths(string? processPath)
+    {
+        UpdateService.IsTestHostPath(processPath).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("Nexora PUBG Mobile Tool.exe")]
+    [InlineData("C:/Tools/Nexora/Nexora PUBG Mobile Tool.exe")]
+    [InlineData("dotnet-launcher.exe")]
+    public void IsTestHostPath_AcceptsApplicationExecutables(string processPath)
+    {
+        UpdateService.IsTestHostPath(processPath).Should().BeFalse();
+    }
+
     [Fact]
     public void TryExtractSha256_ExtractsHexHashFromChangelog()
     {
         const string expected = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
         var changelog = $"## Release Notes\n\nSHA256: {expected}\nBug fixes and improvements.";
 
-        var extracted = UpdateService.TryExtractSha256(changelog);
+        var extracted = UpdateArchiveValidator.TryExtractSha256(changelog);
 
         extracted.Should().Be(expected);
     }
@@ -52,25 +76,25 @@ public sealed class UpdateIntegrityTests
     {
         const string expected = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
-        UpdateService.TryExtractSha256($"SHA-256: {expected}").Should().Be(expected);
-        UpdateService.TryExtractSha256($"**SHA256:** {expected}").Should().Be(expected);
-        UpdateService.TryExtractSha256($"**SHA-256:** `{expected}`").Should().Be(expected);
-        UpdateService.TryExtractSha256($"checksum = {expected}").Should().Be(expected);
-        UpdateService.TryExtractSha256($"{expected}  Nexora-v1.0.13-win-x64.exe").Should().Be(expected);
-        UpdateService.TryExtractSha256("No hash in this body").Should().BeNull();
-        UpdateService.TryExtractSha256(string.Empty).Should().BeNull();
+        UpdateArchiveValidator.TryExtractSha256($"SHA-256: {expected}").Should().Be(expected);
+        UpdateArchiveValidator.TryExtractSha256($"**SHA256:** {expected}").Should().Be(expected);
+        UpdateArchiveValidator.TryExtractSha256($"**SHA-256:** `{expected}`").Should().Be(expected);
+        UpdateArchiveValidator.TryExtractSha256($"checksum = {expected}").Should().Be(expected);
+        UpdateArchiveValidator.TryExtractSha256($"{expected}  Nexora-v1.0.13-win-x64.exe").Should().Be(expected);
+        UpdateArchiveValidator.TryExtractSha256("No hash in this body").Should().BeNull();
+        UpdateArchiveValidator.TryExtractSha256(string.Empty).Should().BeNull();
     }
 
     [Fact]
     public void IsAuthenticodeSigned_ReturnsFalse_ForMissingOrUnsignedFile()
     {
-        UpdateService.IsAuthenticodeSigned("Z:\\nexora-nonexistent.exe").Should().BeFalse();
+        UpdateArchiveValidator.IsAuthenticodeSigned("Z:\\nexora-nonexistent.exe").Should().BeFalse();
 
         var tempFile = Path.Combine(Path.GetTempPath(), $"NexoraUnsignedTest-{Guid.NewGuid():N}.exe");
         try
         {
             File.WriteAllBytes(tempFile, new byte[] { 0x4D, 0x5A, 0x90, 0x00 });
-            UpdateService.IsAuthenticodeSigned(tempFile).Should().BeFalse();
+            UpdateArchiveValidator.IsAuthenticodeSigned(tempFile).Should().BeFalse();
         }
         finally
         {
@@ -85,7 +109,7 @@ public sealed class UpdateIntegrityTests
         try
         {
             File.WriteAllBytes(tempFile, Array.Empty<byte>());
-            var hash = UpdateService.ComputeSha256(tempFile);
+            var hash = UpdateArchiveValidator.ComputeSha256(tempFile);
             hash.Should().Be("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
         }
         finally
@@ -95,18 +119,18 @@ public sealed class UpdateIntegrityTests
     }
 
     [Fact]
-    public void VerifyExecutableIntegrity_MatchesValidExpectedHash()
+    public void VerifyExecutableIntegrity_RejectsUnsignedExecutableEvenWhenHashMatches()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"NexoraIntegrityTest-{Guid.NewGuid():N}.exe");
         try
         {
             File.WriteAllBytes(tempFile, new byte[] { 0x4D, 0x5A, 0x90, 0x00 }); // Mock MZ header
-            var expectedHash = UpdateService.ComputeSha256(tempFile);
+            var expectedHash = UpdateArchiveValidator.ComputeSha256(tempFile);
 
-            var verified = UpdateService.VerifyExecutableIntegrity(tempFile, expectedHash, out var error);
+            var verified = UpdateArchiveValidator.VerifyExecutableIntegrity(tempFile, expectedHash, out var error);
 
-            verified.Should().BeTrue();
-            error.Should().BeEmpty();
+            verified.Should().BeFalse();
+            error.Should().Contain("signature");
         }
         finally
         {
@@ -123,7 +147,7 @@ public sealed class UpdateIntegrityTests
             File.WriteAllBytes(tempFile, new byte[] { 0x4D, 0x5A, 0x90, 0x00 });
             var mismatchedHash = "0000000000000000000000000000000000000000000000000000000000000000";
 
-            var verified = UpdateService.VerifyExecutableIntegrity(tempFile, mismatchedHash, out var error);
+            var verified = UpdateArchiveValidator.VerifyExecutableIntegrity(tempFile, mismatchedHash, out var error);
 
             verified.Should().BeFalse();
             error.Should().Contain("does not match");
@@ -143,7 +167,7 @@ public sealed class UpdateIntegrityTests
             // Unsigned mock file with no expected hash
             File.WriteAllBytes(tempFile, new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00 });
 
-            var verified = UpdateService.VerifyExecutableIntegrity(tempFile, null, out var error);
+            var verified = UpdateArchiveValidator.VerifyExecutableIntegrity(tempFile, null, out var error);
 
             verified.Should().BeFalse();
             error.Should().Contain("unverifiable");
@@ -164,7 +188,7 @@ public sealed class UpdateIntegrityTests
             DownloadUrl: "https://untrusted-host.com/update.zip",
             ChangeLog: "Test changelog");
 
-        var service = new UpdateService();
+        var service = new UpdateService(new ProcessRunner());
         var result = await service.DownloadAndLaunchAsync(update);
 
         result.Success.Should().BeFalse();

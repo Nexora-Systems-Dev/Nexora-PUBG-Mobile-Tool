@@ -59,7 +59,7 @@ public sealed class UpdateReplacementTests
     [Fact]
     public void ValidateTargetPath_RejectsExecutableInsideUpdateStagingDirectory()
     {
-        var stagingDir = Path.Combine(Path.GetTempPath(), AppConstants.Update.StagingPrefix + Guid.NewGuid().ToString("N"));
+        var stagingDir = Path.Combine(Path.GetTempPath(), new UpdateOptions().StagingPrefix + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(stagingDir);
         var stagingExe = Path.Combine(stagingDir, "Nexora.exe");
         try
@@ -78,10 +78,57 @@ public sealed class UpdateReplacementTests
     }
 
     [Fact]
+    public void ValidateTargetPath_RejectsExecutableInsideCustomStagingBase()
+    {
+        // Guards the fixed mismatch: with a custom staging base, an executable
+        // inside that base's staging prefix must be rejected even though it is
+        // nowhere under %TEMP%.
+        var customBase = Path.Combine(Path.GetTempPath(), $"NexoraCustomBase-{Guid.NewGuid():N}");
+        var stagingDir = Path.Combine(customBase, new UpdateOptions().StagingPrefix + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(stagingDir);
+        var stagingExe = Path.Combine(stagingDir, "Nexora.exe");
+        try
+        {
+            File.WriteAllText(stagingExe, "staging exe");
+
+            var valid = UpdateService.ValidateTargetPath(stagingExe, out var error, stagingBaseDirectory: customBase);
+
+            valid.Should().BeFalse();
+            error.Should().Contain("temporary update staging directory");
+        }
+        finally
+        {
+            FileUtilities.TryDeleteDirectory(customBase);
+        }
+    }
+
+    [Fact]
+    public void ValidateTargetPath_AcceptsTempRootFile_WhenCustomStagingBaseConfigured()
+    {
+        // The other half of the mismatch: with a custom staging base, a file
+        // directly under %TEMP% is outside the staging prefix and must pass.
+        var customBase = Path.Combine(Path.GetTempPath(), $"NexoraCustomBase-{Guid.NewGuid():N}");
+        var tempFile = Path.Combine(Path.GetTempPath(), $"NexoraValidTarget-{Guid.NewGuid():N}.exe");
+        try
+        {
+            File.WriteAllText(tempFile, "mock exe content");
+
+            var valid = UpdateService.ValidateTargetPath(tempFile, out var error, stagingBaseDirectory: customBase);
+
+            valid.Should().BeTrue();
+            error.Should().BeEmpty();
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
     public void GetCurrentExecutablePath_UsesConfiguredOverride()
     {
         var customPath = @"C:\Program Files\Nexora\Nexora.exe";
-        var service = new UpdateService(currentExecutablePath: customPath);
+        var service = new UpdateService(new ProcessRunner(), currentExecutablePath: customPath);
 
         service.GetCurrentExecutablePath().Should().Be(Path.GetFullPath(customPath));
     }
@@ -95,7 +142,7 @@ public sealed class UpdateReplacementTests
         const string extraction = @"C:\Temp\staging\extracted";
         const string staging = @"C:\Temp\staging";
 
-        var script = UpdateService.BuildHandoffScript(parentPid, source, target, extraction, staging);
+        var script = UpdateHandoffBuilder.BuildHandoffScript(parentPid, source, target, extraction, staging);
 
         script.Should().Contain("$parentPid = 12345");
         script.Should().Contain("WaitForExit(30000)");
@@ -112,7 +159,7 @@ public sealed class UpdateReplacementTests
     {
         const string originalScript = "Write-Output 'Testing EncodedCommand'";
 
-        var args = UpdateService.BuildPowerShellArguments(originalScript);
+        var args = UpdateHandoffBuilder.BuildPowerShellArguments(originalScript);
 
         args.Should().StartWith("-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand ");
         var base64Part = args.Split("-EncodedCommand ")[1];
@@ -144,7 +191,7 @@ public sealed class UpdateReplacementTests
             File.WriteAllText(readmeFile, "Changelog and release notes");
 
             // parentPid: 0 bypasses parent wait loop for testing
-            var script = UpdateService.BuildHandoffScript(
+            var script = UpdateHandoffBuilder.BuildHandoffScript(
                 parentPid: 0,
                 sourceExecutablePath: sourceExe,
                 targetExecutablePath: targetExe,
@@ -186,7 +233,7 @@ public sealed class UpdateReplacementTests
 
             File.WriteAllText(targetExe, "Old Version 1.0.13 Content");
 
-            var script = UpdateService.BuildHandoffScript(
+            var script = UpdateHandoffBuilder.BuildHandoffScript(
                 parentPid: 0,
                 sourceExecutablePath: missingSourceExe,
                 targetExecutablePath: targetExe,
@@ -228,7 +275,7 @@ public sealed class UpdateReplacementTests
             File.WriteAllText(sourceExe, "New Extracted Executable");
 
             // Build a script with a simulated copy failure that triggers the rollback branch
-            var baseScript = UpdateService.BuildHandoffScript(
+            var baseScript = UpdateHandoffBuilder.BuildHandoffScript(
                 parentPid: 0,
                 sourceExecutablePath: sourceExe,
                 targetExecutablePath: targetExe,
@@ -261,7 +308,7 @@ public sealed class UpdateReplacementTests
     public async Task DownloadAndLaunchAsync_RejectsUpdate_WhenTargetExecutableDoesNotExist()
     {
         var missingTarget = Path.Combine(Path.GetTempPath(), $"NexoraMissing-{Guid.NewGuid():N}.exe");
-        var service = new UpdateService(currentExecutablePath: missingTarget);
+        var service = new UpdateService(new ProcessRunner(), currentExecutablePath: missingTarget);
 
         var update = new UpdateInfo(
             Available: true,
@@ -292,7 +339,7 @@ public sealed class UpdateReplacementTests
 
             // Runner that fails StartDetachedElevated
             var failingRunner = new MockProcessRunner(startDetachedResult: false);
-            var service = new UpdateService(failingRunner, mockHttp, targetExe);
+            var service = new UpdateService(failingRunner, mockHttp, targetExe, stagingBaseDirectory: tempRoot, signatureCheck: _ => true);
 
             var update = new UpdateInfo(
                 Available: true,
@@ -330,7 +377,11 @@ public sealed class UpdateReplacementTests
             var zipBytes = CreateMockUpdateZip("v1.0.14", out var expectedSha256);
             var mockHttp = new MockHttpClient(zipBytes);
             var successRunner = new MockProcessRunner(startDetachedResult: true);
-            var service = new UpdateService(successRunner, mockHttp, targetExe);
+            // Scoped staging base: the intentionally-retained handoff staging tree lives
+            // under tempRoot and is removed by the finally below instead of leaking into %TEMP%.
+            // Signature stubbed true: this test covers handoff staging, while
+            // UpdateIntegrityTests pins the production dual hash+signature gate.
+            var service = new UpdateService(successRunner, mockHttp, targetExe, stagingBaseDirectory: tempRoot, signatureCheck: _ => true);
 
             var update = new UpdateInfo(
                 Available: true,
@@ -354,12 +405,48 @@ public sealed class UpdateReplacementTests
         }
     }
 
+    [Fact]
+    public async Task DownloadAndLaunchAsync_FailsSafely_WhenNetworkIsUnreachable()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"NexoraOfflineTest-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(tempRoot);
+            var targetExe = Path.Combine(tempRoot, "Nexora PUBG Mobile Tool.exe");
+            File.WriteAllText(targetExe, "Original exe");
+
+            var offlineHttp = new System.Net.Http.HttpClient(new FailingHttpMessageHandler());
+            var service = new UpdateService(
+                new MockProcessRunner(startDetachedResult: true),
+                offlineHttp,
+                targetExe,
+                stagingBaseDirectory: tempRoot,
+                signatureCheck: _ => true);
+
+            var update = new UpdateInfo(
+                Available: true,
+                LatestVersion: "v1.0.14",
+                AssetName: "Nexora-v1.0.14-win-x64.zip",
+                DownloadUrl: "https://github.com/mohammad-emad-dev/Nexora-PUBG-Mobile-Tool/releases/download/v1.0.14/update.zip",
+                ChangeLog: "Changelog");
+
+            var result = await service.DownloadAndLaunchAsync(update);
+
+            result.Success.Should().BeFalse();
+            result.Message.Should().Contain("Update failed");
+        }
+        finally
+        {
+            FileUtilities.TryDeleteDirectory(tempRoot);
+        }
+    }
+
     private static byte[] CreateMockUpdateZip(string version, out string sha256)
     {
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
         {
-            var exeEntry = archive.CreateEntry($"Nexora-{version}-{AppConstants.Update.Runtime}.exe");
+            var exeEntry = archive.CreateEntry($"Nexora-{version}-{new UpdateOptions().Runtime}.exe");
             using var entryStream = exeEntry.Open();
             var payload = Encoding.UTF8.GetBytes("MZ simulated verified executable binary content");
             entryStream.Write(payload);
@@ -395,6 +482,14 @@ public sealed class UpdateReplacementTests
             };
             return Task.FromResult(response);
         }
+    }
+
+    private sealed class FailingHttpMessageHandler : System.Net.Http.HttpMessageHandler
+    {
+        protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(
+            System.Net.Http.HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            throw new System.Net.Http.HttpRequestException("Network unreachable (test).");
     }
 
     private sealed class MockProcessRunner : IProcessRunner

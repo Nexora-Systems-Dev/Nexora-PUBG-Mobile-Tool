@@ -16,11 +16,7 @@ public sealed record HardwareSnapshot(
     bool HypervisorDetected)
 {
     public string Architecture => "GameLoop 64-bit";
-    public bool HasDedicatedGpu => GpuVendor.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase)
-        || GpuName.Contains("RTX", StringComparison.OrdinalIgnoreCase)
-        || GpuName.Contains("GTX", StringComparison.OrdinalIgnoreCase)
-        || GpuName.Contains("RX", StringComparison.OrdinalIgnoreCase)
-        || GpuName.Contains("Arc", StringComparison.OrdinalIgnoreCase);
+    public bool HasDedicatedGpu => GpuVendorClassifier.IsDedicatedGpu(GpuVendor, GpuName);
 }
 
 public sealed record OptimizerPlan(

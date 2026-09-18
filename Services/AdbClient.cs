@@ -6,26 +6,89 @@ namespace Nexora.Services;
 
 public sealed class AdbClient : IAdbClient
 {
+    /// <summary>
+    /// How long a resolved ADB path is reused before re-probing the installation.
+    /// Short enough that a GameLoop install/repair is picked up promptly, long
+    /// enough that per-command registry/process scans don't tax every call.
+    /// </summary>
+    private static readonly TimeSpan AdbPathCacheTtl = TimeSpan.FromMinutes(1);
+
     private readonly IProcessRunner _runner;
-    private readonly string _adbPath;
+    private readonly IGameLoopPathResolver _paths;
+    private readonly GameLoopOptions _gameLoop;
+    private readonly EmulatorOptions _emulator;
+    private readonly object _adbPathLock = new();
+    private string? _adbPath;
+    private DateTime _adbPathResolvedAtUtc;
     private string? _deviceSerial;
 
-    public AdbClient(IProcessRunner runner, IRegistryService registry)
+    public AdbClient(IProcessRunner runner, IGameLoopPathResolver pathResolver, GameLoopOptions? gameLoop = null, EmulatorOptions? emulator = null)
     {
-        _runner = runner;
-        _adbPath = FindAdbPath(registry);
+        _runner = runner ?? throw new ArgumentNullException(nameof(runner));
+        _paths = pathResolver ?? throw new ArgumentNullException(nameof(pathResolver));
+        _gameLoop = gameLoop ?? new GameLoopOptions();
+        _emulator = emulator ?? new EmulatorOptions();
     }
 
-    public string DeviceSerial => _deviceSerial ?? AppConstants.Adb.PreferredSerial;
+    public string DeviceSerial => _deviceSerial ?? _gameLoop.Adb.PreferredSerial;
 
     public ProcessResult Run(params string[] arguments)
     {
-        return _runner.Run(_adbPath, arguments, AppConstants.Timeouts.AdbCommandTimeout);
+        var adbPath = AdbPath;
+        var result = _runner.Run(adbPath, arguments, _gameLoop.Timeouts.AdbCommandTimeout);
+        if (!result.TimedOut && result.ExitCode == -1)
+        {
+            // The executable never ran (missing file, bad path): fail loudly
+            // with the repair hint instead of a bare process-start error.
+            return new ProcessResult(
+                result.ExitCode,
+                result.StandardOutput,
+                $"ADB executable could not be started at '{adbPath}'. Repair the GameLoop installation or set NEXORA_GAMELOOP_ROOT to a custom install directory. Details: {result.StandardError}",
+                result.TimedOut);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Re-probes the GameLoop installation for adb immediately, so a
+    /// repair/reinstall is picked up without waiting for cache expiry.
+    /// </summary>
+    public void RefreshAdbPath()
+    {
+        lock (_adbPathLock)
+        {
+            _adbPath = FindAdbPath();
+            _adbPathResolvedAtUtc = DateTime.UtcNow;
+        }
+    }
+
+    private string AdbPath
+    {
+        get
+        {
+            lock (_adbPathLock)
+            {
+                if (_adbPath is null || DateTime.UtcNow - _adbPathResolvedAtUtc >= AdbPathCacheTtl)
+                {
+                    _adbPath = FindAdbPath();
+                    _adbPathResolvedAtUtc = DateTime.UtcNow;
+                }
+
+                return _adbPath;
+            }
+        }
     }
 
     public string Shell(string command)
     {
         return Run("-s", DeviceSerial, "shell", command).StandardOutput.Trim();
+    }
+
+    public string Shell(string command, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Shell(command);
     }
 
     public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken)
@@ -40,7 +103,7 @@ public sealed class AdbClient : IAdbClient
 
     private async Task<bool> TransferWithRetryAsync(string operation, string source, string destination, CancellationToken cancellationToken)
     {
-        for (var attempt = 1; attempt <= AppConstants.Timeouts.AdbTransferMaxAttempts; attempt++)
+        for (var attempt = 1; attempt <= _gameLoop.Timeouts.AdbTransferMaxAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var result = Run("-s", DeviceSerial, operation, source, destination);
@@ -51,13 +114,13 @@ public sealed class AdbClient : IAdbClient
                 return true;
             }
 
-            if (attempt == AppConstants.Timeouts.AdbTransferMaxAttempts)
+            if (attempt == _gameLoop.Timeouts.AdbTransferMaxAttempts)
             {
                 return false;
             }
 
             // Refresh device serial before retrying in case the bridge restarted.
-            await Task.Delay(AppConstants.Timeouts.AdbTransferRetryDelay, cancellationToken);
+            await Task.Delay(_gameLoop.Timeouts.AdbTransferRetryDelay, cancellationToken);
             TrySelectDevice(cancellationToken);
         }
 
@@ -73,7 +136,7 @@ public sealed class AdbClient : IAdbClient
             return false;
         }
 
-        for (var attempt = 0; attempt < AppConstants.Timeouts.AdbBootPollAttempts; attempt++)
+        for (var attempt = 0; attempt < _gameLoop.Timeouts.AdbBootPollAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var result = Run("-s", DeviceSerial, "shell", "getprop", "dev.bootcomplete");
@@ -89,7 +152,7 @@ public sealed class AdbClient : IAdbClient
                 TrySelectDevice(cancellationToken);
             }
 
-            await Task.Delay(AppConstants.Timeouts.AdbBootPollDelay, cancellationToken);
+            await Task.Delay(_gameLoop.Timeouts.AdbBootPollDelay, cancellationToken);
         }
 
         return false;
@@ -104,18 +167,9 @@ public sealed class AdbClient : IAdbClient
             return false;
         }
 
-        var connectedSerials = devices.StandardOutput
-            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-            .Skip(1)
-            .Select(line => line.Split('\t', StringSplitOptions.RemoveEmptyEntries))
-            .Where(parts => parts.Length >= 2 && string.Equals(parts[1], "device", StringComparison.OrdinalIgnoreCase))
-            .Select(parts => parts[0])
-            .ToList();
+        var connectedSerials = ParseDeviceSerials(devices.StandardOutput);
 
-        _deviceSerial = connectedSerials.FirstOrDefault(serial =>
-            string.Equals(serial, AppConstants.Adb.PreferredSerial, StringComparison.OrdinalIgnoreCase))
-            ?? connectedSerials.FirstOrDefault(serial =>
-                serial.EndsWith(AppConstants.Adb.TcpPortSuffix, StringComparison.OrdinalIgnoreCase));
+        _deviceSerial = SelectPreferredSerial(connectedSerials);
 
         if (!string.IsNullOrWhiteSpace(_deviceSerial))
         {
@@ -124,23 +178,40 @@ public sealed class AdbClient : IAdbClient
 
         // Connect to local loopback port if GameLoop exposes bridge on TCP 5555.
         cancellationToken.ThrowIfCancellationRequested();
-        Run("connect", AppConstants.Adb.LoopbackEndpoint);
+        Run("connect", _gameLoop.Adb.LoopbackEndpoint);
         cancellationToken.ThrowIfCancellationRequested();
         devices = Run("devices");
-        connectedSerials = devices.StandardOutput
+        connectedSerials = ParseDeviceSerials(devices.StandardOutput);
+
+        _deviceSerial = SelectPreferredSerial(connectedSerials);
+
+        return !string.IsNullOrWhiteSpace(_deviceSerial);
+    }
+
+    /// <summary>
+    /// Parses `adb devices` output into the serials of entries in the "device" state,
+    /// skipping the header line and ignoring offline/unauthorized entries.
+    /// </summary>
+    internal static List<string> ParseDeviceSerials(string output)
+    {
+        return output
             .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
             .Skip(1)
             .Select(line => line.Split('\t', StringSplitOptions.RemoveEmptyEntries))
             .Where(parts => parts.Length >= 2 && string.Equals(parts[1], "device", StringComparison.OrdinalIgnoreCase))
             .Select(parts => parts[0])
             .ToList();
+    }
 
-        _deviceSerial = connectedSerials.FirstOrDefault(serial =>
-            string.Equals(serial, AppConstants.Adb.PreferredSerial, StringComparison.OrdinalIgnoreCase))
+    /// <summary>
+    /// Prefers the configured serial, falling back to any serial with the TCP port suffix.
+    /// </summary>
+    private string? SelectPreferredSerial(List<string> connectedSerials)
+    {
+        return connectedSerials.FirstOrDefault(serial =>
+            string.Equals(serial, _gameLoop.Adb.PreferredSerial, StringComparison.OrdinalIgnoreCase))
             ?? connectedSerials.FirstOrDefault(serial =>
-                serial.EndsWith(AppConstants.Adb.TcpPortSuffix, StringComparison.OrdinalIgnoreCase));
-
-        return !string.IsNullOrWhiteSpace(_deviceSerial);
+                serial.EndsWith(_gameLoop.Adb.TcpPortSuffix, StringComparison.OrdinalIgnoreCase));
     }
 
     public IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames, CancellationToken cancellationToken)
@@ -164,17 +235,18 @@ public sealed class AdbClient : IAdbClient
         return installed;
     }
 
-    public void StopAdb() => KillAdb(_runner);
+    public void StopAdb() => KillAdb(_runner, _gameLoop);
 
-    public static void KillAdb(IProcessRunner? runner = null)
+    public static void KillAdb(IProcessRunner runner, GameLoopOptions? gameLoop = null)
     {
+        if (runner is null) throw new ArgumentNullException(nameof(runner));
+        gameLoop ??= new GameLoopOptions();
         try
         {
-            var processRunner = runner ?? new ProcessRunner();
-            processRunner.Run(
+            runner.Run(
                 AppConstants.Tools.TaskkillFileName,
-                new[] { "/F", "/IM", AppConstants.Adb.FileName },
-                TimeSpan.FromMilliseconds(AppConstants.Timeouts.AdbKillWaitMilliseconds));
+                new[] { "/F", "/IM", gameLoop.Adb.FileName },
+                TimeSpan.FromMilliseconds(gameLoop.Timeouts.AdbKillWaitMilliseconds));
         }
         catch
         {
@@ -182,72 +254,29 @@ public sealed class AdbClient : IAdbClient
         }
     }
 
-    private static string FindAdbPath(IRegistryService registry)
+    /// <summary>
+    /// Probes the GameLoop installation for adb: bundled assets, then the
+    /// resolver's UI / AppMarket / root lookups. Intentional last resort is the
+    /// bare <c>adb.exe</c> PATH fallback — <see cref="Run"/> turns a missing
+    /// executable into an explicit "ADB executable could not be started"
+    /// failure instead of silently using a wrong drive.
+    /// </summary>
+    internal string FindAdbPath()
     {
         var candidates = new List<string>
         {
-            Path.Combine(AppContext.BaseDirectory, AppConstants.Assets.DirectoryName, AppConstants.Adb.FileName)
+            Path.Combine(AppContext.BaseDirectory, _emulator.Assets.DirectoryName, _gameLoop.Adb.FileName)
         };
 
-        foreach (var branch in new[] { AppConstants.Registry.BranchUI, AppConstants.Registry.BranchAppMarket })
+        // The resolver already walks registry → running processes → ProgramFiles,
+        // so these three lookups cover every source the old candidate list probed.
+        foreach (var baseDir in new[] { _paths.GetUiPath(), _paths.GetAppMarketPath(), _paths.GetRoot() })
         {
-            var installPath = registry.GetLocalString(AppConstants.Registry.ValueInstallPath, branch);
-            if (!string.IsNullOrWhiteSpace(installPath))
-            {
-                candidates.Add(Path.Combine(installPath, AppConstants.Adb.FileName));
-                candidates.Add(Path.Combine(installPath, "adb", AppConstants.Adb.FileName));
-            }
+            if (string.IsNullOrWhiteSpace(baseDir)) continue;
+            candidates.Add(Path.Combine(baseDir, _gameLoop.Adb.FileName));
+            candidates.Add(Path.Combine(baseDir, "adb", _gameLoop.Adb.FileName));
         }
 
-        // Fall back to active emulator process paths if registry lookup did not locate ADB.
-        foreach (var name in AppConstants.Emulator.RunningCheckProcessNames)
-        {
-            try
-            {
-                var procs = System.Diagnostics.Process.GetProcessesByName(name);
-                foreach (var p in procs)
-                {
-                    try
-                    {
-                        var modPath = p.MainModule?.FileName;
-                        if (!string.IsNullOrWhiteSpace(modPath))
-                        {
-                            var dir = Path.GetDirectoryName(modPath);
-                            if (!string.IsNullOrWhiteSpace(dir))
-                            {
-                                candidates.Add(Path.Combine(dir, AppConstants.Adb.FileName));
-                                candidates.Add(Path.Combine(dir, "adb", AppConstants.Adb.FileName));
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore processes where module path access is denied.
-                    }
-                    finally
-                    {
-                        p.Dispose();
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore process enumeration errors.
-            }
-        }
-
-        // Check standard Program Files installation paths.
-        foreach (var programFiles in new[]
-        {
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-        }.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            candidates.Add(Path.Combine(programFiles, AppConstants.Emulator.InstallFolderName, "ui", AppConstants.Adb.FileName));
-            candidates.Add(Path.Combine(programFiles, AppConstants.Emulator.InstallFolderName, "UI", AppConstants.Adb.FileName));
-        }
-
-        var existing = candidates.FirstOrDefault(File.Exists);
-        return existing ?? AppConstants.Adb.FileName;
+        return candidates.FirstOrDefault(File.Exists) ?? _gameLoop.Adb.FileName;
     }
 }

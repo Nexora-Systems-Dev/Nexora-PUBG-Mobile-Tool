@@ -18,7 +18,7 @@ public interface IGameLoopPerformanceEngine
 
     OperationResult OptimizeGameLoop();
 
-    OperationResult OptimizeAll();
+    Task<OperationResult> OptimizeAllAsync(CancellationToken cancellationToken = default);
 
     OperationResult ApplyPerformanceSession();
 

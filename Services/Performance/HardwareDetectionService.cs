@@ -11,11 +11,13 @@ namespace Nexora.Services.Performance;
 /// </summary>
 public sealed class HardwareDetectionService
 {
-    private readonly ProcessRunner _runner;
+    private readonly IProcessRunner _runner;
+    private readonly GameLoopOptions _gameLoop;
 
-    public HardwareDetectionService(ProcessRunner runner)
+    public HardwareDetectionService(IProcessRunner runner, GameLoopOptions? gameLoop = null)
     {
-        _runner = runner;
+        _runner = runner ?? throw new ArgumentNullException(nameof(runner));
+        _gameLoop = gameLoop ?? new GameLoopOptions();
     }
 
     public Task<HardwareSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default)
@@ -29,7 +31,62 @@ public sealed class HardwareDetectionService
 
     public HardwareSnapshot GetSnapshot()
     {
-        const string script = @"
+        var json = TryRunDetectionScript();
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return CreateFallbackSnapshot();
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(json.Trim());
+            return ParseSnapshot(document.RootElement);
+        }
+        catch (JsonException)
+        {
+            return CreateFallbackSnapshot();
+        }
+    }
+
+    /// <summary>
+    /// Runs the hardware detection script and returns its raw JSON output,
+    /// or null when detection fails.
+    /// </summary>
+    private string? TryRunDetectionScript()
+    {
+        var result = _runner.RunPowerShell(DetectionScript, _gameLoop.Timeouts.HardwareDetectionTimeout);
+        if (!result.Succeeded || string.IsNullOrWhiteSpace(result.StandardOutput))
+        {
+            return null;
+        }
+
+        return result.StandardOutput;
+    }
+
+    /// <summary>
+    /// Builds a snapshot from parsed detection output, clamping values into valid ranges.
+    /// </summary>
+    private static HardwareSnapshot ParseSnapshot(JsonElement root)
+    {
+        return new HardwareSnapshot(
+            ReadJsonString(root, "CpuVendor", "Unknown CPU vendor"),
+            ReadJsonString(root, "CpuName", "Unknown CPU"),
+            Math.Max(1, ReadJsonInt(root, "PhysicalCores", Math.Max(1, Environment.ProcessorCount / 2))),
+            Math.Max(1, ReadJsonInt(root, "LogicalCores", Environment.ProcessorCount)),
+            Math.Max(1, ReadJsonInt(root, "TotalMemoryGb", 8)),
+            ReadJsonString(root, "GpuVendor", "Unknown GPU vendor"),
+            ReadJsonString(root, "GpuName", "Unknown GPU"),
+            Math.Max(0, ReadJsonInt(root, "GpuMemoryGb", 0)),
+            Math.Max(60, ReadJsonInt(root, "RefreshRateHz", 0) > 0
+                ? ReadJsonInt(root, "RefreshRateHz", 60)
+                : GetDisplayRefreshRate()),
+            ReadJsonBool(root, "IsLaptop"),
+            IsOnAcPower(),
+            ReadJsonBool(root, "VirtualizationEnabled"),
+            ReadJsonBool(root, "HypervisorDetected"));
+    }
+
+    private const string DetectionScript = @"
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
 $gpu = Get-CimInstance Win32_VideoController | Sort-Object AdapterRAM -Descending | Select-Object -First 1
 $computer = Get-CimInstance Win32_ComputerSystem
@@ -49,39 +106,6 @@ $laptop = @(Get-CimInstance Win32_Battery).Count -gt 0
     HypervisorDetected = [bool]$computer.HypervisorPresent
 } | ConvertTo-Json -Compress
 ";
-
-        var result = _runner.RunPowerShell(script, AppConstants.Timeouts.HardwareDetectionTimeout);
-        if (!result.Succeeded || string.IsNullOrWhiteSpace(result.StandardOutput))
-        {
-            return CreateFallbackSnapshot();
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(result.StandardOutput.Trim());
-            var root = document.RootElement;
-            return new HardwareSnapshot(
-                ReadJsonString(root, "CpuVendor", "Unknown CPU vendor"),
-                ReadJsonString(root, "CpuName", "Unknown CPU"),
-                Math.Max(1, ReadJsonInt(root, "PhysicalCores", Math.Max(1, Environment.ProcessorCount / 2))),
-                Math.Max(1, ReadJsonInt(root, "LogicalCores", Environment.ProcessorCount)),
-                Math.Max(1, ReadJsonInt(root, "TotalMemoryGb", 8)),
-                ReadJsonString(root, "GpuVendor", "Unknown GPU vendor"),
-                ReadJsonString(root, "GpuName", "Unknown GPU"),
-                Math.Max(0, ReadJsonInt(root, "GpuMemoryGb", 0)),
-                Math.Max(60, ReadJsonInt(root, "RefreshRateHz", 0) > 0
-                    ? ReadJsonInt(root, "RefreshRateHz", 60)
-                    : GetDisplayRefreshRate()),
-                ReadJsonBool(root, "IsLaptop"),
-                IsOnAcPower(),
-                ReadJsonBool(root, "VirtualizationEnabled"),
-                ReadJsonBool(root, "HypervisorDetected"));
-        }
-        catch (JsonException)
-        {
-            return CreateFallbackSnapshot();
-        }
-    }
 
     private HardwareSnapshot CreateFallbackSnapshot()
     {

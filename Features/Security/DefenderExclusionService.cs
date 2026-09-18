@@ -1,8 +1,8 @@
 using Nexora.Configuration;
-using Nexora.Shared.Infrastructure;
+using Nexora.Services.Performance;
 using Nexora.Shared.Kernel;
 
-namespace Nexora.Services.Performance;
+namespace Nexora.Features.Security;
 
 /// <summary>
 /// Verifies Windows Defender service state and configures exclusions
@@ -10,15 +10,15 @@ namespace Nexora.Services.Performance;
 /// </summary>
 public sealed class DefenderExclusionService
 {
-    private readonly ProcessRunner _runner;
-    private readonly RegistryService _registry;
-    private readonly GameLoopProcessService _processService;
+    private readonly IProcessRunner _runner;
+    private readonly IGameLoopProcessService _processService;
+    private readonly EmulatorOptions _emulator;
 
-    public DefenderExclusionService(ProcessRunner runner, RegistryService registry)
+    public DefenderExclusionService(IProcessRunner runner, IGameLoopProcessService processService, EmulatorOptions? emulator = null)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
-        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
-        _processService = new GameLoopProcessService(_runner, _registry);
+        _processService = processService ?? throw new ArgumentNullException(nameof(processService));
+        _emulator = emulator ?? new EmulatorOptions();
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public sealed class DefenderExclusionService
             return OperationResult.Fail("GameLoop installation path was not found in the registry.");
         }
 
-        if (!IsTrustedGameLoopPath(gameLoopPath))
+        if (!IsTrustedGameLoopPath(gameLoopPath, _emulator))
         {
             return OperationResult.Fail("The resolved GameLoop path is outside the expected installation directory.");
         }
@@ -74,7 +74,7 @@ public sealed class DefenderExclusionService
     /// Validates that <paramref name="resolvedPath"/> contains the expected
     /// GameLoop installation folder name as a distinct directory segment.
     /// </summary>
-    internal static bool IsTrustedGameLoopPath(string resolvedPath)
+    internal static bool IsTrustedGameLoopPath(string resolvedPath, EmulatorOptions emulator)
     {
         if (string.IsNullOrWhiteSpace(resolvedPath)) return false;
 
@@ -82,7 +82,7 @@ public sealed class DefenderExclusionService
         {
             var fullPath = Path.GetFullPath(resolvedPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var segments = fullPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-            return segments.Any(segment => string.Equals(segment, AppConstants.Emulator.InstallFolderName, StringComparison.OrdinalIgnoreCase));
+            return segments.Any(segment => string.Equals(segment, (emulator ?? throw new ArgumentNullException(nameof(emulator))).Emulator.InstallFolderName, StringComparison.OrdinalIgnoreCase));
         }
         catch
         {

@@ -7,7 +7,5 @@ namespace Nexora.Services;
 /// </summary>
 public interface ITempCleanupService
 {
-    OperationResult CleanTemp();
-
     Task<OperationResult> CleanTempAsync(CancellationToken cancellationToken = default);
 }

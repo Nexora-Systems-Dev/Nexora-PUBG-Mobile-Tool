@@ -3,15 +3,17 @@ using System.Net.NetworkInformation;
 using Nexora.Configuration;
 using Nexora.Shared.Kernel;
 
-namespace Nexora.Services;
+namespace Nexora.Features.SystemTools.Network;
 
 public sealed class NetworkToolsService : INetworkToolsService
 {
     private readonly IProcessRunner _runner;
+    private readonly GameLoopOptions _gameLoop;
 
-    public NetworkToolsService(IProcessRunner runner)
+    public NetworkToolsService(IProcessRunner runner, GameLoopOptions? gameLoop = null)
     {
-        _runner = runner;
+        _runner = runner ?? throw new ArgumentNullException(nameof(runner));
+        _gameLoop = gameLoop ?? new GameLoopOptions();
     }
 
     public OperationResult ChangeDns(string primary, string secondary)
@@ -38,7 +40,7 @@ public sealed class NetworkToolsService : INetworkToolsService
                      "if ($applied -eq 0 -or $failed.Count -gt 0 -or $notApplied.Count -gt 0) { " +
                      "Write-Error ('Could not verify DNS on: ' + (($failed + $notApplied) -join ', ')); exit 2 }; " +
                      "Write-Output ('NEXORA_DNS_OK|' + $applied)";
-        var result = _runner.RunPowerShell(script, AppConstants.Timeouts.DnsChangeTimeout);
+        var result = _runner.RunPowerShell(script, _gameLoop.Timeouts.DnsChangeTimeout);
         if (!result.Succeeded || !result.StandardOutput.Contains("NEXORA_DNS_OK|", StringComparison.Ordinal))
         {
             return OperationResult.Fail($"Could not change DNS settings. {ProcessText.GetError(result)}");
@@ -48,37 +50,14 @@ public sealed class NetworkToolsService : INetworkToolsService
         return OperationResult.Ok($"DNS changed to {primary} / {secondary} on {marker ?? "active adapters"}.");
     }
 
-    public int? PingDns(string host)
-    {
-        try
-        {
-            using var ping = new Ping();
-            long? lowest = null;
-            for (var attempt = 0; attempt < AppConstants.Timeouts.DnsPingAttempts; attempt++)
-            {
-                var reply = ping.Send(host, AppConstants.Timeouts.DnsPingTimeoutMilliseconds);
-                if (reply.Status == IPStatus.Success && (lowest is null || reply.RoundtripTime < lowest))
-                {
-                    lowest = reply.RoundtripTime;
-                }
-            }
-
-            return lowest is null ? null : (int)lowest.Value;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     public async Task<int?> PingDnsAsync(string host, CancellationToken cancellationToken = default)
     {
         try
         {
             using var ping = new Ping();
             long? lowest = null;
-            var timeout = TimeSpan.FromMilliseconds(AppConstants.Timeouts.DnsPingTimeoutMilliseconds);
-            for (var attempt = 0; attempt < AppConstants.Timeouts.DnsPingAttempts; attempt++)
+            var timeout = TimeSpan.FromMilliseconds(_gameLoop.Timeouts.DnsPingTimeoutMilliseconds);
+            for (var attempt = 0; attempt < _gameLoop.Timeouts.DnsPingAttempts; attempt++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var reply = await ping.SendPingAsync(host, timeout, cancellationToken: cancellationToken);

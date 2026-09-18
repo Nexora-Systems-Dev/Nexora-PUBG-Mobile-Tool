@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Nexora.Features.GameLoop;
+using Nexora.Features.SystemTools;
 using Nexora.Services;
+using Nexora.Services.Performance;
 using Nexora.Shared.Infrastructure;
 using Nexora.Shared.Kernel;
 using Xunit;
@@ -15,7 +17,12 @@ public sealed class AdbCancellationTests
     private static readonly CancellationToken CanceledToken = new(canceled: true);
 
     private static GameLoopService CreateService() =>
-        new(new RegistryService(), new AdbClient(new ProcessRunner(), new RegistryService()));
+        new(
+            new RegistryService(),
+            new AdbClient(new ProcessRunner(), new GameLoopPathResolver(new RegistryService())),
+            new GameLoopWorkingStorage(new PhysicalFileSystem(), new GameLoopWorkRootProvider()),
+            new PhysicalFileSystem(),
+            new GameLoopProcessService(new ProcessRunner(), new GameLoopPathResolver(new RegistryService())));
 
     [Fact]
     public async Task ConnectAsync_Throws_ForCanceledToken()
@@ -53,7 +60,7 @@ public sealed class AdbCancellationTests
     {
         // The entry guard fires before device selection, so no adb
         // process is spawned and this stays hermetic with or without GameLoop.
-        var adb = new AdbClient(new ProcessRunner(), new RegistryService());
+        var adb = new AdbClient(new ProcessRunner(), new GameLoopPathResolver(new RegistryService()));
 
         var act = async () => await adb.WaitForBootAsync(CanceledToken);
 
@@ -61,24 +68,25 @@ public sealed class AdbCancellationTests
     }
 
     [Fact]
-    public void KillGameLoopProcesses_Throws_ForCanceledToken()
+    public void Shell_WithCancellationToken_Throws_ForCanceledToken()
     {
-        var facade = new WindowsToolsService(new ProcessRunner(), new RegistryService());
+        var adb = new AdbClient(new ProcessRunner(), new GameLoopPathResolver(new RegistryService()));
 
-        var act = () => facade.KillGameLoopProcesses(CanceledToken);
+        var act = () => adb.Shell("getprop dev.bootcomplete", CanceledToken);
 
         act.Should().Throw<OperationCanceledException>();
     }
 
     [Fact]
-    public async Task KillGameLoopProcessesAsync_Throws_ForCanceledToken()
+    public void KillGameLoopProcesses_Throws_ForCanceledToken()
     {
-        // Task.Run with a pre-canceled token never invokes the
-        // delegate, so the process list is untouched.
-        var facade = new WindowsToolsService(new ProcessRunner(), new RegistryService());
+        var runner = new ProcessRunner();
+        var registry = new RegistryService();
+        var pathResolver = new GameLoopPathResolver(registry);
+        var processService = new GameLoopProcessService(runner, pathResolver);
 
-        var act = async () => await facade.KillGameLoopProcessesAsync(CanceledToken);
+        var act = () => processService.KillGameLoopProcesses(CanceledToken);
 
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        act.Should().Throw<OperationCanceledException>();
     }
 }

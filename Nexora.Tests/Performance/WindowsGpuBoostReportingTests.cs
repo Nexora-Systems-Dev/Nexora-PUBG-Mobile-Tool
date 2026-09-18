@@ -1,5 +1,8 @@
 using FluentAssertions;
+using Nexora.Features.Performance;
+using Nexora.Features.Security;
 using Nexora.Services.Performance;
+using Nexora.Shared.Infrastructure;
 using Nexora.Shared.Kernel;
 using Nexora.UI.Presentation;
 using Xunit;
@@ -97,7 +100,10 @@ public sealed class WindowsGpuBoostReportingTests
     [Fact]
     public void ProcessPriority_OfflineGameLoop_ReturnsSkipped_AndArmsMonitor()
     {
-        var service = new ProcessPriorityService();
+        var store = new ProcessPrioritySnapshotStore();
+        var processService = new GameLoopProcessService(new ProcessRunner(), new GameLoopPathResolver(new RegistryService()));
+        var applier = new ProcessPriorityApplier(store, processService);
+        var service = new ProcessPriorityService(store, applier, new ProcessPriorityMonitor(store, applier));
 
         // CI hosts have no GameLoop emulator running; if one is running the
         // service must still succeed and report priority tuning instead.
@@ -192,6 +198,31 @@ public sealed class WindowsGpuBoostReportingTests
     }
 
     [Theory]
+    [InlineData("NVIDIA", "GeForce GTX 1660", true)]
+    [InlineData("NVIDIA", "GeForce MX150", true)]
+    [InlineData("Intel", "Arc A770", true)]
+    [InlineData("AMD", "Radeon RX 7900", true)]
+    [InlineData("AMD", "Radeon Graphics", false)]
+    [InlineData("Intel", "Iris Xe Graphics", false)]
+    [InlineData("Intel", "UHD Graphics 630", false)]
+    public void HasDedicatedGpu_Shares_Classifier_Markers(string gpuVendor, string gpuName, bool expected)
+    {
+        var hardware = new HardwareSnapshot("Intel", "Core i5", 4, 8, 16, gpuVendor, gpuName, 4, 60, false, true, false, false);
+        hardware.HasDedicatedGpu.Should().Be(expected);
+    }
+
+    [Fact]
+    public void IntelArc_Classifies_IntelVendor_But_DedicatedPlan()
+    {
+        // The motivating case: one shared classifier answers both questions —
+        // Intel vendor (NVIDIA profile correctly skipped) with discrete
+        // silicon (dedicated plan correctly offered).
+        NvidiaOptimizerService.ClassifyGpuProvider("Intel Arc A770 | Intel").Should().Be(GpuVendor.Intel);
+        var hardware = new HardwareSnapshot("Intel", "Core i5", 6, 12, 16, "Intel", "Arc A770", 8, 144, false, true, false, false);
+        hardware.HasDedicatedGpu.Should().BeTrue();
+    }
+
+    [Theory]
     [InlineData("GpuPreference=2;", true)]
     [InlineData("GpuPreference=2", true)]
     [InlineData("GpuPreference=1;", false)]
@@ -199,5 +230,57 @@ public sealed class WindowsGpuBoostReportingTests
     public void IsHighPerformancePreference_Tolerates_LegacyFormat(string? value, bool expected)
     {
         GpuRoutingService.IsHighPerformancePreference(value).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(@"D:\Games\TxGameAssistant\UI", true)]
+    [InlineData(@"C:\Program Files\TxGameAssistant\UI", true)]
+    [InlineData(@"C:\Windows\System32", false)]
+    [InlineData(@"C:\FakeTxGameAssistantEvil\UI", false)]
+    [InlineData("", false)]
+    public void IsTrustedInstallPath_RequiresExactInstallFolderSegment(string? path, bool expected)
+    {
+        GpuRoutingService.IsTrustedInstallPath(path, new Nexora.Configuration.EmulatorOptions()).Should().Be(expected);
+    }
+
+    [Fact]
+    public void ApplyHighPerformance_RejectsDirectory_OutsideInstallFolder()
+    {
+        var untrusted = Path.Combine(Path.GetTempPath(), $"NexoraGpuUntrusted-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(untrusted);
+        try
+        {
+            var service = new GpuRoutingService(new MemoryUserRegistry());
+
+            var result = service.ApplyHighPerformance(untrusted, new[] { "AndroidEmulatorEn.exe" });
+
+            result.Success.Should().BeFalse();
+            result.Message.Should().Contain("outside the expected installation directory");
+        }
+        finally
+        {
+            Directory.Delete(untrusted, recursive: true);
+        }
+    }
+
+    private sealed class MemoryUserRegistry : Nexora.Shared.Infrastructure.IUserRegistry
+    {
+        public int? GetUserDword(string name) => null;
+
+        public bool SetUserDword(string name, int value) => true;
+
+        public int? GetAppSettingDword(string name) => null;
+
+        public void SetAppSettingDword(string name, int value)
+        {
+        }
+
+        public void DeleteAppSetting(string name)
+        {
+        }
+
+        public bool SetCurrentUserString(string subKeyPath, string name, string value) => true;
+
+        public string? GetCurrentUserString(string subKeyPath, string name) => null;
     }
 }

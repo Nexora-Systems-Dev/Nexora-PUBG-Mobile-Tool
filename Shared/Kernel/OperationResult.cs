@@ -11,6 +11,14 @@ public enum StepOutcome
     Failed
 }
 
+/// <summary>
+/// Result of a single optimization step. The state is a deliberate tri-state:
+/// <see cref="StepOutcome"/> is the source of truth (Applied / Skipped / Failed)
+/// while <see cref="Success"/> is the gate signal — true for both Applied and
+/// Skipped, false only for Failed — so callers can branch on success without
+/// caring whether work was needed, and reporting can still distinguish "did
+/// work" from "nothing to do" via <see cref="Outcome"/>/<see cref="IsSkipped"/>.
+/// </summary>
 public sealed record OperationResult(bool Success, string Message, StepOutcome Outcome = StepOutcome.Applied)
 {
     public static OperationResult Ok(string message) => new(true, message, StepOutcome.Applied);

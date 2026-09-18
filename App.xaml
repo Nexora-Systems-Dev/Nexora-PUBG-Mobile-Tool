@@ -14,6 +14,7 @@
         <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
         <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
         <SolidColorBrush x:Key="Success" Color="#10B981" />
+        <SolidColorBrush x:Key="Warning" Color="#FBBF24" />
         <SolidColorBrush x:Key="Danger" Color="#EF4444" />
 
         <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.5" />
