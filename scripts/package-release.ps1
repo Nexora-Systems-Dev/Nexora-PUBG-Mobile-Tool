@@ -116,9 +116,21 @@ $hashes = @($releaseExe, $releaseZip) | ForEach-Object {
 }
 $hashes | Set-Content -LiteralPath (Join-Path $artifactsRoot "$releaseName-SHA256SUMS.txt") -Encoding ASCII
 
+# Unsigned artifacts are only installable by the in-app updater when the client
+# can read this checksum, and it reads the checksum from the GitHub release
+# body. Surface a paste-ready line so publishing it is not a manual hunt.
+$exeChecksum = (Get-FileHash -Algorithm SHA256 -LiteralPath $releaseExe).Hash.ToLowerInvariant()
+$publisherLine = "SHA-256 ($releaseName.exe): $exeChecksum"
+
 [pscustomobject]@{
     Executable = $releaseExe
     Archive = $releaseZip
     Notes = $releaseNotes
     Runtime = $Runtime
+    PublisherChecksumLine = $publisherLine
 } | Format-List
+
+if ([string]::IsNullOrWhiteSpace($CertificateThumbprint) -and [string]::IsNullOrWhiteSpace($CertificatePath)) {
+    Write-Host "Unsigned build. Paste this line into the GitHub release body so the in-app updater can verify the payload:" -ForegroundColor Yellow
+    Write-Host "  $publisherLine" -ForegroundColor Cyan
+}

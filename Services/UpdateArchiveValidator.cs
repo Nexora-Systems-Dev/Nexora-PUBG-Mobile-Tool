@@ -73,36 +73,39 @@ public static class UpdateArchiveValidator
     }
 
     /// <summary>
-    /// Validates update executable integrity using SHA-256 checksum AND Authenticode verification.
-    /// When an expected hash is provided, both the hash and a trusted publisher signature are required.
+    /// Validates update executable integrity. Strongest available evidence wins:
+    /// a valid Authenticode signature from the trusted publisher is accepted on
+    /// its own; otherwise the payload must match an expected SHA-256 checksum
+    /// that was published with the release. An unsigned payload with no
+    /// published checksum is rejected outright.
     /// </summary>
     internal static bool VerifyExecutableIntegrity(string executablePath, string? expectedSha256, out string errorMessage, UpdateOptions? updates = null, Func<string, bool>? signatureCheck = null)
     {
         errorMessage = string.Empty;
 
-        var hasExpectedHash = !string.IsNullOrWhiteSpace(expectedSha256);
-        if (hasExpectedHash)
-        {
-            var actualHash = ComputeSha256(executablePath);
-            if (!string.Equals(actualHash, expectedSha256!.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                errorMessage = "The update executable hash does not match the expected checksum.";
-                return false;
-            }
-
-            var signed = signatureCheck?.Invoke(executablePath) ?? IsAuthenticodeSigned(executablePath, updates: updates);
-            if (!signed)
-            {
-                errorMessage = "The update executable hash matches but it has no trusted Authenticode signature.";
-                return false;
-            }
-
-            return true;
-        }
-
+        // Signature is the strongest evidence: it proves both integrity and
+        // publisher identity, and it is the only evidence that scales once a
+        // signing certificate is configured. It is checked first so a signed
+        // release is never rejected over a stale published checksum.
         if (signatureCheck?.Invoke(executablePath) ?? IsAuthenticodeSigned(executablePath, updates: updates))
         {
             return true;
+        }
+
+        // Unsigned releases ship a published SHA-256 checksum instead. A payload
+        // that matches it byte-for-byte, fetched over a trusted HTTPS feed, is
+        // safe to install — this is the path the v1.0.15 release notes describe
+        // as enabled.
+        if (!string.IsNullOrWhiteSpace(expectedSha256))
+        {
+            var actualHash = ComputeSha256(executablePath);
+            if (string.Equals(actualHash, expectedSha256!.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            errorMessage = "The update executable hash does not match the expected checksum.";
+            return false;
         }
 
         errorMessage = "The update executable is unverifiable: it has no trusted Authenticode signature or verified checksum.";

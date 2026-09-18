@@ -119,7 +119,7 @@ public sealed class UpdateIntegrityTests
     }
 
     [Fact]
-    public void VerifyExecutableIntegrity_RejectsUnsignedExecutableEvenWhenHashMatches()
+    public void VerifyExecutableIntegrity_AcceptsUnsignedExecutable_WhenPublishedHashMatches()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"NexoraIntegrityTest-{Guid.NewGuid():N}.exe");
         try
@@ -129,8 +129,31 @@ public sealed class UpdateIntegrityTests
 
             var verified = UpdateArchiveValidator.VerifyExecutableIntegrity(tempFile, expectedHash, out var error);
 
-            verified.Should().BeFalse();
-            error.Should().Contain("signature");
+            // Unsigned releases are the only kind the pipeline currently emits;
+            // a matching published checksum is their sole evidence of integrity.
+            verified.Should().BeTrue();
+            error.Should().BeEmpty();
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void VerifyExecutableIntegrity_TrustedSignature_OutscoresHashMismatch()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"NexoraIntegrityTest-{Guid.NewGuid():N}.exe");
+        try
+        {
+            File.WriteAllBytes(tempFile, new byte[] { 0x4D, 0x5A, 0x90, 0x00 });
+            var staleHash = "0000000000000000000000000000000000000000000000000000000000000000";
+
+            // A signed payload must install even when the published checksum is stale.
+            var verified = UpdateArchiveValidator.VerifyExecutableIntegrity(
+                tempFile, staleHash, out _, signatureCheck: _ => true);
+
+            verified.Should().BeTrue();
         }
         finally
         {
