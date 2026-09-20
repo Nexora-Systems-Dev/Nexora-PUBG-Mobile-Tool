@@ -1,0 +1,55 @@
+# Visual Studio / editor state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET build output
+[Bb]in/
+[Oo]bj/
+publish/
+publish-*/
+artifacts/
+
+# Staged release binaries (notes and checksums stay tracked)
+Release/*.exe
+Release/*.zip
+Release/*.tar.gz
+
+# Test and coverage output
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+output/
+
+# Local configuration and secrets
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.snk
+
+# Operating system files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Agent & tool state
+.agent/
+.antigravity/
+.agents/
+.claude/
+graphify-out/
+ECC/
+.axme-code/
+.codedev-mcp/

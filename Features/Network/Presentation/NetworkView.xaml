@@ -1,0 +1,331 @@
+<UserControl x:Class="Nexora.Features.Network.Presentation.NetworkView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Margin="34,14,34,10" ClipToBounds="True">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
+        <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
+        <SolidColorBrush x:Key="AccentHover" Color="#38BDF8" />
+
+        <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
+        <DropShadowEffect x:Key="HeroCtaGlowEffect" Color="#00D2FF" BlurRadius="18" ShadowDepth="2" Opacity="0.45" Direction="270" />
+
+        <LinearGradientBrush x:Key="NetworkTopBorderBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#0000D2FF" Offset="0" />
+            <GradientStop Color="#9000D2FF" Offset="0.5" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
+        </LinearGradientBrush>
+
+        <RadialGradientBrush x:Key="NetworkAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#4000D2FF" Offset="0" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
+        </RadialGradientBrush>
+
+        <RadialGradientBrush x:Key="NetworkCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#2500D2FF" Offset="0" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
+        </RadialGradientBrush>
+
+        <LinearGradientBrush x:Key="PrimaryCtaBackground" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#00D2FF" Offset="0" />
+            <GradientStop Color="#0096EB" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="PrimaryCtaBackgroundHover" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#38BDF8" Offset="0" />
+            <GradientStop Color="#0EA5E9" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="PrimaryCtaBackgroundPressed" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#0284C7" Offset="0" />
+            <GradientStop Color="#0369A1" Offset="1" />
+        </LinearGradientBrush>
+
+        <Style x:Key="NetworkHeroButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryCtaBackground}" />
+            <Setter Property="Foreground" Value="#051019" />
+            <Setter Property="BorderBrush" Value="#40DFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="Bahnschrift SemiCondensed" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="24,12" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CtaBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}"
+                                Effect="{StaticResource HeroCtaGlowEffect}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundHover}" />
+                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#90EBFF" />
+                                <Setter TargetName="CtaBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#00D2FF" BlurRadius="24" ShadowDepth="2" Opacity="0.65" Direction="270" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundPressed}" />
+                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#0284C7" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="CtaBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="1" Opacity="0.4" Direction="270" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="CtaBorder" Property="Background" Value="#111B24" />
+                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
+                                <Setter Property="Foreground" Value="#4B5E6D" />
+                                <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                                <Setter Property="Opacity" Value="0.75" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="NetworkOutlineButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0D1620" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="BorderBrush" Value="#223546" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="18,10" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#00D2FF" />
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#152737" />
+                                <Setter Property="Foreground" Value="#00D2FF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#0E1B26" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="NetworkComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
+            <Setter Property="Background" Value="#0B131B" />
+            <Setter Property="BorderBrush" Value="#1C2E3E" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Background" Value="#0B131B" />
+                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+                        <Setter Property="Padding" Value="12,9" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter
+                                            Content="{TemplateBinding Content}"
+                                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter TargetName="ItemBorder" Property="Background" Value="#102534" />
+                                            <Setter Property="Foreground" Value="#00D2FF" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Border Grid.RowSpan="2" Background="{StaticResource OptimizerPageBackgroundBrush}" BorderBrush="#1B2B37" BorderThickness="1" CornerRadius="18" IsHitTestVisible="False" />
+        <Border Grid.RowSpan="2" Height="1" Background="{StaticResource NetworkTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
+        <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource NetworkAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
+        <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource NetworkCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
+
+        <Grid Grid.Row="0" Margin="18,12,18,16">
+            <StackPanel Orientation="Horizontal">
+                <Border Width="4" Height="48" Background="{StaticResource Accent}" CornerRadius="2" Margin="0,0,14,0" Effect="{StaticResource AccentGlowEffect}" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="NETWORK &amp; DISPLAY TUNING" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="SemiBold" Margin="0,0,0,3" />
+                    <TextBlock Text="NETWORK &amp; VIEW" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="29" FontWeight="SemiBold" />
+                    <TextBlock Text="Tune your connection with esports DNS and calibrate iPad aspect ratio canvas." Foreground="{StaticResource TextSecondary}" FontSize="13" Margin="0,3,0,0" />
+                </StackPanel>
+            </StackPanel>
+            <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="6" Padding="12,7">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
+                    <TextBlock Text="LOW LATENCY ROUTING" Foreground="#00D2FF" FontSize="11" FontWeight="Bold" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="18,0,18,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="1.08*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,4">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <TextBlock Text="DNS CHANGER" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Border HorizontalAlignment="Right" Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                <TextBlock Text="ADAPTER ROUTING" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Grid.Row="1" Text="Select an esports provider, test real-time ping latency, and apply direct routing to active network adapters." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,14" LineHeight="18" />
+
+                        <TextBlock Grid.Row="2" Text="DNS PROVIDER" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
+                        <ComboBox Grid.Row="3" x:Name="DnsComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="DnsComboBox_SelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontFamily="Segoe UI" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Border Grid.Row="4" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="CONNECTION TELEMETRY" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock x:Name="DnsStatusText" Text="Choose a provider to test response time." Foreground="#38BDF8" FontFamily="Bahnschrift SemiCondensed" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <WrapPanel Grid.Row="5" Margin="0,0,0,16">
+                            <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
+                                <TextBlock Text="⚡ Low Jitter Direct Route" Foreground="#8A9CAE" FontSize="11" />
+                            </Border>
+                            <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,0,4">
+                                <TextBlock Text="🛡️ Anti-DDoS DNS Protection" Foreground="#8A9CAE" FontSize="11" />
+                            </Border>
+                        </WrapPanel>
+
+                        <Button Grid.Row="6" x:Name="ChangeDnsButton" Content="CHANGE DNS" Click="ChangeDnsButton_Click" Style="{StaticResource NetworkHeroButtonStyle}" HorizontalAlignment="Right" />
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
+
+                <Border Grid.Column="2" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,4">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <TextBlock Text="IPAD VIEW" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Border HorizontalAlignment="Right" Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                <TextBlock Text="4:3 ASPECT RATIO" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Grid.Row="1" Text="Apply a tested iPad-style aspect ratio and matching GameLoop key layout. Close GameLoop first, then restart it after applying." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,14" LineHeight="18" />
+
+                        <TextBlock Grid.Row="2" Text="DISPLAY PRESET" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
+                        <ComboBox Grid.Row="3" x:Name="IpadComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="IpadComboBox_SelectionChanged" ToolTip="Select an iPad display profile">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontFamily="Segoe UI" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Border Grid.Row="4" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="PRESET PROFILE DETAILS" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock x:Name="IpadPresetDetailsText" Text="Choose a tested iPad display profile." Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="14" FontWeight="Bold" TextWrapping="Wrap" Margin="0,2,0,2" />
+                                <TextBlock x:Name="IpadApplyStatusText" Text="No profile selected." Foreground="{StaticResource TextMuted}" FontSize="12" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <WrapPanel Grid.Row="5" Margin="0,0,0,16">
+                            <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
+                                <TextBlock Text="📐 Expanded Camera FOV" Foreground="#8A9CAE" FontSize="11" />
+                            </Border>
+                            <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,0,4">
+                                <TextBlock Text="🎯 Keymap Layout Aligned" Foreground="#8A9CAE" FontSize="11" />
+                            </Border>
+                        </WrapPanel>
+
+                        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="ResetIpadButton" Content="RESET" Click="ResetIpadButton_Click" Style="{StaticResource NetworkOutlineButtonStyle}" Margin="0,0,10,0" />
+                            <Button x:Name="ChangeIpadButton" Content="APPLY IPAD VIEW" Click="ChangeIpadButton_Click" Style="{StaticResource NetworkHeroButtonStyle}" IsEnabled="False" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

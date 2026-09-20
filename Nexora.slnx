@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Nexora.csproj" />
+  <Project Path="Nexora.Tests/Nexora.Tests.csproj" />
+</Solution>
