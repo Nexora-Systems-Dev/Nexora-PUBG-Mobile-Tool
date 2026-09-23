@@ -1,9 +1,8 @@
+using Nexora.Features.Optimizer.Application;
 using Nexora.Features.Performance.Application;
 using Nexora.Features.Performance.Infrastructure;
 using Nexora.Features.Updates.Application;
 using Nexora.Features.Updates.Infrastructure;
-using Nexora.Features.Optimizer.Application;
-using Nexora.Infrastructure.Files;
 using Nexora.Infrastructure.GameLoop;
 using Nexora.Infrastructure.Processes;
 using Nexora.Infrastructure.Registry;
@@ -31,18 +30,18 @@ internal static class DesignerFallback
     {
         var runner = new ProcessRunner();
         var registry = new RegistryService();
-        // Single process/temp identity in the designer path: one process
-        // service and one temp cleanup shared by every fallback below,
-        // mirroring the DI singletons used when the container provides them.
         var pathResolver = new GameLoopPathResolver(registry);
         var processSvc = new GameLoopProcessService(runner, pathResolver);
         var tempSvc = new TempCleanupService(registry);
-        // Same shared-store composition the DI container builds for the trio.
         var priorityStore = new ProcessPrioritySnapshotStore();
         var priorityApplier = new ProcessPriorityApplier(priorityStore, processSvc);
-        var processPriority = new ProcessPriorityService(priorityStore, priorityApplier, new ProcessPriorityMonitor(priorityStore, priorityApplier));
+        var processPriority = new ProcessPriorityService(
+            priorityStore,
+            priorityApplier,
+            new ProcessPriorityMonitor(priorityStore, priorityApplier));
 
         return new DesignerServiceGraph(
+            // RegistryService implements both registry facets, so one shared instance fills both.
             new PerformanceEngineFacade(runner, registry, registry, processSvc, tempSvc, processPriority),
             new UpdateService(runner));
     }

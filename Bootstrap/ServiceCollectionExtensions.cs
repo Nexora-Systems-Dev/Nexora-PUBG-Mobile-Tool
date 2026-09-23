@@ -7,24 +7,22 @@ using Nexora.Features.GameLoop.Infrastructure;
 using Nexora.Features.Graphics.Application;
 using Nexora.Features.Graphics.Presentation;
 using Nexora.Features.Network.Application;
-using Nexora.Features.Network.Domain;
 using Nexora.Features.Network.Presentation;
 using Nexora.Features.Optimizer.Application;
 using Nexora.Features.Optimizer.Presentation;
 using Nexora.Features.Performance.Application;
-using Nexora.Features.Performance.Domain;
 using Nexora.Features.Performance.Infrastructure;
-using Nexora.Shared.Kernel;
-using Nexora.Features.Tuning.Application;
-using Nexora.Features.Tuning.Presentation;
 using Nexora.Features.Shortcuts.Application;
 using Nexora.Features.Shortcuts.Presentation;
+using Nexora.Features.Tuning.Application;
+using Nexora.Features.Tuning.Presentation;
 using Nexora.Features.Updates.Application;
 using Nexora.Features.Updates.Infrastructure;
 using Nexora.Infrastructure.Files;
 using Nexora.Infrastructure.GameLoop;
 using Nexora.Infrastructure.Processes;
 using Nexora.Infrastructure.Registry;
+using Nexora.Shared.Kernel;
 using Nexora.UI.Presentation;
 
 namespace Nexora.Bootstrap;
@@ -83,11 +81,15 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IIpadLayoutService, IpadLayoutService>();
         services.AddSingleton<INetworkToolsService, NetworkToolsService>();
         services.AddSingleton<IGraphicsSettingsService, GraphicsSettingsService>();
-        services.AddSingleton<IShortcutService>(sp => new ShortcutService(
-            sp.GetRequiredService<IProcessRunner>(),
-            sp.GetRequiredService<IGameLoopPathResolver>(),
-            Path.Combine(AppContext.BaseDirectory, sp.GetRequiredService<EmulatorOptions>().Assets.DirectoryName),
-            sp.GetRequiredService<EmulatorOptions>()));
+        services.AddSingleton<IShortcutService>(sp =>
+        {
+            var emulatorOptions = sp.GetRequiredService<EmulatorOptions>();
+            return new ShortcutService(
+                sp.GetRequiredService<IProcessRunner>(),
+                sp.GetRequiredService<IGameLoopPathResolver>(),
+                Path.Combine(AppContext.BaseDirectory, emulatorOptions.Assets.DirectoryName),
+                emulatorOptions);
+        });
 
         // Window-wide "one long operation at a time" guard: shared by the shell
         // and every page ViewModel so a click on one page cannot stack work on
@@ -96,38 +98,35 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IGameLoopPerformanceEngine, PerformanceEngineFacade>();
 
-        // Graphics page: the ViewModel is resolved by the page (see
-        // GraphicsView's designer-tolerant constructor), and both registrations
-        // forward to the same connection/profile singletons above.
+        // Page ViewModel/View pairs, all transient. Each View has a
+        // designer-tolerant constructor (parameterless for the XAML designer,
+        // parameterized for the container), so the pair is registered to wire
+        // the resolved graph.
+        // Graphics: both registrations forward to the connection and profile
+        // singletons above.
         services.AddTransient<GraphicsViewModel>();
         services.AddTransient<GraphicsView>();
 
-        // Tuning page: the ViewModel is resolved by the page (see
-        // TuningView's designer-tolerant constructor), both Transient.
         services.AddTransient<TuningViewModel>();
         services.AddTransient<TuningView>();
 
-        // Network page: same designer-tolerant pattern, both Transient.
         services.AddTransient<NetworkViewModel>();
         services.AddTransient<NetworkView>();
 
-        // Optimizer page: Presentation-only per D1 (the engine lives in
-        // Features/Performance); same designer-tolerant pattern, both Transient.
+        // Optimizer: Presentation-only per D1 — the engine lives in Features/Performance.
         services.AddTransient<OptimizerViewModel>();
         services.AddTransient<OptimizerView>();
 
-        // Shortcuts page: same designer-tolerant pattern, both Transient. The
-        // preview text lives in the Features/Shortcuts Domain model; creation
-        // and icons stay behind IShortcutService.
+        // Shortcuts: preview text lives in the Features/Shortcuts Domain model;
+        // creation and icons stay behind IShortcutService.
         services.AddTransient<ShortcutsViewModel>();
         services.AddTransient<ShortcutsView>();
 
-        // About page: static copy plus the version pill from its ViewModel;
-        // same designer-tolerant pattern, both Transient.
+        // About: static copy plus the version pill from its ViewModel.
         services.AddTransient<AboutViewModel>();
         services.AddTransient<AboutView>();
 
-        // Views: transient by default, resolved through the provider.
+        // Shell window: transient, resolved at startup by App.OnStartup.
         services.AddTransient<MainWindow>();
 
         return services;

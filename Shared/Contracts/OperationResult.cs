@@ -1,5 +1,4 @@
 namespace Nexora.Shared.Contracts;
-using Nexora.Shared.Contracts;
 
 /// <summary>
 /// Outcome of a single optimization step: actually applied,

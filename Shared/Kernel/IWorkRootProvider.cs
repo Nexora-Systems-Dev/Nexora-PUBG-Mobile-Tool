@@ -1,5 +1,4 @@
 namespace Nexora.Shared.Kernel;
-using Nexora.Shared.Kernel;
 
 /// <summary>
 /// Environment boundary for application root directories.
