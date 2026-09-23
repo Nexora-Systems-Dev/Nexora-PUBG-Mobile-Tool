@@ -23,23 +23,14 @@ public sealed class ProcessPrioritySnapshotStore : IProcessPrioritySnapshotStore
 
     public int Count
     {
-        get
-        {
-            lock (_sync)
-            {
-                return _snapshots.Count;
-            }
-        }
+        get { lock (_sync) return _snapshots.Count; }
     }
 
     public bool TryAdd(ProcessPrioritySnapshot snapshot)
     {
         lock (_sync)
         {
-            if (_snapshots.ContainsKey(snapshot.ProcessId))
-            {
-                return false;
-            }
+            if (_snapshots.ContainsKey(snapshot.ProcessId)) return false;
 
             _snapshots[snapshot.ProcessId] = snapshot;
             return true;
@@ -110,16 +101,10 @@ public sealed class ProcessPrioritySnapshotStore : IProcessPrioritySnapshotStore
             using var process = Process.GetProcessById(snapshot.ProcessId);
             var currentPath = TryGetExecutablePath(process);
 
-            bool sameProcess;
-            if (string.IsNullOrWhiteSpace(snapshot.ExecutablePath) || string.IsNullOrWhiteSpace(currentPath))
-            {
-                // Fall back to process name comparison if executable path access is denied.
-                sameProcess = string.Equals(process.ProcessName, snapshot.ProcessName, StringComparison.OrdinalIgnoreCase);
-            }
-            else
-            {
-                sameProcess = PathsEqual(currentPath, snapshot.ExecutablePath);
-            }
+            // Fall back to process name comparison if executable path access is denied.
+            var sameProcess = string.IsNullOrWhiteSpace(snapshot.ExecutablePath) || string.IsNullOrWhiteSpace(currentPath)
+                ? string.Equals(process.ProcessName, snapshot.ProcessName, StringComparison.OrdinalIgnoreCase)
+                : PathsEqual(currentPath, snapshot.ExecutablePath);
 
             return !sameProcess;
         }

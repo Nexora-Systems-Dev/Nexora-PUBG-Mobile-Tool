@@ -81,35 +81,12 @@ public sealed class GameLoopProcessService : IGameLoopProcessService
     public List<Process> FindGameLoopProcesses(string? gameLoopRoot = null)
     {
         gameLoopRoot ??= _paths.GetRoot();
-        var candidates = new List<Process>();
 
+        var candidates = new List<Process>();
         foreach (var process in GameLoopProcessEnumerator.EnumerateByNames(_emulator.Emulator.ProcessImageNames))
         {
-            var imageName = string.Empty;
-            try
-            {
-                imageName = (process.ProcessName + ".exe");
-            }
-            catch
-            {
-                process.Dispose();
-                continue;
-            }
-
-            var isGameLoopProcess = false;
-            try
-            {
-                var executablePath = process.MainModule?.FileName;
-                isGameLoopProcess = _paths.IsGameLoopPath(executablePath, gameLoopRoot) ||
-                    (string.IsNullOrWhiteSpace(executablePath) && _emulator.Emulator.SafeFallbackImageNames.Contains(imageName, StringComparer.OrdinalIgnoreCase));
-            }
-            catch
-            {
-                // Process path access can be denied on protected processes; fall back to known safe image names.
-                isGameLoopProcess = _emulator.Emulator.SafeFallbackImageNames.Contains(imageName, StringComparer.OrdinalIgnoreCase);
-            }
-
-            if (isGameLoopProcess)
+            // A process that exits mid-scan has no readable name and is dropped here.
+            if (ReadImageName(process) is { } imageName && IsGameLoopProcess(process, imageName, gameLoopRoot))
             {
                 candidates.Add(process);
             }
@@ -119,6 +96,47 @@ public sealed class GameLoopProcessService : IGameLoopProcessService
             }
         }
 
+        return DeduplicateByProcessId(candidates);
+    }
+
+    /// <summary>The image name with its extension, or null when the process exited mid-scan.</summary>
+    private static string? ReadImageName(Process process)
+    {
+        try
+        {
+            return process.ProcessName + ".exe";
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Verifies a candidate image lives under the GameLoop root. Path access is
+    /// denied on protected processes, so a blank path falls back to the known
+    /// safe image-name list rather than rejecting a genuine emulator process.
+    /// </summary>
+    private bool IsGameLoopProcess(Process process, string imageName, string? gameLoopRoot)
+    {
+        try
+        {
+            var executablePath = process.MainModule?.FileName;
+            return _paths.IsGameLoopPath(executablePath, gameLoopRoot) ||
+                (string.IsNullOrWhiteSpace(executablePath) && _emulator.Emulator.SafeFallbackImageNames.Contains(imageName, StringComparer.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            return _emulator.Emulator.SafeFallbackImageNames.Contains(imageName, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
+    /// Enumerating can yield the same PID more than once; the first occurrence
+    /// wins and duplicates are disposed so no handle leaks out of the scan.
+    /// </summary>
+    private static List<Process> DeduplicateByProcessId(List<Process> candidates)
+    {
         var unique = new List<Process>();
         var seenIds = new HashSet<int>();
         foreach (var process in candidates)

@@ -33,11 +33,8 @@ public sealed class PerformanceExecutionReport
     public string GetSummary() =>
         $"{AppliedCount} applied, {SkippedCount} skipped, {FailedCount} failed.";
 
-    public string FormatDetailed()
-    {
-        return string.Join("\n", Steps.Select(step =>
-            $"• [{StepTag(step.Result)}] {step.Name}: {step.Result.Message}"));
-    }
+    public string FormatDetailed() =>
+        string.Join("\n", Steps.Select(step => $"• [{StepTag(step.Result)}] {step.Name}: {step.Result.Message}"));
 
     public OperationResult ToDetailedResult(string title)
     {
@@ -58,11 +55,8 @@ public sealed class PerformanceExecutionReport
         return OperationResult.Ok(message);
     }
 
-    private static string StepTag(OperationResult result)
-    {
-        if (!result.Success) return "Failed";
-        return result.IsSkipped ? "Skipped" : "Applied";
-    }
+    private static string StepTag(OperationResult result) =>
+        !result.Success ? "Failed" : result.IsSkipped ? "Skipped" : "Applied";
 
     public OperationResult ToOperationResult(string successMessage, string failurePrefix)
     {

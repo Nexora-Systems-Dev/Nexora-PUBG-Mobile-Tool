@@ -39,94 +39,96 @@ public sealed class PerformancePlanBuilder
     private const int DedicatedFxaa = 2;
     private const int DefaultRenderQuality = 2;
 
+    // Tier names — asserted verbatim by PerformancePlanBuilderTests.
+    private const string PerformanceTier = "Performance";
+    private const string EntryTier = "Entry";
+    private const string BalancedTier = "Balanced";
+
+    // Power-mode labels — asserted verbatim by PerformancePlanBuilderTests.
+    private const string HighPerformanceMode = "High performance available";
+    private const string PerformanceOnAcMode = "Performance on AC";
+    private const string BalancedOnBatteryMode = "Balanced on battery";
+
+    // Target 120 FPS while leaving actual runtime support to the emulator and game.
+    private const string RecommendedFps = "120 FPS";
+
     public OptimizerPlan Build(HardwareSnapshot hardware)
     {
         // Treat unknown or zero VRAM as limited to avoid overly aggressive profiles on detection failure.
         var limitedGpu = hardware.GpuMemoryGb <= LimitedVramGb;
         var entryLevel = hardware.TotalMemoryGb <= SmallMemoryGb || hardware.PhysicalCores <= FewCores || limitedGpu;
-        var performanceLevel = hardware.TotalMemoryGb >= LargeMemoryGb && hardware.PhysicalCores >= ManyCores &&
-            hardware.HasDedicatedGpu && hardware.GpuMemoryGb >= PerformanceVramGb;
-        string tier;
-        if (performanceLevel)
-        {
-            tier = "Performance";
-        }
-        else if (entryLevel)
-        {
-            tier = "Entry";
-        }
-        else
-        {
-            tier = "Balanced";
-        }
 
-        int reserveMb;
-        if (hardware.TotalMemoryGb <= SmallMemoryGb)
-        {
-            reserveMb = SmallMemoryReserveMb;
-        }
-        else if (hardware.TotalMemoryGb <= LargeMemoryGb)
-        {
-            reserveMb = MediumMemoryReserveMb;
-        }
-        else
-        {
-            reserveMb = LargeMemoryReserveMb;
-        }
-
-        var memoryMb = Math.Clamp(hardware.TotalMemoryGb * 1024 - reserveMb, MinMemoryMb, MaxMemoryMb);
-        memoryMb = Math.Max(MinMemoryMb, memoryMb / MemoryStepMb * MemoryStepMb);
-
-        var cpuCores = hardware.PhysicalCores <= FewCores
-            ? Math.Max(SmallMachineCoreFloor, hardware.PhysicalCores - 1)
-            : Math.Min(MaxCpuCores, Math.Max(MinCpuCores, (int)Math.Round(hardware.PhysicalCores * CpuShareRatio, MidpointRounding.AwayFromZero)));
-
-        var lowRenderPath = entryLevel || (!hardware.HasDedicatedGpu && hardware.GpuMemoryGb < PerformanceVramGb);
-        var contentScale = lowRenderPath ? LowContentScale : HighContentScale;
-        int fxaaQuality;
-        if (limitedGpu)
-        {
-            fxaaQuality = DisabledFxaa;
-        }
-        else if (hardware.HasDedicatedGpu)
-        {
-            fxaaQuality = DedicatedFxaa;
-        }
-        else
-        {
-            fxaaQuality = IntegratedFxaa;
-        }
-
-        // Target 120 FPS recommendation while leaving actual runtime support to the emulator and game.
-        const string recommendedFps = "120 FPS";
-        var gpuRoute = hardware.HasDedicatedGpu
-            ? $"High-performance {hardware.GpuName}"
-            : $"Integrated {hardware.GpuName}";
-        string powerMode;
-        if (!hardware.IsLaptop)
-        {
-            powerMode = "High performance available";
-        }
-        else if (hardware.IsOnAcPower)
-        {
-            powerMode = "Performance on AC";
-        }
-        else
-        {
-            powerMode = "Balanced on battery";
-        }
-
+        // Each plan axis is an independent pure decision on the same snapshot.
+        var render = ChooseRenderProfile(hardware, entryLevel, limitedGpu);
         return new OptimizerPlan(
-            tier,
-            memoryMb,
-            cpuCores,
-            contentScale,
+            ClassifyTier(hardware, entryLevel),
+            CalculateMemoryMb(hardware.TotalMemoryGb),
+            CalculateCpuCores(hardware.PhysicalCores),
+            render.ContentScale,
             RenderQuality: DefaultRenderQuality,
-            fxaaQuality,
+            render.FxaaQuality,
             EnableLocalShaderCache: true,
             EnableGlobalShaderCache: false,
-            recommendedFps,
-            gpuRoute,
-            powerMode);
+            RecommendedFps,
+            ChooseGpuRoute(hardware),
+            ChoosePowerMode(hardware));
     }
+
+    /// <summary>
+    /// Performance needs every dimension strong; Entry is weak hardware or a
+    /// limited GPU; anything between is Balanced.
+    /// </summary>
+    private static string ClassifyTier(HardwareSnapshot hardware, bool entryLevel) =>
+        hardware.TotalMemoryGb >= LargeMemoryGb && hardware.PhysicalCores >= ManyCores &&
+            hardware.HasDedicatedGpu && hardware.GpuMemoryGb >= PerformanceVramGb
+                ? PerformanceTier
+                : entryLevel ? EntryTier : BalancedTier;
+
+    /// <summary>
+    /// The emulator memory budget: subtract a reserve that scales with the
+    /// machine, clamp to the supported range, then round down to the allocation step.
+    /// </summary>
+    private static int CalculateMemoryMb(int totalMemoryGb)
+    {
+        var reserveMb = totalMemoryGb <= SmallMemoryGb ? SmallMemoryReserveMb
+            : totalMemoryGb <= LargeMemoryGb ? MediumMemoryReserveMb
+            : LargeMemoryReserveMb;
+
+        var memoryMb = Math.Clamp(totalMemoryGb * 1024 - reserveMb, MinMemoryMb, MaxMemoryMb);
+        return Math.Max(MinMemoryMb, memoryMb / MemoryStepMb * MemoryStepMb);
+    }
+
+    /// <summary>
+    /// Small machines keep a core for the host; others get a fixed share of
+    /// physical cores clamped to the emulator's supported range.
+    /// </summary>
+    private static int CalculateCpuCores(int physicalCores) =>
+        physicalCores <= FewCores
+            ? Math.Max(SmallMachineCoreFloor, physicalCores - 1)
+            : Math.Min(MaxCpuCores, Math.Max(MinCpuCores, (int)Math.Round(physicalCores * CpuShareRatio, MidpointRounding.AwayFromZero)));
+
+    /// <summary>
+    /// The render ladder: content scale drops on a weak GPU path, and FXAA is
+    /// disabled on limited VRAM and split integrated/dedicated otherwise.
+    /// </summary>
+    private static (int ContentScale, int FxaaQuality) ChooseRenderProfile(HardwareSnapshot hardware, bool entryLevel, bool limitedGpu)
+    {
+        var lowRenderPath = entryLevel || (!hardware.HasDedicatedGpu && hardware.GpuMemoryGb < PerformanceVramGb);
+        var contentScale = lowRenderPath ? LowContentScale : HighContentScale;
+        var fxaaQuality = limitedGpu ? DisabledFxaa
+            : hardware.HasDedicatedGpu ? DedicatedFxaa
+            : IntegratedFxaa;
+
+        return (contentScale, fxaaQuality);
+    }
+
+    /// <summary>The GPU route names the device the emulator should render on.</summary>
+    private static string ChooseGpuRoute(HardwareSnapshot hardware) =>
+        hardware.HasDedicatedGpu ? $"High-performance {hardware.GpuName}" : $"Integrated {hardware.GpuName}";
+
+    /// <summary>Laptops throttle on battery; desktops always advertise high performance.</summary>
+    private static string ChoosePowerMode(HardwareSnapshot hardware) =>
+        !hardware.IsLaptop ? HighPerformanceMode
+        : hardware.IsOnAcPower ? PerformanceOnAcMode
+        : BalancedOnBatteryMode;
 }

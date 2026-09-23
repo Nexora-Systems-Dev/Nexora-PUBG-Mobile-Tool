@@ -56,15 +56,7 @@ public sealed class ProcessPriorityMonitor : IProcessPriorityMonitor
     /// </summary>
     public void Stop()
     {
-        CancellationTokenSource? cancellation;
-        lock (_sync)
-        {
-            cancellation = _monitorCancellation;
-            cancellation?.Cancel();
-            _monitorTask = null;
-            _monitorCancellation = null;
-        }
-
+        var (_, cancellation) = CancelAndClearLoop();
         cancellation?.Dispose();
     }
 
@@ -73,16 +65,7 @@ public sealed class ProcessPriorityMonitor : IProcessPriorityMonitor
     /// </summary>
     public async Task StopMonitorAsync(CancellationToken cancellationToken = default)
     {
-        Task? monitor;
-        CancellationTokenSource? cancellation;
-        lock (_sync)
-        {
-            cancellation = _monitorCancellation;
-            cancellation?.Cancel();
-            monitor = _monitorTask;
-            _monitorTask = null;
-            _monitorCancellation = null;
-        }
+        var (monitor, cancellation) = CancelAndClearLoop();
 
         try
         {
@@ -100,6 +83,25 @@ public sealed class ProcessPriorityMonitor : IProcessPriorityMonitor
         finally
         {
             cancellation?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Cancels the running loop and clears both fields under the monitor lock,
+    /// returning the handles the caller needs to finish the stop outside it.
+    /// Disposing stays with the caller so the awaiting path releases the
+    /// cancellation source only after the loop has actually terminated.
+    /// </summary>
+    private (Task? Monitor, CancellationTokenSource? Cancellation) CancelAndClearLoop()
+    {
+        lock (_sync)
+        {
+            var cancellation = _monitorCancellation;
+            cancellation?.Cancel();
+            var monitor = _monitorTask;
+            _monitorTask = null;
+            _monitorCancellation = null;
+            return (monitor, cancellation);
         }
     }
 }
