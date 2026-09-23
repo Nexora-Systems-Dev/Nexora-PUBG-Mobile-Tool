@@ -59,46 +59,53 @@ public partial class MainWindow : Window
 
         // Shell half of the connection paint, behind the presenter: the page
         // paints its own surfaces from the same event.
-        _connection = new ShellConnectionPresenter(
-            this,
-            TopConnectionDot,
-            TopConnectionPill,
-            TopConnectionText,
-            SidebarConnectionDot,
-            SidebarConnectionText,
-            SidebarAdbText,
-            SetStatus);
+        _connection = CreateConnectionPresenter();
         _graphicsViewModel.ConnectionStateChanged += _connection.Show;
 
         // The Tuning and Network pages own their flows; the shell keeps only
         // the window status bar, which the pages' statuses forward to.
-        TuningView.ViewModel.StatusChanged += (message, isError) => SetStatus(message, isError);
-        NetworkView.ViewModel.StatusChanged += (message, isError) => SetStatus(message, isError);
+        TuningView.ViewModel.StatusChanged += SetStatus;
+        NetworkView.ViewModel.StatusChanged += SetStatus;
 
         // The Optimizer page owns its profile and tool flows; the shell keeps
         // only the window status bar and the startup/close lifecycle around it.
-        OptimizerView.StatusChanged += (message, isError) => SetStatus(message, isError);
+        OptimizerView.StatusChanged += SetStatus;
 
         // The Shortcuts page owns its version seeding, preview and creation;
         // the shell keeps only the window status bar and the detected-version
         // feed from Graphics below.
-        ShortcutsView.StatusChanged += (message, isError) => SetStatus(message, isError);
+        ShortcutsView.StatusChanged += SetStatus;
 
         // The About page owns its own content, including the version pill —
         // the shell keeps no About state.
-        _navigator = new ShellNavigator(
-            new Dictionary<string, Action<bool>>
-            {
-                [NavigationItem.Graphics.Key] = show => GraphicsView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-                [NavigationItem.Optimizer.Key] = show => OptimizerView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-                [NavigationItem.Tuning.Key] = show => TuningView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-                [NavigationItem.Network.Key] = show => NetworkView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-                [NavigationItem.Shortcuts.Key] = show => ShortcutsView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-                [NavigationItem.About.Key] = show => AboutView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-            },
-            BuildRefreshMap(() => TuningView.RefreshAsync()));
+        _navigator = new ShellNavigator(BuildShowMap(), BuildRefreshMap(() => TuningView.RefreshAsync()));
         SetStatus("Ready to connect to GameLoop.");
     }
+
+    /// <summary>
+    /// The page-visibility table: one show/hide callback per page key in
+    /// sidebar order. Sits beside <see cref="BuildRefreshMap(Func{Task})"/> so
+    /// the navigator pairs visibility with refresh-on-arrive, and the shell
+    /// never names a page outside these two tables.
+    /// </summary>
+    private IReadOnlyDictionary<string, Action<bool>> BuildShowMap() =>
+        new Dictionary<string, Action<bool>>
+        {
+            [NavigationItem.Graphics.Key] = show => GraphicsView.Visibility = ToVisibility(show),
+            [NavigationItem.Optimizer.Key] = show => OptimizerView.Visibility = ToVisibility(show),
+            [NavigationItem.Tuning.Key] = show => TuningView.Visibility = ToVisibility(show),
+            [NavigationItem.Network.Key] = show => NetworkView.Visibility = ToVisibility(show),
+            [NavigationItem.Shortcuts.Key] = show => ShortcutsView.Visibility = ToVisibility(show),
+            [NavigationItem.About.Key] = show => AboutView.Visibility = ToVisibility(show),
+        };
+
+    /// <summary>Shell half of the connection paint, behind the presenter: the page
+    /// paints its own surfaces from the same event.</summary>
+    private ShellConnectionPresenter CreateConnectionPresenter() =>
+        new(this, TopConnectionDot, TopConnectionPill, TopConnectionText,
+            SidebarConnectionDot, SidebarConnectionText, SidebarAdbText, SetStatus);
+
+    private static Visibility ToVisibility(bool show) => show ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>
     /// The single home of the refresh-on-arrive registrations: one entry per
@@ -190,25 +197,31 @@ public partial class MainWindow : Window
         }
         finally
         {
-            // Close exactly once, and only while the dispatcher is still alive.
-            // The e.Cancel guard above normally holds the window open for the
-            // whole restore, but a close request can still land in the narrow
-            // window between setting _closeCompleted and calling Close(); on an
-            // already-closing window that throws InvalidOperationException, which
-            // in an async void method would terminate the process (QA F-001).
-            if (!_closeCompleted)
-            {
-                _closeCompleted = true;
-                try
-                {
-                    if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
-                        Close();
-                }
-                catch (InvalidOperationException)
-                {
-                    // Window already closed via the racing close request; teardown done.
-                }
-            }
+            // The last step of every close path, so teardown order reads:
+            // cancel in-flight work, restore the session, then close once.
+            CloseOnce();
+        }
+    }
+
+    /// <summary>
+    /// Close exactly once, and only while the dispatcher is still alive.
+    /// The e.Cancel guard above normally holds the window open for the
+    /// whole restore, but a close request can still land in the narrow
+    /// window between setting _closeCompleted and calling Close(); on an
+    /// already-closing window that throws InvalidOperationException, which
+    /// in an async void method would terminate the process (QA F-001).
+    /// </summary>
+    private void CloseOnce()
+    {
+        if (_closeCompleted) return;
+        _closeCompleted = true;
+        try
+        {
+            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished) Close();
+        }
+        catch (InvalidOperationException)
+        {
+            // Window already closed via the racing close request; teardown done.
         }
     }
 
