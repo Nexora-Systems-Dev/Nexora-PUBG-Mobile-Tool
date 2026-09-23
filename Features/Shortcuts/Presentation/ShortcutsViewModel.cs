@@ -60,54 +60,34 @@ public sealed class ShortcutsViewModel
     /// <c>RunToolAsync</c> used to own for this page: acquire the bus, run the
     /// operation on a cancellable token, translate cancellation and failure
     /// into results, and always release. Button enablement stays in the view;
-    /// the shell status line travels through <see cref="StatusChanged"/>.
+    /// the shell status line travels through <see cref="StatusChanged"/>. The
+    /// spine itself lives in <see cref="OperationSpine"/>, shared with the
+    /// Optimizer page; this method keeps only this page's cancellation
+    /// ownership.
     /// </summary>
     public async Task<OperationResult> ExecuteAsync(Func<CancellationToken, Task<OperationResult>> action)
     {
-        if (!_operationBus.TryAcquire()) return OperationResult.Fail("Another operation is already running.");
-        StatusChanged?.Invoke("Working...", false);
+        // Local so the source is disposed when the call ends; the field is just
+        // the live handle the shell's Cancel() pre-empts, cleared before
+        // disposal so a late Cancel() no-ops instead of hitting a disposed
+        // source.
+        using var cancellation = new CancellationTokenSource();
+        _toolCancellation = cancellation;
 
-        OperationResult result;
-        _toolCancellation = new CancellationTokenSource();
         try
         {
-            result = await action(_toolCancellation.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            result = OperationResult.Skip("Operation canceled.");
-        }
-        catch (Exception ex)
-        {
-            result = OperationResult.Fail(ex.Message);
+            return await OperationSpine.RunAsync(
+                new OperationContext(_operationBus, StatusChanged), cancellation.Token, action);
         }
         finally
         {
-            _operationBus.Release();
-            CancelAndDisposeTool();
+            _toolCancellation = null;
         }
-
-        return result;
     }
 
     /// <summary>
     /// Cancels whatever creation is in flight. Called at window close so an
     /// outstanding shortcut write can never outlive the shell.
     /// </summary>
-    public void Cancel() => CancelAndDisposeTool();
-
-    private void CancelAndDisposeTool()
-    {
-        var cancellation = _toolCancellation;
-        _toolCancellation = null;
-        if (cancellation is null) return;
-        try
-        {
-            cancellation.Cancel();
-        }
-        finally
-        {
-            cancellation.Dispose();
-        }
-    }
+    public void Cancel() => _toolCancellation?.Cancel();
 }
