@@ -50,60 +50,36 @@ public sealed class GameLoopPathResolver : IGameLoopPathResolver
     }
 
     /// <summary>
-    /// Resolves the GameLoop root folder from the registry or running processes.
-    /// Tier-0 is the validated CustomInstallRoot override, then registry,
-    /// running processes, and finally a ProgramFiles traversal.
+    /// Resolves the GameLoop root folder. Tier-0 is the validated
+    /// CustomInstallRoot override, then registry, running processes, and
+    /// finally a ProgramFiles traversal.
     /// </summary>
-    public string? GetRoot()
+    public string? GetRoot() =>
+        GetValidatedCustomRoot()
+            ?? GetRootFromRegistry()
+            ?? GetRootFromRunningProcesses()
+            ?? GetRootFromProgramFiles();
+
+    // Tier: the parent of a running emulator executable's directory — the
+    // install root it was actually launched from.
+    private string? GetRootFromRunningProcesses()
     {
-        var customRoot = GetValidatedCustomRoot();
-        if (customRoot is not null)
+        foreach (var executableDir in EnumerateRunningProcessDirectories())
         {
-            return customRoot;
-        }
-
-        var fromRegistry = GetRootFromRegistry();
-        if (fromRegistry is not null)
-        {
-            return fromRegistry;
-        }
-
-        // Fall back to active emulator process paths via the shared enumerator
-        // (single GetProcessesByName home — see GameLoopProcessEnumerator).
-        foreach (var process in GameLoopProcessEnumerator.EnumerateByNames(_emulator.Emulator.RunningCheckProcessNames))
-        {
-            try
+            var parent = TryGetParent(executableDir);
+            if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
             {
-                var modPath = process.MainModule?.FileName;
-                if (!string.IsNullOrWhiteSpace(modPath))
-                {
-                    var uiDir = Path.GetDirectoryName(modPath);
-                    if (!string.IsNullOrWhiteSpace(uiDir))
-                    {
-                        var parent = Directory.GetParent(uiDir)?.FullName;
-                        if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
-                        {
-                            return parent;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore protected processes.
-            }
-            finally
-            {
-                process.Dispose();
+                return parent;
             }
         }
 
-        // Last-resort heuristic: standard ProgramFiles roots.
-        foreach (var programFiles in new[]
-        {
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-        }.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
+        return null;
+    }
+
+    // Tier: last-resort heuristic over the standard ProgramFiles roots.
+    private string? GetRootFromProgramFiles()
+    {
+        foreach (var programFiles in StandardProgramFilesRoots())
         {
             try
             {
@@ -127,40 +103,28 @@ public sealed class GameLoopPathResolver : IGameLoopPathResolver
     /// </summary>
     public string? GetUiPath()
     {
-        var customRoot = GetValidatedCustomRoot();
-        if (customRoot is not null)
+        if (GetValidatedCustomRoot() is { } customRoot)
         {
             var fromCustom = NormalizeUiPath(Path.Combine(customRoot, "UI")) ?? NormalizeUiPath(customRoot);
             if (fromCustom is not null) return fromCustom;
         }
 
         var registryPath = _registry.GetLocalString(_gameLoop.Registry.ValueInstallPath, _gameLoop.Registry.BranchUI);
-        var fromRegistry = NormalizeUiPath(registryPath);
-        if (fromRegistry is not null) return fromRegistry;
+        if (NormalizeUiPath(registryPath) is { } fromRegistry) return fromRegistry;
 
-        foreach (var process in GameLoopProcessEnumerator.EnumerateByNames(_emulator.Emulator.RunningCheckProcessNames))
-        {
-            try
-            {
-                var processDirectory = Path.GetDirectoryName(process.MainModule?.FileName);
-                var fromProcess = NormalizeUiPath(processDirectory);
-                if (fromProcess is not null) return fromProcess;
-            }
-            catch
-            {
-                // Ignore protected processes.
-            }
-            finally
-            {
-                process.Dispose();
-            }
-        }
+        return GetUiPathFromRunningProcesses() ?? GetUiPathFromProgramFiles();
+    }
 
-        foreach (var programFiles in new[]
-        {
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-        }.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
+    // Tier: the directory of a running emulator executable, normalized to UI.
+    private string? GetUiPathFromRunningProcesses() =>
+        EnumerateRunningProcessDirectories()
+            .Select(NormalizeUiPath)
+            .FirstOrDefault(path => path is not null);
+
+    // Tier: each standard ProgramFiles root, looking for <install>\UI.
+    private string? GetUiPathFromProgramFiles()
+    {
+        foreach (var programFiles in StandardProgramFilesRoots())
         {
             var standardPath = NormalizeUiPath(Path.Combine(programFiles, _emulator.Emulator.InstallFolderName, "UI"));
             if (standardPath is not null) return standardPath;
@@ -210,6 +174,66 @@ public sealed class GameLoopPathResolver : IGameLoopPathResolver
 
         return null;
     }
+
+    /// <summary>
+    /// Directories of running emulator executables, via the shared enumerator
+    /// (single <c>Process.GetProcessesByName</c> home — see
+    /// <see cref="GameLoopProcessEnumerator"/>). Protected processes that deny
+    /// module access are skipped; every handle is disposed after reading.
+    /// </summary>
+    private IEnumerable<string> EnumerateRunningProcessDirectories()
+    {
+        foreach (var process in GameLoopProcessEnumerator.EnumerateByNames(_emulator.Emulator.RunningCheckProcessNames))
+        {
+            var directory = TryGetProcessDirectory(process);
+            process.Dispose();
+            if (directory is not null) yield return directory;
+        }
+    }
+
+    /// <summary>
+    /// The directory of a process's main module, or null when the process
+    /// denies module access (protected or cross-architecture processes).
+    /// </summary>
+    private static string? TryGetProcessDirectory(Process process)
+    {
+        try
+        {
+            var modulePath = process.MainModule?.FileName;
+            return string.IsNullOrWhiteSpace(modulePath) ? null : Path.GetDirectoryName(modulePath);
+        }
+        catch
+        {
+            // Ignore protected processes.
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The parent directory of a path, or null when the path is malformed.
+    /// </summary>
+    private static string? TryGetParent(string path)
+    {
+        try
+        {
+            return Directory.GetParent(path)?.FullName;
+        }
+        catch
+        {
+            // Ignore invalid path formats.
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The standard per-machine install roots, de-duplicated with blank
+    /// entries filtered out (the sequence can legitimately be empty).
+    /// </summary>
+    private static IEnumerable<string> StandardProgramFilesRoots() => new[]
+    {
+        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+    }.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Returns the validated custom install root, or null when unset or missing on disk.

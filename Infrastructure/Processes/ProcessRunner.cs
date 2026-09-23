@@ -18,20 +18,19 @@ public sealed class ProcessRunner : IProcessRunner
         _gameLoop = gameLoop ?? new GameLoopOptions();
     }
 
+    private static ProcessStartInfo HiddenRedirectedStartInfo(string fileName) => new()
+    {
+        FileName = fileName,
+        UseShellExecute = false,
+        CreateNoWindow = true,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        WorkingDirectory = AppContext.BaseDirectory
+    };
+
     public ProcessResult Run(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null)
     {
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = fileName,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                WorkingDirectory = AppContext.BaseDirectory
-            }
-        };
+        using var process = new Process { StartInfo = HiddenRedirectedStartInfo(fileName) };
 
         foreach (var argument in arguments)
         {

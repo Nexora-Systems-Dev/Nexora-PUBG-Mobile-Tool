@@ -31,13 +31,7 @@ public sealed class RegistryService : IUserRegistry, IMachineRegistry
     public int? GetUserDword(string name)
     {
         using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(UserPath, writable: false);
-        var value = key?.GetValue(name);
-        return value switch
-        {
-            int intValue => intValue,
-            long longValue => (int)longValue,
-            _ => null
-        };
+        return ReadDword(key?.GetValue(name));
     }
 
     public bool SetUserDword(string name, int value)
@@ -61,13 +55,7 @@ public sealed class RegistryService : IUserRegistry, IMachineRegistry
     private static int? TryGetAppSettingDword(string settingsPath, string name)
     {
         using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(settingsPath, writable: false);
-        var value = key?.GetValue(name);
-        return value switch
-        {
-            int intValue => intValue,
-            long longValue => (int)longValue,
-            _ => null
-        };
+        return ReadDword(key?.GetValue(name));
     }
 
     /// <summary>
@@ -133,12 +121,18 @@ public sealed class RegistryService : IUserRegistry, IMachineRegistry
     {
         using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
         using var key = baseKey.OpenSubKey(subKeyPath, writable: false);
-        var value = key?.GetValue(name);
-        return value switch
-        {
-            int intValue => intValue,
-            long longValue => (int)longValue,
-            _ => null
-        };
+        return ReadDword(key?.GetValue(name));
     }
+
+    /// <summary>
+    /// A registry DWORD arrives as <see cref="int"/> or <see cref="long"/>
+    /// depending on which tool wrote it, so both shapes are accepted and
+    /// narrowed to <see cref="int"/>; a missing value stays null.
+    /// </summary>
+    private static int? ReadDword(object? value) => value switch
+    {
+        int intValue => intValue,
+        long longValue => (int)longValue,
+        _ => null
+    };
 }
