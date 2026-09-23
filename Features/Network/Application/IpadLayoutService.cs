@@ -2,15 +2,9 @@ using System.Globalization;
 using System.Text.Json;
 using System.Xml.Linq;
 using Nexora.Configuration;
-using Nexora.Features.GameLoop.Application;
-using Nexora.Features.GameLoop.Domain;
-using Nexora.Features.GameLoop.Infrastructure;
 using Nexora.Features.Performance.Application;
-using Nexora.Features.Performance.Domain;
-using Nexora.Features.Performance.Infrastructure;
 using Nexora.Shared.Kernel;
 using Nexora.Features.Graphics.Domain;
-using Nexora.Features.Network.Domain;
 using Nexora.Infrastructure.Registry;
 using Nexora.Shared.Contracts;
 
@@ -59,24 +53,34 @@ public sealed class IpadLayoutService : IIpadLayoutService
 
             SnapshotCurrentResolution();
             ApplyLayoutMap(originalPath);
-            if (!_registry.SetUserDword("VMResWidth", width) || !_registry.SetUserDword("VMResHeight", height))
-            {
-                return OperationResult.Fail("Could not save the selected iPad resolution to GameLoop.");
-            }
-
-            var appliedWidth = _registry.GetUserDword("VMResWidth");
-            var appliedHeight = _registry.GetUserDword("VMResHeight");
-            if (appliedWidth != width || appliedHeight != height)
-            {
-                return OperationResult.Fail("GameLoop did not accept the selected iPad resolution.");
-            }
-
-            return OperationResult.Ok(FormattableString.Invariant($"Resolution set to {width} x {height}."));
+            return WriteResolution(width, height);
         }
         catch (Exception ex)
         {
             return OperationResult.Fail($"Could not set iPad resolution: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Writes both resolution values and confirms GameLoop accepted them by
+    /// reading them straight back. Owns all three outcomes — two failure and
+    /// the success — so the caller's try block is one line.
+    /// </summary>
+    private OperationResult WriteResolution(int width, int height)
+    {
+        if (!_registry.SetUserDword("VMResWidth", width) || !_registry.SetUserDword("VMResHeight", height))
+        {
+            return OperationResult.Fail("Could not save the selected iPad resolution to GameLoop.");
+        }
+
+        var appliedWidth = _registry.GetUserDword("VMResWidth");
+        var appliedHeight = _registry.GetUserDword("VMResHeight");
+        if (appliedWidth != width || appliedHeight != height)
+        {
+            return OperationResult.Fail("GameLoop did not accept the selected iPad resolution.");
+        }
+
+        return OperationResult.Ok(FormattableString.Invariant($"Resolution set to {width} x {height}."));
     }
 
     public OperationResult ResetIpadResolution()
