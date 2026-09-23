@@ -1,5 +1,6 @@
 using System.Windows;
 using Nexora.Features.Updates.Application;
+using Nexora.Features.Updates.Domain;
 using Nexora.Shared.Contracts;
 
 namespace Nexora.Features.Updates.Presentation;
@@ -45,27 +46,30 @@ public sealed class UpdateHandoff
             // close, or the refresh settling first); never show UI on a
             // dispatcher that is already torn down.
             if (_isShutdown()) return;
-            if (update.Available)
-            {
-                var message = $"Nexora update {update.LatestVersion} is available.\n\n{update.ChangeLog}";
-                if (MessageBox.Show(message, "Update Available", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                {
-                    _setStatus("Downloading update...", false);
-                    var result = await _updates.DownloadAndLaunchAsync(update);
-                    _setStatus(result.Message, !result.Success);
-                    if (result.Success)
-                    {
-                        // UpdateService has already verified that the new
-                        // elevated process started successfully. Closing this
-                        // instance lets the new version take over cleanly.
-                        _close();
-                    }
-                }
-            }
+            if (update.Available) await PromptAndDownloadAsync(update);
         }
         catch (Exception ex)
         {
             _setStatus($"Update check failed: {ex.Message}", true);
         }
+    }
+
+    /// <summary>
+    /// Prompts for the release, downloads it, and closes this instance on success
+    /// so the elevated handoff can replace the executable. Stays inside
+    /// <see cref="RunAsync"/>'s try so a download failure is reported, not thrown.
+    /// </summary>
+    private async Task PromptAndDownloadAsync(UpdateInfo update)
+    {
+        var message = $"Nexora update {update.LatestVersion} is available.\n\n{update.ChangeLog}";
+        if (MessageBox.Show(message, "Update Available", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes) return;
+
+        _setStatus("Downloading update...", false);
+        var result = await _updates.DownloadAndLaunchAsync(update);
+        _setStatus(result.Message, !result.Success);
+        // UpdateService has already verified that the new elevated process
+        // started successfully. Closing this instance lets the new version
+        // take over cleanly.
+        if (result.Success) _close();
     }
 }

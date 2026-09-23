@@ -98,11 +98,7 @@ public static class UpdateArchiveValidator
         // as enabled.
         if (!string.IsNullOrWhiteSpace(expectedSha256))
         {
-            var actualHash = ComputeSha256(executablePath);
-            if (string.Equals(actualHash, expectedSha256!.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
+            if (MatchesExpectedChecksum(executablePath, expectedSha256)) return true;
 
             errorMessage = "The update executable hash does not match the expected checksum.";
             return false;
@@ -111,6 +107,10 @@ public static class UpdateArchiveValidator
         errorMessage = "The update executable is unverifiable: it has no trusted Authenticode signature or verified checksum.";
         return false;
     }
+
+    /// <summary>Compares the on-disk SHA-256 against the checksum published with the release.</summary>
+    private static bool MatchesExpectedChecksum(string executablePath, string expectedSha256) =>
+        string.Equals(ComputeSha256(executablePath), expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Computes the hex-encoded SHA-256 hash of the specified file.
@@ -165,32 +165,9 @@ public static class UpdateArchiveValidator
             using var rawCert = X509Certificate.CreateFromSignedFile(filePath);
             using var cert = new X509Certificate2(rawCert);
 #pragma warning restore CS0618
-            using var chain = new X509Chain
-            {
-                ChainPolicy =
-                {
-                    RevocationMode = X509RevocationMode.Online,
-                    RevocationFlag = X509RevocationFlag.ExcludeRoot,
-                    VerificationFlags = X509VerificationFlags.IgnoreEndRevocationUnknown |
-                                        X509VerificationFlags.IgnoreCertificateAuthorityRevocationUnknown |
-                                        X509VerificationFlags.IgnoreRootRevocationUnknown
-                }
-            };
-
-            var chainValid = chain.Build(cert);
-            if (!chainValid)
-            {
-                return false;
-            }
-
-            // Verify certificate subject contains the expected publisher name.
-            if (!string.IsNullOrWhiteSpace(expectedPublisher) &&
-                cert.Subject.IndexOf(expectedPublisher, StringComparison.OrdinalIgnoreCase) < 0)
-            {
-                return false;
-            }
-
-            return true;
+            using var chain = new X509Chain { ChainPolicy = CreateChainPolicy() };
+            if (!chain.Build(cert)) return false;
+            return IsExpectedPublisher(cert, expectedPublisher);
         }
         catch (System.Security.Cryptography.CryptographicException)
         {
@@ -201,4 +178,19 @@ public static class UpdateArchiveValidator
             return false;
         }
     }
+
+    /// <summary>The chain policy used to verify an Authenticode publisher; all three flags kept in one place.</summary>
+    private static X509ChainPolicy CreateChainPolicy() => new X509ChainPolicy
+    {
+        RevocationMode = X509RevocationMode.Online,
+        RevocationFlag = X509RevocationFlag.ExcludeRoot,
+        VerificationFlags = X509VerificationFlags.IgnoreEndRevocationUnknown |
+                            X509VerificationFlags.IgnoreCertificateAuthorityRevocationUnknown |
+                            X509VerificationFlags.IgnoreRootRevocationUnknown
+    };
+
+    /// <summary>Blank expected-publisher means the chain alone is sufficient evidence.</summary>
+    private static bool IsExpectedPublisher(X509Certificate2 cert, string? expectedPublisher) =>
+        string.IsNullOrWhiteSpace(expectedPublisher) ||
+        cert.Subject.IndexOf(expectedPublisher, StringComparison.OrdinalIgnoreCase) >= 0;
 }

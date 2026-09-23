@@ -31,6 +31,18 @@ public sealed class UpdateService : IUpdateService
 
     private string GetStagingBaseDirectory() => _stagingBaseDirectory ?? Path.GetTempPath();
 
+    /// <summary>
+    /// Purges orphaned staging trees from previous runs, then builds a fresh
+    /// unique tree so a pre-created directory in the staging base can never be reused.
+    /// </summary>
+    private (string StagingRoot, string ArchivePath, string ExtractionRoot) PrepareStagingTree()
+    {
+        var stagingBase = GetStagingBaseDirectory();
+        StagingDirectoryGC.PurgeStaleStagingDirectories(stagingBase, updates: _updates);
+        var stagingRoot = Path.Combine(stagingBase, _updates.StagingPrefix + Guid.NewGuid().ToString("N"));
+        return (stagingRoot, Path.Combine(stagingRoot, _updates.ArchiveFileName), Path.Combine(stagingRoot, _updates.ExtractionFolderName));
+    }
+
     public Task<UpdateInfo> CheckAsync(CancellationToken cancellationToken = default) =>
         _checker.CheckAsync(cancellationToken);
 
@@ -45,13 +57,7 @@ public sealed class UpdateService : IUpdateService
             return OperationResult.Fail(targetError);
         }
 
-        // Clean up orphaned staging directories from previous runs.
-        StagingDirectoryGC.PurgeStaleStagingDirectories(GetStagingBaseDirectory(), updates: _updates);
-
-        // Use a unique directory to prevent local pre-creation attacks in the staging base.
-        var stagingRoot = Path.Combine(GetStagingBaseDirectory(), _updates.StagingPrefix + Guid.NewGuid().ToString("N"));
-        var archivePath = Path.Combine(stagingRoot, _updates.ArchiveFileName);
-        var extractionRoot = Path.Combine(stagingRoot, _updates.ExtractionFolderName);
+        var (stagingRoot, archivePath, extractionRoot) = PrepareStagingTree();
 
         var stagedSuccessfully = false;
         try
@@ -179,37 +185,32 @@ public sealed class UpdateService : IUpdateService
     /// </summary>
     internal string GetCurrentExecutablePath()
     {
-        if (!string.IsNullOrWhiteSpace(_currentExecutablePath))
-        {
-            return Path.GetFullPath(_currentExecutablePath);
-        }
+        if (!string.IsNullOrWhiteSpace(_currentExecutablePath)) return Path.GetFullPath(_currentExecutablePath);
 
         var processPath = Environment.ProcessPath;
-        if (!string.IsNullOrWhiteSpace(processPath) && !IsTestHostPath(processPath))
-        {
-            return Path.GetFullPath(processPath);
-        }
+        if (!string.IsNullOrWhiteSpace(processPath) && !IsTestHostPath(processPath)) return Path.GetFullPath(processPath);
 
+        var mainModulePath = TryGetMainModulePath();
+        if (!string.IsNullOrEmpty(mainModulePath)) return mainModulePath;
+
+        var fallbackPath = Path.Combine(AppContext.BaseDirectory, _updates.PortableExecutableName);
+        return File.Exists(fallbackPath) ? Path.GetFullPath(fallbackPath) : string.Empty;
+    }
+
+    /// <summary>Best-effort module probe: MainModule can throw in restricted security contexts.</summary>
+    private static string? TryGetMainModulePath()
+    {
         try
         {
             var mainModulePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-            if (!string.IsNullOrWhiteSpace(mainModulePath) && !IsTestHostPath(mainModulePath))
-            {
-                return Path.GetFullPath(mainModulePath);
-            }
+            return !string.IsNullOrWhiteSpace(mainModulePath) && !IsTestHostPath(mainModulePath)
+                ? Path.GetFullPath(mainModulePath)
+                : null;
         }
         catch
         {
-            // MainModule can throw in restricted security contexts.
+            return null;
         }
-
-        var fallbackPath = Path.Combine(AppContext.BaseDirectory, _updates.PortableExecutableName);
-        if (File.Exists(fallbackPath))
-        {
-            return Path.GetFullPath(fallbackPath);
-        }
-
-        return string.Empty;
     }
 
     internal static bool ValidateTargetPath(string targetExecutablePath, out string validationError, UpdateOptions? updates = null, string? stagingBaseDirectory = null)
@@ -235,14 +236,20 @@ public sealed class UpdateService : IUpdateService
         }
 
         // Guard against the staging base the update flow actually uses, not just %TEMP%.
-        var stagingBase = stagingBaseDirectory ?? Path.GetTempPath();
-        var stagingPrefix = Path.Combine(stagingBase, (updates ?? new UpdateOptions()).StagingPrefix);
-        if (targetExecutablePath.StartsWith(stagingPrefix, StringComparison.OrdinalIgnoreCase))
+        if (IsRunningFromStaging(targetExecutablePath, stagingBaseDirectory, updates))
         {
             validationError = "The application cannot be updated while running from a temporary update staging directory.";
             return false;
         }
 
         return true;
+    }
+
+    /// <summary>Guards the staging base the update flow actually uses, not just %TEMP%.</summary>
+    private static bool IsRunningFromStaging(string targetExecutablePath, string? stagingBaseDirectory, UpdateOptions? updates)
+    {
+        var stagingBase = stagingBaseDirectory ?? Path.GetTempPath();
+        var stagingPrefix = Path.Combine(stagingBase, (updates ?? new UpdateOptions()).StagingPrefix);
+        return targetExecutablePath.StartsWith(stagingPrefix, StringComparison.OrdinalIgnoreCase);
     }
 }

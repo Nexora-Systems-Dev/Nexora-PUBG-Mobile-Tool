@@ -35,9 +35,15 @@ public sealed class UpdateChecker
                 candidate.TryGetProperty("name", out var name) &&
                 name.GetString()?.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) == true)
             : default;
-        var assetName = asset.ValueKind == JsonValueKind.Object && asset.TryGetProperty("name", out var name) ? name.GetString() ?? string.Empty : string.Empty;
-        var downloadUrl = asset.ValueKind == JsonValueKind.Object && asset.TryGetProperty("browser_download_url", out var url) ? url.GetString() ?? string.Empty : string.Empty;
+        var assetName = ReadAssetString(asset, "name");
+        var downloadUrl = ReadAssetString(asset, "browser_download_url");
         var expectedSha256 = UpdateArchiveValidator.TryExtractSha256(changelog);
         return new UpdateInfo(!string.Equals(AppConstants.CurrentVersion, latest, StringComparison.OrdinalIgnoreCase), latest, assetName, downloadUrl, changelog, expectedSha256);
     }
+
+    /// <summary>Reads a string property from a possibly-absent release asset element.</summary>
+    private static string ReadAssetString(JsonElement asset, string propertyName) =>
+        asset.ValueKind == JsonValueKind.Object && asset.TryGetProperty(propertyName, out var value)
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
 }

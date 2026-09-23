@@ -30,12 +30,8 @@ public sealed class DefenderExclusionService
     /// </summary>
     public OperationResult AddDefenderExclusion()
     {
-        var defenderService = _runner.RunPowerShell(
-            "$service = Get-Service -Name WinDefend -ErrorAction SilentlyContinue; " +
-            "if ($null -eq $service) { 'Unavailable' } else { \"$($service.Status)|$($service.StartType)\" }");
-
-        var defenderState = defenderService.StandardOutput.Trim();
-        if (ShouldSkipDefender(defenderState, defenderService.Succeeded))
+        var (defenderState, querySucceeded) = QueryDefenderState();
+        if (ShouldSkipDefender(defenderState, querySucceeded))
         {
             return OperationResult.Skip("Windows Defender is disabled or unavailable; exclusion skipped.");
         }
@@ -58,6 +54,18 @@ public sealed class DefenderExclusionService
         return result.Succeeded
             ? OperationResult.Ok("GameLoop optimizer exclusion applied.")
             : OperationResult.Fail($"Could not update the Windows Defender exclusion. {ProcessText.GetError(result)}");
+    }
+
+    /// <summary>
+    /// Probes the WinDefend service once, reporting its Status|StartType pair and
+    /// whether the query itself succeeded — an unavailable service is a skip, not a failure.
+    /// </summary>
+    private (string State, bool Succeeded) QueryDefenderState()
+    {
+        var result = _runner.RunPowerShell(
+            "$service = Get-Service -Name WinDefend -ErrorAction SilentlyContinue; " +
+            "if ($null -eq $service) { 'Unavailable' } else { \"$($service.Status)|$($service.StartType)\" }");
+        return (result.StandardOutput.Trim(), result.Succeeded);
     }
 
     /// <summary>
