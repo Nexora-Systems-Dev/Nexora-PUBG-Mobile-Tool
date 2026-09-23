@@ -3,166 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Margin="34,14,34,10" ClipToBounds="True">
     <UserControl.Resources>
-        <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
-        <DropShadowEffect x:Key="HeroCtaGlowEffect" Color="#00D2FF" BlurRadius="18" ShadowDepth="2" Opacity="0.45" Direction="270" />
-
-        <LinearGradientBrush x:Key="NetworkTopBorderBrush" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#0000D2FF" Offset="0" />
-            <GradientStop Color="#9000D2FF" Offset="0.5" />
-            <GradientStop Color="#0000D2FF" Offset="1" />
-        </LinearGradientBrush>
-
-        <RadialGradientBrush x:Key="NetworkAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-            <GradientStop Color="#4000D2FF" Offset="0" />
-            <GradientStop Color="#0000D2FF" Offset="1" />
-        </RadialGradientBrush>
-
-        <RadialGradientBrush x:Key="NetworkCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-            <GradientStop Color="#2500D2FF" Offset="0" />
-            <GradientStop Color="#0000D2FF" Offset="1" />
-        </RadialGradientBrush>
-
-        <LinearGradientBrush x:Key="PrimaryCtaBackground" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#00D2FF" Offset="0" />
-            <GradientStop Color="#0096EB" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="PrimaryCtaBackgroundHover" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#38BDF8" Offset="0" />
-            <GradientStop Color="#0EA5E9" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="PrimaryCtaBackgroundPressed" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#0284C7" Offset="0" />
-            <GradientStop Color="#0369A1" Offset="1" />
-        </LinearGradientBrush>
-
-        <Style x:Key="NetworkHeroButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource PrimaryCtaBackground}" />
-            <Setter Property="Foreground" Value="#051019" />
-            <Setter Property="BorderBrush" Value="#40DFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontFamily" Value="Bahnschrift SemiCondensed" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="24,12" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="CtaBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}"
-                                Effect="{StaticResource HeroCtaGlowEffect}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundHover}" />
-                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#90EBFF" />
-                                <Setter TargetName="CtaBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="24" ShadowDepth="2" Opacity="0.65" Direction="270" />
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundPressed}" />
-                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#0284C7" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                                <Setter TargetName="CtaBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="1" Opacity="0.4" Direction="270" />
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PanelBackground}" />
-                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
-                                <Setter Property="Foreground" Value="#4B5E6D" />
-                                <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                                <Setter Property="Opacity" Value="0.75" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="NetworkOutlineButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#0D1620" />
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-            <Setter Property="BorderBrush" Value="#223546" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="18,10" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#152737" />
-                                <Setter Property="Foreground" Value="{StaticResource Accent}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#0E1B26" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.45" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <Style x:Key="NetworkComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
             <Setter Property="Background" Value="#0B131B" />
             <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
-            <Setter Property="Height" Value="42" />
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
-                    <Style TargetType="ComboBoxItem">
+                    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource ComboBoxItemStyle}">
                         <Setter Property="Background" Value="#0B131B" />
-                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                        <Setter Property="Padding" Value="12,9" />
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="VerticalContentAlignment" Value="Center" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ComboBoxItem">
-                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter
-                                            Content="{TemplateBinding Content}"
-                                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentSoft}" />
-                                            <Setter Property="Foreground" Value="{StaticResource Accent}" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
                     </Style>
                 </Setter.Value>
             </Setter>
@@ -175,9 +22,9 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Border Grid.RowSpan="2" Background="{StaticResource OptimizerPageBackgroundBrush}" BorderBrush="#1B2B37" BorderThickness="1" CornerRadius="18" IsHitTestVisible="False" />
-        <Border Grid.RowSpan="2" Height="1" Background="{StaticResource NetworkTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
-        <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource NetworkAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
-        <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource NetworkCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
+        <Border Grid.RowSpan="2" Height="1" Background="{StaticResource PageTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
+        <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource PageAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
+        <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource PageCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
 
         <Grid Grid.Row="0" Margin="18,12,18,16">
             <StackPanel Orientation="Horizontal">
@@ -256,7 +103,7 @@
                             </Border>
                         </WrapPanel>
 
-                        <Button Grid.Row="6" x:Name="ChangeDnsButton" Content="CHANGE DNS" Click="ChangeDnsButton_Click" Style="{StaticResource NetworkHeroButtonStyle}" HorizontalAlignment="Right" />
+                        <Button Grid.Row="6" x:Name="ChangeDnsButton" Content="CHANGE DNS" Click="ChangeDnsButton_Click" Style="{StaticResource HeroButtonStyle}" HorizontalAlignment="Right" />
                     </Grid>
                 </Border>
 
@@ -316,8 +163,8 @@
                         </WrapPanel>
 
                         <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button x:Name="ResetIpadButton" Content="RESET" Click="ResetIpadButton_Click" Style="{StaticResource NetworkOutlineButtonStyle}" Margin="0,0,10,0" />
-                            <Button x:Name="ChangeIpadButton" Content="APPLY IPAD VIEW" Click="ChangeIpadButton_Click" Style="{StaticResource NetworkHeroButtonStyle}" IsEnabled="False" />
+                            <Button x:Name="ResetIpadButton" Content="RESET" Click="ResetIpadButton_Click" Style="{StaticResource PageOutlineButtonStyle}" Margin="0,0,10,0" />
+                            <Button x:Name="ChangeIpadButton" Content="APPLY IPAD VIEW" Click="ChangeIpadButton_Click" Style="{StaticResource HeroButtonStyle}" IsEnabled="False" />
                         </StackPanel>
                     </Grid>
                 </Border>

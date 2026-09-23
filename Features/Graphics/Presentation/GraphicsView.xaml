@@ -6,33 +6,7 @@
         <SolidColorBrush x:Key="SegmentTrackBackground" Color="#091219" />
         <SolidColorBrush x:Key="SegmentTrackBorder" Color="#1B2B38" />
 
-        <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
         <DropShadowEffect x:Key="CardSelectedGlowEffect" Color="#00D2FF" BlurRadius="16" ShadowDepth="0" Opacity="0.6" />
-        <DropShadowEffect x:Key="CtaGlowEffect" Color="#00D2FF" BlurRadius="18" ShadowDepth="2" Opacity="0.45" Direction="270" />
-
-        <LinearGradientBrush x:Key="GraphicsTopBorderBrush" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#0000D2FF" Offset="0" />
-            <GradientStop Color="#9000D2FF" Offset="0.5" />
-            <GradientStop Color="#0000D2FF" Offset="1" />
-        </LinearGradientBrush>
-
-        <RadialGradientBrush x:Key="GraphicsAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-            <GradientStop Color="#4000D2FF" Offset="0" />
-            <GradientStop Color="#0000D2FF" Offset="1" />
-        </RadialGradientBrush>
-
-        <LinearGradientBrush x:Key="PrimaryCtaBackground" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#00D2FF" Offset="0" />
-            <GradientStop Color="#0096EB" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="PrimaryCtaBackgroundHover" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#38BDF8" Offset="0" />
-            <GradientStop Color="#0EA5E9" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="PrimaryCtaBackgroundPressed" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#0284C7" Offset="0" />
-            <GradientStop Color="#0369A1" Offset="1" />
-        </LinearGradientBrush>
 
         <Style x:Key="GraphicsSegmentButtonStyle" TargetType="RadioButton">
             <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
@@ -168,73 +142,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="GraphicsApplyButtonStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="#061219" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="32,13" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="CtaBorder"
-                                CornerRadius="8"
-                                Background="{StaticResource PrimaryCtaBackground}"
-                                BorderBrush="#5AE1FF"
-                                BorderThickness="1"
-                                Padding="{TemplateBinding Padding}"
-                                Effect="{StaticResource CtaGlowEffect}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Path Data="M 1,6 L 4.5,9.5 L 11,2"
-                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                      StrokeThickness="2"
-                                      StrokeStartLineCap="Round"
-                                      StrokeEndLineCap="Round"
-                                      StrokeLineJoin="Round"
-                                      VerticalAlignment="Center"
-                                      Margin="0,0,10,0" />
-                                <TextBlock Text="APPLY SETTINGS"
-                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                           FontWeight="Bold"
-                                           FontSize="13"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundHover}" />
-                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#90EBFF" />
-                                <Setter TargetName="CtaBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="24" ShadowDepth="2" Opacity="0.65" Direction="270" />
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundPressed}" />
-                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#0284C7" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                                <Setter TargetName="CtaBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="1" Opacity="0.4" Direction="270" />
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PanelBackground}" />
-                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
-                                <Setter Property="Foreground" Value="#4B5E6D" />
-                                <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                                <Setter Property="Opacity" Value="0.75" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <Style x:Key="GraphicsConnectButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
@@ -268,40 +175,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <Style x:Key="GraphicsComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
-            <Setter Property="ItemContainerStyle">
-                <Setter.Value>
-                    <Style TargetType="ComboBoxItem">
-                        <Setter Property="Background" Value="#111A23" />
-                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                        <Setter Property="Padding" Value="12,9" />
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="VerticalContentAlignment" Value="Center" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ComboBoxItem">
-                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter
-                                            Content="{TemplateBinding Content}"
-                                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentSoft}" />
-                                            <Setter Property="Foreground" Value="{StaticResource Accent}" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -311,8 +184,8 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Border Grid.RowSpan="3" Background="{StaticResource GraphicsPageBackgroundBrush}" BorderBrush="#1B2B37" BorderThickness="1" CornerRadius="18" IsHitTestVisible="False" />
-        <Border Grid.RowSpan="3" Height="1" Background="{StaticResource GraphicsTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
-        <Ellipse Grid.RowSpan="3" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource GraphicsAccentGlowBrush}" Opacity="0.45" IsHitTestVisible="False" />
+        <Border Grid.RowSpan="3" Height="1" Background="{StaticResource PageTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
+        <Ellipse Grid.RowSpan="3" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource PageAccentGlowBrush}" Opacity="0.45" IsHitTestVisible="False" />
         <Ellipse Grid.RowSpan="3" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource GraphicsCoolGlowBrush}" Opacity="0.3" IsHitTestVisible="False" />
         <Grid Grid.Row="0" Margin="18,12,18,18">
             <StackPanel Orientation="Horizontal">
@@ -325,7 +198,7 @@
             </StackPanel>
             <StackPanel HorizontalAlignment="Right" Width="270">
                 <TextBlock Text="PUBG MOBILE VERSION" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8" />
-                <ComboBox x:Name="PubgVersionComboBox" Style="{StaticResource GraphicsComboBoxStyle}" SelectionChanged="PubgVersionComboBox_SelectionChanged" />
+                <ComboBox x:Name="PubgVersionComboBox" Style="{StaticResource InputComboBoxStyle}" SelectionChanged="PubgVersionComboBox_SelectionChanged" />
             </StackPanel>
         </Grid>
 
@@ -451,7 +324,26 @@
                 <Ellipse Width="7" Height="7" Fill="{StaticResource TextMuted}" Margin="0,0,8,0" />
                 <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource TextSecondary}" FontSize="13" />
             </StackPanel>
-            <Button x:Name="ApplyButton" Content="APPLY SETTINGS" Click="ApplyButton_Click" Style="{StaticResource GraphicsApplyButtonStyle}" HorizontalAlignment="Right" IsEnabled="False" />
+            <!-- The hero CTA with this page's Segoe label set inline; the ramp,
+            glow and states come from HeroButtonStyle so the check-mark content
+            is the only page-specific piece. -->
+            <Button x:Name="ApplyButton" Click="ApplyButton_Click" Style="{StaticResource HeroButtonStyle}" FontFamily="Segoe UI" FontSize="13" BorderBrush="#5AE1FF" Foreground="#061219" Padding="32,13" HorizontalAlignment="Right" IsEnabled="False">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="M 1,6 L 4.5,9.5 L 11,2"
+                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="2"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round"
+                          VerticalAlignment="Center"
+                          Margin="0,0,10,0" />
+                    <TextBlock Text="APPLY SETTINGS"
+                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                               FontWeight="Bold"
+                               FontSize="13"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
         </Grid>
     </Grid>
 </UserControl>

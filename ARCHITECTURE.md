@@ -168,12 +168,12 @@ Defined globally in `App.xaml`:
 | `TextSecondary` | `#9DA8B2` | Slate gray secondary text and labels |
 | `Success` | `#10B981` | Status pill connected state |
 | `Danger` | `#EF4444` | Status pill disconnected / error states |
-| `AccentGlowEffect` | `BlurRadius=12, Opacity=0.5` | DropShadow glow for active cyan highlights |
+| `AccentGlowEffect` | `BlurRadius=14, Opacity=0.55` | DropShadow glow for active cyan highlights |
 
 ### 4.2 Reusable Controls & Components
-- **Segmented Radio Buttons (`SegmentButtonStyle`):** Modern segmented pill selectors for graphics options (Quality, FPS, Style) featuring cyan border highlight on hover and `AccentSoft` fill when checked.
+- **Segmented Radio Buttons (`GraphicsSegmentButtonStyle`):** Modern segmented pill selectors for graphics options (Quality, FPS, Style) featuring cyan border highlight on hover and `AccentSoft` fill when checked.
 - **Navigation Rail (`NavButtonStyle`):** Sidebar items featuring a vertical glowing 3.5px Electric Cyan rail indicator on the active page.
-- **Metric & Style Cards (`StyleCardButton`):** Toggable tiles for visual styles (Classic, Colorful, Realistic, Soft, Movie).
+- **Metric & Style Cards (`GraphicsStyleCardButton`):** Toggable tiles for visual styles (Classic, Colorful, Realistic, Soft, Movie).
 - **Dark ComboBox (`InputComboBoxStyle`):** Custom-styled WPF dropdown with rounded borders, hover glows, and scrollable dark popup lists.
 
 ### 4.3 Presentation & Layout Separation

@@ -66,7 +66,7 @@ EmulatorTuningOptions (new, Configuration): strongly-typed options, nullable-cto
   the notice instead of a surprise error.
 - **Layout:** grouped cards — Performance (processor, memory), Graphics (render mode,
   DPI, caches, GPU, optimization, V-Sync, AA), System (ADB, root), Device (phone model).
-  Reuses `SegmentButtonStyle`, card styles, and design tokens in `App.xaml`.
+  Reuses the shared `HeroButtonStyle` / `PageOutlineButtonStyle` vocabularies and design tokens in `App.xaml`.
 - **Apply report:** per-setting Applied/Skipped/Failed lines through the existing
   `PerformanceExecutionReport → OperationResult` pipeline, shown in the status area.
   Emulator restart note: settings take effect at emulator startup.

@@ -3,194 +3,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Margin="34,14,34,10" ClipToBounds="True">
     <UserControl.Resources>
-                        <LinearGradientBrush x:Key="ShortcutsTopBorderBrush" StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#0000D2FF" Offset="0.0" />
-                            <GradientStop Color="#9000D2FF" Offset="0.5" />
-                            <GradientStop Color="#0000D2FF" Offset="1.0" />
-                        </LinearGradientBrush>
-
-                        <RadialGradientBrush x:Key="ShortcutsAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                            <GradientStop Color="#4000D2FF" Offset="0" />
-                            <GradientStop Color="#0000D2FF" Offset="1" />
-                        </RadialGradientBrush>
-
-                        <RadialGradientBrush x:Key="ShortcutsCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                            <GradientStop Color="#2500D2FF" Offset="0" />
-                            <GradientStop Color="#0000D2FF" Offset="1" />
-                        </RadialGradientBrush>
-
-                        <LinearGradientBrush x:Key="ShortcutsPrimaryCtaBackground" StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#00D2FF" Offset="0" />
-                            <GradientStop Color="#0096EB" Offset="1" />
-                        </LinearGradientBrush>
-                        <LinearGradientBrush x:Key="ShortcutsPrimaryCtaBackgroundHover" StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#38BDF8" Offset="0" />
-                            <GradientStop Color="#0EA5E9" Offset="1" />
-                        </LinearGradientBrush>
-                        <LinearGradientBrush x:Key="ShortcutsPrimaryCtaBackgroundPressed" StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#0284C7" Offset="0" />
-                            <GradientStop Color="#0369A1" Offset="1" />
-                        </LinearGradientBrush>
-
-                        <DropShadowEffect x:Key="HeroCtaGlowEffect"
-                                          Color="#00D2FF"
-                                          BlurRadius="18"
-                                          ShadowDepth="2"
-                                          Opacity="0.45"
-                                          Direction="270" />
-
-                        <Style x:Key="ShortcutsHeroButtonStyle" TargetType="Button">
-                            <Setter Property="Background" Value="{StaticResource ShortcutsPrimaryCtaBackground}" />
-                            <Setter Property="Foreground" Value="#051019" />
-                            <Setter Property="BorderBrush" Value="#40DFFF" />
-                            <Setter Property="BorderThickness" Value="1" />
-                            <Setter Property="FontFamily" Value="Bahnschrift SemiCondensed" />
-                            <Setter Property="FontSize" Value="14" />
-                            <Setter Property="FontWeight" Value="Bold" />
-                            <Setter Property="Cursor" Value="Hand" />
-                            <Setter Property="Padding" Value="24,12" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="CtaBorder"
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="8"
-                                                Padding="{TemplateBinding Padding}"
-                                                Effect="{StaticResource HeroCtaGlowEffect}">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource ShortcutsPrimaryCtaBackgroundHover}" />
-                                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#90EBFF" />
-                                                <Setter TargetName="CtaBorder" Property="Effect">
-                                                    <Setter.Value>
-                                                        <DropShadowEffect Color="#00D2FF" BlurRadius="24" ShadowDepth="2" Opacity="0.65" Direction="270" />
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource ShortcutsPrimaryCtaBackgroundPressed}" />
-                                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#0284C7" />
-                                                <Setter Property="Foreground" Value="#FFFFFF" />
-                                                <Setter TargetName="CtaBorder" Property="Effect">
-                                                    <Setter.Value>
-                                                        <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="1" Opacity="0.4" Direction="270" />
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PanelBackground}" />
-                                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
-                                                <Setter Property="Foreground" Value="#4B5E6D" />
-                                                <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
-                                                <Setter Property="Cursor" Value="Arrow" />
-                                                <Setter Property="Opacity" Value="0.75" />
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-
-                        <Style x:Key="ShortcutsComboBoxStyle" TargetType="ComboBox">
-                            <Setter Property="Background" Value="#0B131B" />
-                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
-                            <Setter Property="BorderThickness" Value="1" />
-                            <Setter Property="Padding" Value="12,8" />
-                            <Setter Property="FontFamily" Value="Segoe UI" />
-                            <Setter Property="FontSize" Value="14" />
-                            <Setter Property="Height" Value="42" />
-                            <Setter Property="ItemContainerStyle">
-                                <Setter.Value>
-                                    <Style TargetType="ComboBoxItem">
-                                        <Setter Property="Background" Value="#0B131B" />
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                                        <Setter Property="Padding" Value="12,9" />
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        <Setter Property="VerticalContentAlignment" Value="Center" />
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ComboBoxItem">
-                                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                                        <ContentPresenter
-                                                            Content="{TemplateBinding Content}"
-                                                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsHighlighted" Value="True">
-                                                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentSoft}" />
-                                                            <Setter Property="Foreground" Value="{StaticResource Accent}" />
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Setter.Value>
-                            </Setter>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ComboBox">
-                                        <Grid>
-                                            <Border x:Name="ComboBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
-                                                <Grid>
-                                                    <ContentPresenter
-                                                        Margin="{TemplateBinding Padding}"
-                                                        VerticalAlignment="Center"
-                                                        IsHitTestVisible="False"
-                                                        Content="{TemplateBinding SelectionBoxItem}"
-                                                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                                        ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
-                                                    <ToggleButton
-                                                        x:Name="DropDownToggleButton"
-                                                        Panel.ZIndex="1"
-                                                        Background="Transparent"
-                                                        BorderThickness="0"
-                                                        Focusable="False"
-                                                        IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                                        HorizontalContentAlignment="Stretch"
-                                                        VerticalContentAlignment="Stretch">
-                                                        <ToggleButton.Template>
-                                                            <ControlTemplate TargetType="ToggleButton">
-                                                                <Border Background="{TemplateBinding Background}">
-                                                                    <Grid>
-                                                                        <Path Data="M 0 0 L 5 5 L 10 0" Stroke="{StaticResource TextSecondary}" StrokeThickness="1.5" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" />
-                                                                    </Grid>
-                                                                </Border>
-                                                            </ControlTemplate>
-                                                        </ToggleButton.Template>
-                                                    </ToggleButton>
-                                                </Grid>
-                                            </Border>
-                                            <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
-                                                <Border Background="#0B131B" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
-                                                    <ScrollViewer MaxHeight="260">
-                                                        <ItemsPresenter />
-                                                    </ScrollViewer>
-                                                </Border>
-                                            </Popup>
-                                        </Grid>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
-                                            </Trigger>
-                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
+        <Style x:Key="ShortcutsComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
+            <Setter Property="Background" Value="#0B131B" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource ComboBoxItemStyle}">
+                        <Setter Property="Background" Value="#0B131B" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
     <Grid>
                     <Grid.RowDefinitions>
@@ -198,9 +21,9 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Border Grid.RowSpan="2" Background="{StaticResource OptimizerPageBackgroundBrush}" BorderBrush="#1B2B37" BorderThickness="1" CornerRadius="18" IsHitTestVisible="False" />
-                    <Border Grid.RowSpan="2" Height="1" Background="{StaticResource ShortcutsTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
-                    <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource ShortcutsAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
-                    <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource ShortcutsCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
+                    <Border Grid.RowSpan="2" Height="1" Background="{StaticResource PageTopBorderBrush}" VerticalAlignment="Top" Margin="32,1,32,0" Opacity="0.85" IsHitTestVisible="False" />
+                    <Ellipse Grid.RowSpan="2" Width="500" Height="500" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-170,-175,0,0" Fill="{StaticResource PageAccentGlowBrush}" Opacity="0.35" IsHitTestVisible="False" />
+                    <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource PageCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
 
                     <Grid Grid.Row="0" Margin="18,12,18,16">
                         <StackPanel Orientation="Horizontal">
@@ -295,7 +118,7 @@
                                         </Border>
                                     </WrapPanel>
 
-                                    <Button Grid.Row="5" x:Name="CreateShortcutButton" Content="CREATE DESKTOP SHORTCUT" Click="CreateShortcutButton_Click" Style="{StaticResource ShortcutsHeroButtonStyle}" HorizontalAlignment="Right" IsEnabled="False" />
+                                    <Button Grid.Row="5" x:Name="CreateShortcutButton" Content="CREATE DESKTOP SHORTCUT" Click="CreateShortcutButton_Click" Style="{StaticResource HeroButtonStyle}" HorizontalAlignment="Right" IsEnabled="False" />
                                 </Grid>
                             </Border>
 

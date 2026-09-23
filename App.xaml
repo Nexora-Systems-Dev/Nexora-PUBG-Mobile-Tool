@@ -21,17 +21,30 @@
         <SolidColorBrush x:Key="Warning" Color="#FBBF24" />
         <SolidColorBrush x:Key="Danger" Color="#EF4444" />
 
-        <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.5" />
+        <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
+        <DropShadowEffect x:Key="HeroCtaGlowEffect" Color="#00D2FF" BlurRadius="18" ShadowDepth="2" Opacity="0.45" Direction="270" />
+        <DropShadowEffect x:Key="HeroHoverGlowEffect" Color="#00D2FF" BlurRadius="24" ShadowDepth="2" Opacity="0.65" Direction="270" />
+        <DropShadowEffect x:Key="HeroPressedGlowEffect" Color="#00D2FF" BlurRadius="12" ShadowDepth="1" Opacity="0.4" Direction="270" />
+
+        <LinearGradientBrush x:Key="PageTopBorderBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#0000D2FF" Offset="0" />
+            <GradientStop Color="#9000D2FF" Offset="0.5" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
+        </LinearGradientBrush>
+        <RadialGradientBrush x:Key="PageAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#4000D2FF" Offset="0" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
+        </RadialGradientBrush>
+        <RadialGradientBrush x:Key="PageCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#2500D2FF" Offset="0" />
+            <GradientStop Color="#0000D2FF" Offset="1" />
+        </RadialGradientBrush>
 
         <LinearGradientBrush x:Key="GraphicsPageBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#101A24" Offset="0" />
             <GradientStop Color="#0C141D" Offset="0.5" />
             <GradientStop Color="#10202B" Offset="1" />
         </LinearGradientBrush>
-        <RadialGradientBrush x:Key="GraphicsAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-            <GradientStop Color="#3500D2FF" Offset="0" />
-            <GradientStop Color="#0000D2FF" Offset="1" />
-        </RadialGradientBrush>
         <RadialGradientBrush x:Key="GraphicsCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
             <GradientStop Color="#355A84A8" Offset="0" />
             <GradientStop Color="#005A84A8" Offset="1" />
@@ -41,10 +54,6 @@
             <GradientStop Color="#0C151E" Offset="0.55" />
             <GradientStop Color="#101D27" Offset="1" />
         </LinearGradientBrush>
-        <RadialGradientBrush x:Key="OptimizerAccentGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-            <GradientStop Color="#3000D2FF" Offset="0" />
-            <GradientStop Color="#0000D2FF" Offset="1" />
-        </RadialGradientBrush>
         <RadialGradientBrush x:Key="OptimizerCoolGlowBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
             <GradientStop Color="#2F5A84A8" Offset="0" />
             <GradientStop Color="#005A84A8" Offset="1" />
@@ -62,6 +71,19 @@
             <GradientStop Color="#2500D2FF" Offset="0" />
             <GradientStop Color="#0000D2FF" Offset="1" />
         </RadialGradientBrush>
+
+        <LinearGradientBrush x:Key="PrimaryCtaBackground" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#00D2FF" Offset="0" />
+            <GradientStop Color="#0096EB" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="PrimaryCtaBackgroundHover" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#38BDF8" Offset="0" />
+            <GradientStop Color="#0EA5E9" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="PrimaryCtaBackgroundPressed" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#0284C7" Offset="0" />
+            <GradientStop Color="#0369A1" Offset="1" />
+        </LinearGradientBrush>
 
         <Style x:Key="WindowControlButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -166,33 +188,83 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SegmentButtonStyle" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
-            <Setter Property="Background" Value="#121B23" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <!-- The five pages' primary action: one cyan CTA ramp (background, hover,
+        pressed) on one rounded border, with the glow intensifying per state.
+        Page-local Hero* styles were byte-identical copies of this; the three
+        trigger effects are shared so the ramp has one home. -->
+        <Style x:Key="HeroButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryCtaBackground}" />
+            <Setter Property="Foreground" Value="#051019" />
+            <Setter Property="BorderBrush" Value="#40DFFF" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="Bahnschrift SemiCondensed" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="24,12" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="SegmentBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="6,0">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CtaBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}" Effect="{StaticResource HeroCtaGlowEffect}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="SegmentBorder" Property="BorderBrush" Value="#00D2FF" />
-                                <Setter TargetName="SegmentBorder" Property="Background" Value="#142432" />
+                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundHover}" />
+                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#90EBFF" />
+                                <Setter TargetName="CtaBorder" Property="Effect" Value="{StaticResource HeroHoverGlowEffect}" />
                             </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="SegmentBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
-                                <Setter TargetName="SegmentBorder" Property="Background" Value="{StaticResource AccentSoft}" />
-                                <Setter Property="Foreground" Value="{StaticResource Accent}" />
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PrimaryCtaBackgroundPressed}" />
+                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#0284C7" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="CtaBorder" Property="Effect" Value="{StaticResource HeroPressedGlowEffect}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4" />
+                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PanelBackground}" />
+                                <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
+                                <Setter Property="Foreground" Value="#4B5E6D" />
+                                <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                                <Setter Property="Opacity" Value="0.75" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The pages' secondary action: dark slate body, cyan outline that
+        lights up on hover. The Optimizer and Network copies differed only in
+        Padding, which every call site sets inline. -->
+        <Style x:Key="PageOutlineButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0D1620" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="BorderBrush" Value="#223546" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="18,10" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#152737" />
+                                <Setter Property="Foreground" Value="{StaticResource Accent}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#0E1B26" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                                <Setter Property="Cursor" Value="Arrow" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -311,6 +383,38 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
+        <!-- Keyed so page combo styles can derive from it and recolor only the
+        item background, instead of re-declaring the template and the highlight
+        trigger at every call site. -->
+        <Style x:Key="ComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="#111A23" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="Padding" Value="12,9" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentSoft}" />
+                                <Setter Property="Foreground" Value="{StaticResource Accent}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="InputComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Background" Value="#111A23" />
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
@@ -320,38 +424,7 @@
             <Setter Property="FontFamily" Value="Segoe UI" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Height" Value="42" />
-            <Setter Property="ItemContainerStyle">
-                <Setter.Value>
-                    <Style TargetType="ComboBoxItem">
-                        <Setter Property="Background" Value="#111A23" />
-                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                        <Setter Property="Padding" Value="12,9" />
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="VerticalContentAlignment" Value="Center" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ComboBoxItem">
-                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter
-                                            Content="{TemplateBinding Content}"
-                                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentSoft}" />
-                                            <Setter Property="Foreground" Value="{StaticResource Accent}" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ComboBoxItemStyle}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
@@ -401,35 +474,6 @@
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.45" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="StyleCardButton" TargetType="ToggleButton">
-            <Setter Property="Background" Value="#121B23" />
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="CardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
-                            <ContentPresenter />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#00D2FF" />
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
-                                <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource AccentSoft}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />

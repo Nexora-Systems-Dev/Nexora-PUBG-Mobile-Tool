@@ -54,7 +54,7 @@
                     </Border>
                     <Border Grid.Column="0" Width="360" HorizontalAlignment="Left" Background="{StaticResource HeaderAccentGlowBrush}" Opacity="0.6" IsHitTestVisible="False" />
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="26,0,0,0">
-                        <Border Width="38" Height="38" Background="#0A141D" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="8" Margin="0,0,13,0">
+                        <Border Width="38" Height="38" Background="#0A141D" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="8" Margin="0,0,13,0">
                             <Border.Effect>
                                 <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.35" />
                             </Border.Effect>
@@ -62,7 +62,7 @@
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="NEXORA" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="22" FontWeight="SemiBold" />
-                            <TextBlock Text="PUBG MOBILE TOOL" Foreground="#00D2FF" FontFamily="Segoe UI" FontSize="9.5" FontWeight="Bold" />
+                            <TextBlock Text="PUBG MOBILE TOOL" Foreground="{StaticResource Accent}" FontFamily="Segoe UI" FontSize="9.5" FontWeight="Bold" />
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0">
@@ -105,7 +105,7 @@
                             <Grid Grid.Row="0">
                                 <TextBlock Text="GAMELOOP LINK" Foreground="#64748B" FontSize="9.5" FontWeight="Bold" />
                                 <Border Background="#09141D" BorderBrush="#172938" BorderThickness="1" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
-                                    <TextBlock Text="LOCAL TOOL" Foreground="#00D2FF" FontSize="8.5" FontWeight="Bold" />
+                                    <TextBlock Text="LOCAL TOOL" Foreground="{StaticResource Accent}" FontSize="8.5" FontWeight="Bold" />
                                 </Border>
                             </Grid>
                             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,11,0,0" VerticalAlignment="Center">
