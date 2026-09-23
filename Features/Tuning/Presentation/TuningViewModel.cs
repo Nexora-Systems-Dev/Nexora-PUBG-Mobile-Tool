@@ -130,7 +130,6 @@ public sealed class TuningViewModel : INotifyPropertyChanged
         StateLoaded?.Invoke(state);
         if (state.IsGameLoopRunning)
         {
-            var names = string.Join(", ", state.RunningProcessNames);
             StatusChanged?.Invoke("GameLoop is running. End its tasks, then apply.", true);
         }
         else
@@ -143,59 +142,44 @@ public sealed class TuningViewModel : INotifyPropertyChanged
     /// Pushes a user-chosen selection into the GameLoop user hive. The service
     /// refuses while GameLoop runs; that refusal is rendered verbatim.
     /// </summary>
-    public async Task<OperationResult> ApplyAsync(EmulatorTuningSelection selection)
-    {
-        if (!_operationBus.TryAcquire()) return OperationResult.Fail("Another operation is already running.");
-
-        BusyVisualChanged?.Invoke(true);
-        StatusChanged?.Invoke("Applying emulator settings...", false);
-        _toolCancellation = new CancellationTokenSource();
-        try
-        {
-            var result = await _tuning.ApplyAsync(selection, _toolCancellation.Token);
-            StatusChanged?.Invoke(result.Message, !result.Success);
-            return result;
-        }
-        catch (OperationCanceledException)
-        {
-            var canceled = OperationResult.Skip("Emulator tuning was canceled.");
-            StatusChanged?.Invoke(canceled.Message, false);
-            return canceled;
-        }
-        catch (Exception ex)
-        {
-            var failed = OperationResult.Fail(ex.Message);
-            StatusChanged?.Invoke(failed.Message, true);
-            return failed;
-        }
-        finally
-        {
-            BusyVisualChanged?.Invoke(false);
-            _operationBus.Release();
-            CancelAndDisposeTool();
-        }
-    }
+    public Task<OperationResult> ApplyAsync(EmulatorTuningSelection selection) =>
+        ExecuteToolAsync("Applying emulator settings...", "Emulator tuning was canceled.",
+            token => _tuning.ApplyAsync(selection, token));
 
     /// <summary>
     /// Ends every running GameLoop process so a subsequent Apply can write.
     /// Runs off-thread; the caller refreshes afterwards to repaint the guard.
     /// </summary>
-    public async Task<OperationResult> EndTaskAsync()
+    public Task<OperationResult> EndTaskAsync() =>
+        ExecuteToolAsync("Ending GameLoop tasks...", "Operation canceled.",
+            token => Task.Run(() => _processService.KillGameLoopProcesses(token)));
+
+    /// <summary>
+    /// The shared acquire → run → release core of Apply and End Task: the bus
+    /// slot, the busy visual, the per-operation cancellation source the shell's
+    /// <see cref="Cancel()"/> pre-empts, and the outcome → status translation.
+    /// Every outcome — success, service refusal, cancellation, failure — is
+    /// reported through <see cref="StatusChanged"/> and returned unchanged.
+    /// </summary>
+    private async Task<OperationResult> ExecuteToolAsync(
+        string statusMessage,
+        string canceledMessage,
+        Func<CancellationToken, Task<OperationResult>> action)
     {
         if (!_operationBus.TryAcquire()) return OperationResult.Fail("Another operation is already running.");
-
         BusyVisualChanged?.Invoke(true);
-        StatusChanged?.Invoke("Ending GameLoop tasks...", false);
+        StatusChanged?.Invoke(statusMessage, false);
+
         _toolCancellation = new CancellationTokenSource();
         try
         {
-            var result = await Task.Run(() => _processService.KillGameLoopProcesses(_toolCancellation.Token));
+            var result = await action(_toolCancellation.Token);
             StatusChanged?.Invoke(result.Message, !result.Success);
             return result;
         }
         catch (OperationCanceledException)
         {
-            var canceled = OperationResult.Skip("Operation canceled.");
+            var canceled = OperationResult.Skip(canceledMessage);
             StatusChanged?.Invoke(canceled.Message, false);
             return canceled;
         }

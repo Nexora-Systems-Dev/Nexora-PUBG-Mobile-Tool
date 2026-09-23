@@ -89,21 +89,7 @@ public sealed class EmulatorSettingsService : IEmulatorSettingsService
         }
 
         var hardware = await GetHardwareSnapshotAsync(cancellationToken).ConfigureAwait(false);
-        var writes = new List<KeyValuePair<string, int>>
-        {
-            new(EmulatorTuningCatalog.CpuCoresName, ClampCpuCores(selection.CpuCores, hardware)),
-            new(EmulatorTuningCatalog.MemoryMbName, ClampMemoryMb(selection.MemoryMb, hardware)),
-            new(EmulatorTuningCatalog.DpiName, selection.Dpi),
-            new(EmulatorTuningCatalog.RenderCacheName, ToDword(selection.RenderCacheEnabled)),
-            new(EmulatorTuningCatalog.GlobalCacheName, ToDword(selection.GlobalCacheEnabled)),
-            new(EmulatorTuningCatalog.DiscreteGpuName, ToDword(selection.DiscreteGpuEnabled)),
-            new(EmulatorTuningCatalog.DiscreteGpuPairedName, ToDword(selection.DiscreteGpuEnabled)),
-            new(EmulatorTuningCatalog.RenderOptimizeName, ToDword(selection.RenderOptimizeEnabled)),
-            new(EmulatorTuningCatalog.VSyncName, ToDword(selection.VSyncEnabled)),
-            // Inverted vendor semantics: AdbDisable=0 means debugging is ON.
-            new(EmulatorTuningCatalog.AdbDisableName, selection.AdbEnabled ? 0 : 1),
-            new(EmulatorTuningCatalog.AntiAliasingName, ToDword(selection.AntiAliasingEnabled)),
-        };
+        var writes = BuildWrites(selection, hardware);
 
         foreach (var write in writes)
         {
@@ -116,6 +102,27 @@ public sealed class EmulatorSettingsService : IEmulatorSettingsService
 
         return OperationResult.Ok($"Applied {writes.Count} emulator settings. Restart GameLoop to take effect.");
     }
+
+    /// <summary>
+    /// The DWORD write set for a selection, in write order, already clamped to
+    /// the detected hardware. The paired <c>SetGraphicsCard</c> mirror and the
+    /// inverted <c>AdbDisable</c> mapping live here and nowhere else.
+    /// </summary>
+    private static List<KeyValuePair<string, int>> BuildWrites(EmulatorTuningSelection selection, HardwareSnapshot hardware) => new()
+    {
+        new(EmulatorTuningCatalog.CpuCoresName, ClampCpuCores(selection.CpuCores, hardware)),
+        new(EmulatorTuningCatalog.MemoryMbName, ClampMemoryMb(selection.MemoryMb, hardware)),
+        new(EmulatorTuningCatalog.DpiName, selection.Dpi),
+        new(EmulatorTuningCatalog.RenderCacheName, ToDword(selection.RenderCacheEnabled)),
+        new(EmulatorTuningCatalog.GlobalCacheName, ToDword(selection.GlobalCacheEnabled)),
+        new(EmulatorTuningCatalog.DiscreteGpuName, ToDword(selection.DiscreteGpuEnabled)),
+        new(EmulatorTuningCatalog.DiscreteGpuPairedName, ToDword(selection.DiscreteGpuEnabled)),
+        new(EmulatorTuningCatalog.RenderOptimizeName, ToDword(selection.RenderOptimizeEnabled)),
+        new(EmulatorTuningCatalog.VSyncName, ToDword(selection.VSyncEnabled)),
+        // Inverted vendor semantics: AdbDisable=0 means debugging is ON.
+        new(EmulatorTuningCatalog.AdbDisableName, selection.AdbEnabled ? 0 : 1),
+        new(EmulatorTuningCatalog.AntiAliasingName, ToDword(selection.AntiAliasingEnabled)),
+    };
 
     /// <summary>
     /// Hardware does not change at runtime, so the first scan is cached for the

@@ -1,4 +1,3 @@
-using System.Globalization;
 using Nexora.Features.Performance.Application;
 using Nexora.Features.Performance.Domain;
 using Nexora.Features.Performance.Infrastructure;
@@ -36,7 +35,7 @@ public static class OptimizerDisplayFormatter
             ? hardware.HypervisorDetected ? "VT on / hypervisor" : "VT on"
             : "VT off";
 
-        var memoryString = string.Format(CultureInfo.InvariantCulture, "{0:0.#} GB", plan.EmulatorMemoryMb / 1024d);
+        var memoryString = FormattableString.Invariant($"{plan.EmulatorMemoryMb / 1024d:0.#} GB");
 
         return new OptimizerDisplayModel(
             HardwareProfile: $"{plan.Tier.ToUpperInvariant()} HARDWARE PROFILE",

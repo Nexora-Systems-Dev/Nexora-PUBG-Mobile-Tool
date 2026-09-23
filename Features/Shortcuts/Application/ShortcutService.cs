@@ -34,9 +34,13 @@ public sealed class ShortcutService : IShortcutService
             return null;
         }
 
-        var iconPath = Path.Combine(_assetRoot, _emulator.Assets.IconsDirectoryName, $"{packageName}.ico");
+        var iconPath = IconAssetPath(packageName);
         return IconImageLoader.TryLoadIcon(iconPath);
     }
+
+    /// <summary>The bundled .ico for a package, whether or not one exists on disk.</summary>
+    private string IconAssetPath(string? packageName) =>
+        Path.Combine(_assetRoot, _emulator.Assets.IconsDirectoryName, $"{packageName}.ico");
 
     public OperationResult CreateShortcut(string displayName, string packageName)
     {
@@ -48,7 +52,7 @@ public sealed class ShortcutService : IShortcutService
         }
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
         var shortcutPath = Path.Combine(desktop, $"{displayName}.lnk");
-        var iconSource = Path.Combine(_assetRoot, _emulator.Assets.IconsDirectoryName, $"{packageName}.ico");
+        var iconSource = IconAssetPath(packageName);
         var iconPath = Path.Combine(marketPath, $"{packageName}.ico");
         var target = Path.Combine(marketPath, _emulator.Emulator.AppMarketFileName);
         if (!File.Exists(target))
@@ -66,8 +70,8 @@ public sealed class ShortcutService : IShortcutService
             var script = "$ws = New-Object -ComObject WScript.Shell; " +
                          $"$s = $ws.CreateShortcut({ProcessText.Quote(shortcutPath)}); " +
                          $"$s.TargetPath = {ProcessText.Quote(target)}; " +
-                          $"$s.Arguments = {ProcessText.Quote($"-startpkg {packageName} -from DesktopLink")}; " +
-                           $"$s.Description = {ProcessText.Quote(AppConstants.ApplicationName)}; " +
+                         $"$s.Arguments = {ProcessText.Quote($"-startpkg {packageName} -from DesktopLink")}; " +
+                         $"$s.Description = {ProcessText.Quote(AppConstants.ApplicationName)}; " +
                          $"$s.IconLocation = {ProcessText.Quote(iconPath)}; $s.Save()";
             var result = _runner.RunPowerShell(script);
             return result.Succeeded

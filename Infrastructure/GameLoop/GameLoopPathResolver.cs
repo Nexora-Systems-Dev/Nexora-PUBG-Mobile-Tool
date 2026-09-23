@@ -140,15 +140,8 @@ public sealed class GameLoopPathResolver : IGameLoopPathResolver
     /// </summary>
     public string? GetAppMarketPath()
     {
-        var customRoot = GetValidatedCustomRoot();
-        if (customRoot is not null)
-        {
-            var customMarket = Path.Combine(customRoot, _gameLoop.Registry.BranchAppMarket);
-            if (Directory.Exists(customMarket))
-            {
-                return Path.GetFullPath(customMarket);
-            }
-        }
+        var custom = MarketUnder(GetValidatedCustomRoot());
+        if (custom is not null) return custom;
 
         var marketInstallPath = _registry.GetLocalString(_gameLoop.Registry.ValueInstallPath);
         if (!string.IsNullOrWhiteSpace(marketInstallPath) && Directory.Exists(marketInstallPath))
@@ -156,23 +149,29 @@ public sealed class GameLoopPathResolver : IGameLoopPathResolver
             return marketInstallPath;
         }
 
-        if (_registry.GetLocalString(_gameLoop.Registry.ValueInstallPath, _gameLoop.Registry.BranchUI) is { } ui)
-        {
-            try
-            {
-                var derived = Path.Combine(Directory.GetParent(ui)?.FullName ?? string.Empty, _gameLoop.Registry.BranchAppMarket);
-                if (!string.IsNullOrWhiteSpace(derived) && Directory.Exists(derived))
-                {
-                    return Path.GetFullPath(derived);
-                }
-            }
-            catch
-            {
-                // Ignore invalid registry path formats.
-            }
-        }
+        var ui = _registry.GetLocalString(_gameLoop.Registry.ValueInstallPath, _gameLoop.Registry.BranchUI);
+        return ui is null ? null : MarketUnder(TryGetParent(ui));
+    }
 
-        return null;
+    /// <summary>
+    /// The AppMarket folder under an install root, or null when the root is
+    /// blank or holds no such folder. Raw registry roots can be malformed, so
+    /// a bad path resolves to null instead of throwing.
+    /// </summary>
+    private string? MarketUnder(string? root)
+    {
+        if (string.IsNullOrWhiteSpace(root)) return null;
+
+        try
+        {
+            var market = Path.Combine(root, _gameLoop.Registry.BranchAppMarket);
+            return Directory.Exists(market) ? Path.GetFullPath(market) : null;
+        }
+        catch
+        {
+            // Ignore invalid registry path formats.
+            return null;
+        }
     }
 
     /// <summary>
