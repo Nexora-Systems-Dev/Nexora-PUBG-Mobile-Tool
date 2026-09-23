@@ -19,6 +19,8 @@ public enum GpuVendor
 /// </summary>
 public static class GpuVendorClassifier
 {
+    private const string NvidiaMarker = "NVIDIA";
+
     private static readonly string[] AmdMarkers =
     [
         "AMD",
@@ -37,7 +39,7 @@ public static class GpuVendorClassifier
     public static GpuVendor Classify(string? providerText)
     {
         if (string.IsNullOrWhiteSpace(providerText)) return GpuVendor.Unknown;
-        if (providerText.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase)) return GpuVendor.Nvidia;
+        if (HasNvidiaMarker(providerText)) return GpuVendor.Nvidia;
         if (providerText.Contains("Intel", StringComparison.OrdinalIgnoreCase)) return GpuVendor.Intel;
         if (AmdMarkers.Any(marker => providerText.Contains(marker, StringComparison.OrdinalIgnoreCase)))
         {
@@ -52,15 +54,14 @@ public static class GpuVendorClassifier
     /// the adapter name. An AMD vendor string alone is deliberately not enough —
     /// integrated Radeons carry it too, so those still need an RX name marker.
     /// </summary>
-    public static bool IsDedicatedGpu(string? gpuVendor, string? gpuName)
-    {
-        if (!string.IsNullOrEmpty(gpuVendor) &&
-            gpuVendor.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return DiscreteNameMarkers.Any(marker =>
+    public static bool IsDedicatedGpu(string? gpuVendor, string? gpuName) =>
+        HasNvidiaMarker(gpuVendor) || DiscreteNameMarkers.Any(marker =>
             gpuName?.Contains(marker, StringComparison.OrdinalIgnoreCase) == true);
-    }
+
+    /// <summary>
+    /// NVIDIA wins over Intel in the vendor ladder and alone proves a discrete
+    /// GPU, so both decisions share one marker test and cannot drift apart.
+    /// </summary>
+    private static bool HasNvidiaMarker(string? text) =>
+        !string.IsNullOrEmpty(text) && text.Contains(NvidiaMarker, StringComparison.OrdinalIgnoreCase);
 }

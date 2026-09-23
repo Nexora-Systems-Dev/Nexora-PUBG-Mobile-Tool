@@ -79,13 +79,21 @@ public sealed class HardwareDetectionService
             ReadJsonString(root, "GpuVendor", "Unknown GPU vendor"),
             ReadJsonString(root, "GpuName", "Unknown GPU"),
             Math.Max(0, ReadJsonInt(root, "GpuMemoryGb", 0)),
-            Math.Max(60, ReadJsonInt(root, "RefreshRateHz", 0) > 0
-                ? ReadJsonInt(root, "RefreshRateHz", 60)
-                : GetDisplayRefreshRate()),
+            Math.Max(60, ChooseRefreshRate(root)),
             ReadJsonBool(root, "IsLaptop"),
             IsOnAcPower(),
             ReadJsonBool(root, "VirtualizationEnabled"),
             ReadJsonBool(root, "HypervisorDetected"));
+    }
+
+    /// <summary>
+    /// Prefers the refresh rate the adapter reports, falling back to the desktop
+    /// display mode when detection omitted or zeroed the field.
+    /// </summary>
+    private static int ChooseRefreshRate(JsonElement root)
+    {
+        var reported = ReadJsonInt(root, "RefreshRateHz", 0);
+        return reported > 0 ? reported : GetDisplayRefreshRate();
     }
 
     private const string DetectionScript = @"

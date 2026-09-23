@@ -31,17 +31,8 @@ public sealed class PowerSessionService
 
     public OperationResult Apply(HardwareSnapshot hardware)
     {
-        if (_previousPowerScheme is null)
-        {
-            var active = _runner.Run("powercfg.exe", new[] { "/getactivescheme" });
-            var match = PowerSchemeGuidRegex.Match(active.StandardOutput);
-            if (!active.Succeeded || !match.Success || !Guid.TryParse(match.Value, out var previous))
-            {
-                return OperationResult.Fail("Could not identify the active Windows power mode, so no power changes were made.");
-            }
-
-            _previousPowerScheme = previous;
-        }
+        var captureFailure = CaptureActiveScheme();
+        if (captureFailure is not null) return captureFailure;
 
         var batterySafe = hardware.IsLaptop && !hardware.IsOnAcPower;
         var scheme = batterySafe ? BalancedSchemeAlias : HighPerformanceSchemeAlias;
@@ -54,6 +45,25 @@ public sealed class PowerSessionService
         return batterySafe
             ? OperationResult.Ok("Battery-safe performance session active with Windows Balanced power policy.")
             : OperationResult.Ok("High-performance Windows power policy active for GameLoop.");
+    }
+
+    /// <summary>
+    /// Records the scheme to restore at session close; null means a scheme is
+    /// already recorded or was just captured successfully.
+    /// </summary>
+    private OperationResult? CaptureActiveScheme()
+    {
+        if (_previousPowerScheme is not null) return null;
+
+        var active = _runner.Run("powercfg.exe", new[] { "/getactivescheme" });
+        var match = PowerSchemeGuidRegex.Match(active.StandardOutput);
+        if (!active.Succeeded || !match.Success || !Guid.TryParse(match.Value, out var previous))
+        {
+            return OperationResult.Fail("Could not identify the active Windows power mode, so no power changes were made.");
+        }
+
+        _previousPowerScheme = previous;
+        return null;
     }
 
     public OperationResult Restore()

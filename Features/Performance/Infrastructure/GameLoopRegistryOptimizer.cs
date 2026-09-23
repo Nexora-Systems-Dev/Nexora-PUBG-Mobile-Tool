@@ -25,6 +25,10 @@ public sealed class GameLoopRegistryOptimizer
     private readonly GameLoopOptions _gameLoop;
     private readonly EmulatorOptions _emulator;
 
+    private const string AppCompatLayersKey = @"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
+    // Flags the emulator needs: disable fullscreen optimizations and mark the app high-DPI aware.
+    private const string AppCompatFlags = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE";
+
     public GameLoopRegistryOptimizer(IUserRegistry userRegistry, IMachineRegistry machineRegistry, IGameLoopProcessService processService, GpuRoutingService? gpuRouting = null, GameLoopOptions? gameLoop = null, EmulatorOptions? emulator = null)
     {
         _userRegistry = userRegistry ?? throw new ArgumentNullException(nameof(userRegistry));
@@ -42,22 +46,7 @@ public sealed class GameLoopRegistryOptimizer
     {
         try
         {
-            var settings = new Dictionary<string, int>(StringComparer.Ordinal)
-            {
-                ["VSyncEnabled"] = hardware.RefreshRateHz < 89 ? 1 : 0,
-                ["GraphicsCardEnabled"] = 1,
-                ["SetGraphicsCard"] = 1,
-                ["VMDPI"] = plan.ContentScale == 1 ? 240 : 480,
-                ["FxaaQuality"] = plan.FxaaQuality,
-                ["LocalShaderCacheEnabled"] = plan.EnableLocalShaderCache ? 1 : 0,
-                ["ShaderCacheEnabled"] = plan.EnableGlobalShaderCache ? 1 : 0,
-                ["RenderOptimizeEnabled"] = 1,
-                [_gameLoop.Registry.ValueAdbDisable] = 0,
-                ["VMMemorySizeInMB"] = plan.EmulatorMemoryMb,
-                ["VMCpuCount"] = plan.EmulatorCpuCores
-            };
-
-            foreach (var setting in settings)
+            foreach (var setting in BuildSmartSettings(hardware, plan))
             {
                 if (!SetUserRegistryDword(setting.Key, setting.Value) || _userRegistry.GetUserDword(setting.Key) != setting.Value)
                 {
@@ -81,6 +70,25 @@ public sealed class GameLoopRegistryOptimizer
     }
 
     /// <summary>
+    /// The DWORD table the emulator reads at launch, keyed by GameLoop value name.
+    /// </summary>
+    private Dictionary<string, int> BuildSmartSettings(HardwareSnapshot hardware, OptimizerPlan plan) =>
+        new(StringComparer.Ordinal)
+        {
+            ["VSyncEnabled"] = hardware.RefreshRateHz < 89 ? 1 : 0,
+            ["GraphicsCardEnabled"] = 1,
+            ["SetGraphicsCard"] = 1,
+            ["VMDPI"] = plan.ContentScale == 1 ? 240 : 480,
+            ["FxaaQuality"] = plan.FxaaQuality,
+            ["LocalShaderCacheEnabled"] = plan.EnableLocalShaderCache ? 1 : 0,
+            ["ShaderCacheEnabled"] = plan.EnableGlobalShaderCache ? 1 : 0,
+            ["RenderOptimizeEnabled"] = 1,
+            [_gameLoop.Registry.ValueAdbDisable] = 0,
+            ["VMMemorySizeInMB"] = plan.EmulatorMemoryMb,
+            ["VMCpuCount"] = plan.EmulatorCpuCores
+        };
+
+    /// <summary>
     /// Applies GPU routing, CPU priority IFEO keys, and compatibility flags to GameLoop executables.
     /// </summary>
     public OperationResult OptimizeGameLoopRegistry()
@@ -101,6 +109,15 @@ public sealed class GameLoopRegistryOptimizer
         var appCompatFailure = TryApplyAppCompatFlags(installPath, registryKeys, ref registryChanged);
         if (appCompatFailure is not null) return appCompatFailure;
 
+        return BuildOptimizationResult(gpuRouting, registryChanged);
+    }
+
+    /// <summary>
+    /// Three-way completion: downgrade to a skip when nothing changed, and surface
+    /// a routing failure last so a partial success keeps its own diagnosis.
+    /// </summary>
+    private static OperationResult BuildOptimizationResult(OperationResult gpuRouting, bool registryChanged)
+    {
         if (!gpuRouting.Success)
         {
             return OperationResult.Fail("GameLoop registry optimization applied, but GPU routing was not confirmed: " + gpuRouting.Message);
@@ -127,9 +144,7 @@ public sealed class GameLoopRegistryOptimizer
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException || ex is System.Security.SecurityException)
         {
-            return gpuRouting.Success
-                ? OperationResult.Fail("GPU routing was applied, but CPU priority optimization requires administrator privileges.")
-                : OperationResult.Fail("GameLoop registry optimization requires administrator privileges.");
+            return CpuPriorityFailure(gpuRouting);
         }
         catch (Exception ex)
         {
@@ -154,14 +169,18 @@ public sealed class GameLoopRegistryOptimizer
 
             if (!_machineRegistry.SetLocalMachineDword(subKey, "CpuPriorityClass", 3))
             {
-                return gpuRouting.Success
-                    ? OperationResult.Fail("GPU routing was applied, but CPU priority optimization requires administrator privileges.")
-                    : OperationResult.Fail("GameLoop registry optimization requires administrator privileges.");
+                return CpuPriorityFailure(gpuRouting);
             }
         }
 
         return null;
     }
+
+    /// <summary>The elevation message keeps what already succeeded so a partial result is not reported as a total failure.</summary>
+    private static OperationResult CpuPriorityFailure(OperationResult gpuRouting) =>
+        gpuRouting.Success
+            ? OperationResult.Fail("GPU routing was applied, but CPU priority optimization requires administrator privileges.")
+            : OperationResult.Fail("GameLoop registry optimization requires administrator privileges.");
 
     /// <summary>
     /// Writes the compatibility flags, preserving the completion message
@@ -190,17 +209,16 @@ public sealed class GameLoopRegistryOptimizer
     /// <returns>A failure result when a flag cannot be written; null to continue.</returns>
     private OperationResult? ApplyAppCompatFlags(string installPath, string[] registryKeys, ref bool registryChanged)
     {
-        const string appCompatSubKey = @"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers";
         foreach (var key in registryKeys)
         {
             var targetPath = Path.Combine(installPath, key);
-            var current = _userRegistry.GetCurrentUserString(appCompatSubKey, targetPath);
-            if (!string.Equals(current, "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE", StringComparison.Ordinal))
+            var current = _userRegistry.GetCurrentUserString(AppCompatLayersKey, targetPath);
+            if (!string.Equals(current, AppCompatFlags, StringComparison.Ordinal))
             {
                 registryChanged = true;
             }
 
-            if (!_userRegistry.SetCurrentUserString(appCompatSubKey, targetPath, "~ DISABLEDXMAXIMIZEDWINDOWEDMODE HIGHDPIAWARE"))
+            if (!_userRegistry.SetCurrentUserString(AppCompatLayersKey, targetPath, AppCompatFlags))
             {
                 return OperationResult.Fail("GameLoop registry optimization could not be completed.");
             }
@@ -217,32 +235,27 @@ public sealed class GameLoopRegistryOptimizer
         var success = true;
         foreach (var version in PubgVersionCatalog.PubgVersions.Keys)
         {
-            var contentScaleKey = $"{version}_ContentScale";
-            var renderQualityKey = $"{version}_RenderQuality";
-            var fpsLevelKey = $"{version}_FPSLevel";
-
-            if (_userRegistry.GetUserDword(contentScaleKey) is not null)
-            {
-                success &= SetUserRegistryDword(contentScaleKey, contentScaleMultiplier) &&
-                           _userRegistry.GetUserDword(contentScaleKey) == contentScaleMultiplier;
-            }
-
-            if (_userRegistry.GetUserDword(fpsLevelKey) is not null)
-            {
-                success &= SetUserRegistryDword(fpsLevelKey, 0) &&
-                           _userRegistry.GetUserDword(fpsLevelKey) == 0;
-            }
-
-            if (_userRegistry.GetUserDword(renderQualityKey) is not null)
-            {
-                var quality = isLowEndProfile || contentScaleMultiplier == 1 ? 2 : contentScaleMultiplier;
-                success &= SetUserRegistryDword(renderQualityKey, quality) &&
-                           _userRegistry.GetUserDword(renderQualityKey) == quality;
-            }
+            success &= TrySetExistingDword($"{version}_ContentScale", contentScaleMultiplier);
+            success &= TrySetExistingDword($"{version}_FPSLevel", 0);
+            success &= TrySetExistingDword($"{version}_RenderQuality", ChooseRenderQuality(contentScaleMultiplier, isLowEndProfile));
         }
 
         return success;
     }
+
+    /// <summary>
+    /// Writes a value only where the game already tracks the setting, reading it
+    /// back so a denied write can never be reported as success.
+    /// </summary>
+    private bool TrySetExistingDword(string name, int value)
+    {
+        if (_userRegistry.GetUserDword(name) is null) return true;
+        return SetUserRegistryDword(name, value) && _userRegistry.GetUserDword(name) == value;
+    }
+
+    /// <summary>Low-end profiles pin render quality at 2; others follow the content scale.</summary>
+    private static int ChooseRenderQuality(int contentScaleMultiplier, bool isLowEndProfile) =>
+        isLowEndProfile || contentScaleMultiplier == 1 ? 2 : contentScaleMultiplier;
 
     private bool SetUserRegistryDword(string name, int value) => _userRegistry.SetUserDword(name, value);
 }

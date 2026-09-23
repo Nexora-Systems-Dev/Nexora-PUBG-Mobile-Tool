@@ -43,38 +43,14 @@ public sealed class GpuRoutingService
             var alreadyConfigured = 0;
             foreach (var executableName in executableNames.Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                var executablePath = Path.Combine(installDirectory, executableName);
-                if (!File.Exists(executablePath)) continue;
-
-                var normalizedPath = Path.GetFullPath(executablePath);
-                var current = _registry.GetCurrentUserString(UserGpuPreferencesPath, normalizedPath);
-                if (IsHighPerformancePreference(current))
+                switch (RouteExecutable(installDirectory, executableName))
                 {
-                    alreadyConfigured++;
-                    continue;
-                }
-
-                if (_registry.SetCurrentUserString(UserGpuPreferencesPath, normalizedPath, "GpuPreference=2;"))
-                {
-                    var actual = _registry.GetCurrentUserString(UserGpuPreferencesPath, normalizedPath);
-                    if (IsHighPerformancePreference(actual))
-                    {
-                        applied++;
-                    }
+                    case RoutingOutcome.Applied: applied++; break;
+                    case RoutingOutcome.AlreadyConfigured: alreadyConfigured++; break;
                 }
             }
 
-            if (applied > 0)
-            {
-                return OperationResult.Ok($"Windows high-performance GPU routing set for {applied} GameLoop executable(s).");
-            }
-
-            if (alreadyConfigured > 0)
-            {
-                return OperationResult.Skip($"GPU routing already configured for {alreadyConfigured} GameLoop executable(s); no changes were needed.");
-            }
-
-            return OperationResult.Fail("No GameLoop 64-bit rendering executable was found for GPU routing.");
+            return BuildRoutingResult(applied, alreadyConfigured);
         }
         catch (UnauthorizedAccessException)
         {
@@ -85,6 +61,50 @@ public sealed class GpuRoutingService
             return OperationResult.Fail($"Windows GPU routing could not be applied: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Routes one executable into the high-performance GPU preference, reading the
+    /// value back so a denied or dropped write is never reported as applied.
+    /// </summary>
+    private RoutingOutcome RouteExecutable(string installDirectory, string executableName)
+    {
+        var executablePath = Path.Combine(installDirectory, executableName);
+        if (!File.Exists(executablePath)) return RoutingOutcome.Unchanged;
+
+        var normalizedPath = Path.GetFullPath(executablePath);
+        if (IsHighPerformancePreference(_registry.GetCurrentUserString(UserGpuPreferencesPath, normalizedPath)))
+        {
+            return RoutingOutcome.AlreadyConfigured;
+        }
+
+        if (!_registry.SetCurrentUserString(UserGpuPreferencesPath, normalizedPath, "GpuPreference=2;"))
+        {
+            return RoutingOutcome.Unchanged;
+        }
+
+        return IsHighPerformancePreference(_registry.GetCurrentUserString(UserGpuPreferencesPath, normalizedPath))
+            ? RoutingOutcome.Applied
+            : RoutingOutcome.Unchanged;
+    }
+
+    /// <summary>Three-way completion: applied, already configured, or nothing routable found.</summary>
+    private static OperationResult BuildRoutingResult(int applied, int alreadyConfigured)
+    {
+        if (applied > 0)
+        {
+            return OperationResult.Ok($"Windows high-performance GPU routing set for {applied} GameLoop executable(s).");
+        }
+
+        if (alreadyConfigured > 0)
+        {
+            return OperationResult.Skip($"GPU routing already configured for {alreadyConfigured} GameLoop executable(s); no changes were needed.");
+        }
+
+        return OperationResult.Fail("No GameLoop 64-bit rendering executable was found for GPU routing.");
+    }
+
+    /// <summary>Counters tracked separately from the write loop so the result reflects every executable.</summary>
+    private enum RoutingOutcome { Unchanged, AlreadyConfigured, Applied }
 
     internal static bool IsHighPerformancePreference(string? value)
     {

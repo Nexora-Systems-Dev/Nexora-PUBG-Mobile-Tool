@@ -88,26 +88,39 @@ public sealed class NvidiaOptimizerService
     private static XDocument LoadAndCustomizeProfile(string profilePath, List<string> targets)
     {
         var document = XDocument.Load(profilePath, LoadOptions.PreserveWhitespace);
+        RetargetProfileName(document, targets[0]);
+        ReplaceProfileExecutables(document, targets);
+        EnableProfileFxaa(document);
+        return document;
+    }
 
+    /// <summary>The profile is named after the preferred target executable.</summary>
+    private static void RetargetProfileName(XDocument document, string firstTarget)
+    {
         var profileName = document.Descendants("ProfileName").FirstOrDefault();
-        if (profileName is not null) profileName.Value = targets[0];
+        if (profileName is not null) profileName.Value = firstTarget;
+    }
 
+    /// <summary>The bundled profile ships example executables that are replaced by the installed ones.</summary>
+    private static void ReplaceProfileExecutables(XDocument document, List<string> targets)
+    {
         var executables = document.Descendants("Executeables").FirstOrDefault();
-        if (executables is not null)
-        {
-            executables.RemoveAll();
-            foreach (var target in targets)
-            {
-                executables.Add(new XElement("string", target));
-            }
-        }
+        if (executables is null) return;
 
+        executables.RemoveAll();
+        foreach (var target in targets)
+        {
+            executables.Add(new XElement("string", target));
+        }
+    }
+
+    /// <summary>FXAA is forced on for the emulator regardless of the plan's own FXAA axis.</summary>
+    private static void EnableProfileFxaa(XDocument document)
+    {
         var fxaaSetting = document.Descendants("ProfileSetting")
             .FirstOrDefault(node => node.Element("SettingNameInfo")?.Value == "Enable FXAA")?
             .Element("SettingValue");
         if (fxaaSetting is not null) fxaaSetting.Value = "1";
-
-        return document;
     }
 
     /// <summary>
