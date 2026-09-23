@@ -80,72 +80,34 @@ public sealed class NetworkViewModel
     public async Task<OperationResult?> ApplyDnsAsync(string label)
     {
         if (!DnsCatalog.TryGet(label, out var entry) || entry is null) return null;
-        if (!_operationBus.TryAcquire()) return OperationResult.Fail("Another operation is already running.");
 
-        try
-        {
-            var result = await Task.Run(() => _networkTools.ChangeDns(entry.Primary, entry.Secondary));
-            StatusChanged?.Invoke(result.Message, !result.Success);
-            return result;
-        }
-        catch (OperationCanceledException)
-        {
-            var canceled = OperationResult.Skip("Operation canceled.");
-            StatusChanged?.Invoke(canceled.Message, false);
-            return canceled;
-        }
-        catch (Exception ex)
-        {
-            var failed = OperationResult.Fail(ex.Message);
-            StatusChanged?.Invoke(failed.Message, true);
-            return failed;
-        }
-        finally
-        {
-            _operationBus.Release();
-        }
+        return await RunOperationAsync(() => _networkTools.ChangeDns(entry.Primary, entry.Secondary));
     }
 
     /// <summary>
     /// Applies an iPad display profile. The service refuses while GameLoop
     /// runs and owns the backup/restore; that refusal is rendered verbatim.
     /// </summary>
-    public async Task<OperationResult> ApplyIpadAsync(IpadResolutionPreset preset)
-    {
-        if (!_operationBus.TryAcquire()) return OperationResult.Fail("Another operation is already running.");
-
-        try
-        {
-            var result = await Task.Run(() => _ipadLayout.SetIpadResolution(preset.Width, preset.Height));
-            StatusChanged?.Invoke(result.Message, !result.Success);
-            return result;
-        }
-        catch (OperationCanceledException)
-        {
-            var canceled = OperationResult.Skip("Operation canceled.");
-            StatusChanged?.Invoke(canceled.Message, false);
-            return canceled;
-        }
-        catch (Exception ex)
-        {
-            var failed = OperationResult.Fail(ex.Message);
-            StatusChanged?.Invoke(failed.Message, true);
-            return failed;
-        }
-        finally
-        {
-            _operationBus.Release();
-        }
-    }
+    public Task<OperationResult> ApplyIpadAsync(IpadResolutionPreset preset) =>
+        RunOperationAsync(() => _ipadLayout.SetIpadResolution(preset.Width, preset.Height));
 
     /// <summary>Restores the pre-iPad display state from the service's backup.</summary>
-    public async Task<OperationResult> ResetIpadAsync()
+    public Task<OperationResult> ResetIpadAsync() =>
+        RunOperationAsync(_ipadLayout.ResetIpadResolution);
+
+    /// <summary>
+    /// Runs one mutating operation off-thread under the shared bus: its result
+    /// is surfaced verbatim, cancellation becomes a Skip, any other failure is
+    /// reported rather than swallowed, and the bus is always released so a
+    /// throw can never leave the page permanently disabled.
+    /// </summary>
+    private async Task<OperationResult> RunOperationAsync(Func<OperationResult> operation)
     {
         if (!_operationBus.TryAcquire()) return OperationResult.Fail("Another operation is already running.");
 
         try
         {
-            var result = await Task.Run(() => _ipadLayout.ResetIpadResolution());
+            var result = await Task.Run(operation);
             StatusChanged?.Invoke(result.Message, !result.Success);
             return result;
         }

@@ -97,30 +97,12 @@ public sealed class GraphicsSettingsApplier
     private OperationResult UpdateGraphicsSavProperties(byte qualityByte, byte fpsByte, byte styleByte)
     {
         // BattleRenderQuality is primary; optional lobby fields may not exist in all versions.
-        var qualityUpdated = false;
-        foreach (var property in new[] { "ArtQuality", "LobbyRenderQuality", "BattleRenderQuality" })
-        {
-            if (ChangeProperty(property, qualityByte))
-            {
-                qualityUpdated = true;
-            }
-        }
-
-        if (!qualityUpdated)
+        if (!TryUpdateAll(new[] { "ArtQuality", "LobbyRenderQuality", "BattleRenderQuality" }, qualityByte))
         {
             return OperationResult.Fail("Could not update the graphics quality in the PUBG profile.");
         }
 
-        var fpsUpdated = false;
-        foreach (var property in new[] { "FPSLevel", "BattleFPS", "LobbyFPS" })
-        {
-            if (ChangeProperty(property, fpsByte))
-            {
-                fpsUpdated = true;
-            }
-        }
-
-        if (!fpsUpdated)
+        if (!TryUpdateAll(new[] { "FPSLevel", "BattleFPS", "LobbyFPS" }, fpsByte))
         {
             return OperationResult.Fail("Could not update the frame rate in the PUBG profile.");
         }
@@ -131,6 +113,23 @@ public sealed class GraphicsSettingsApplier
         }
 
         return OperationResult.Ok("Graphics settings updated in save buffer.");
+    }
+
+    /// <summary>
+    /// Writes the byte to every listed property the save actually contains,
+    /// returning whether any were updated. Every candidate is attempted — the
+    /// non-short-circuiting OR is load-bearing: stopping at the first hit would
+    /// leave a version's other fallback fields holding a stale value.
+    /// </summary>
+    private bool TryUpdateAll(string[] propertyNames, byte value)
+    {
+        var updated = false;
+        foreach (var property in propertyNames)
+        {
+            updated |= ChangeProperty(property, value);
+        }
+
+        return updated;
     }
 
     private async Task<OperationResult> DeployConfigurationFilesAsync(string packageName, CancellationToken cancellationToken)
@@ -227,9 +226,9 @@ public sealed class GraphicsSettingsApplier
         cancellationToken.ThrowIfCancellationRequested();
         var backupPath = remotePath + RemoteBackupExtension;
         var legacyBackupPath = remotePath + LegacyRemoteBackupExtension;
-        var exists = _adb.Shell($"[ -d {remotePath} ] && echo 1 || echo 0", cancellationToken).Trim() == "1";
-        var backupExists = _adb.Shell($"[ -d {backupPath} ] && echo 1 || echo 0", cancellationToken).Trim() == "1";
-        var legacyBackupExists = _adb.Shell($"[ -d {legacyBackupPath} ] && echo 1 || echo 0", cancellationToken).Trim() == "1";
+        var exists = RemoteFolderExists(remotePath, cancellationToken);
+        var backupExists = RemoteFolderExists(backupPath, cancellationToken);
+        var legacyBackupExists = RemoteFolderExists(legacyBackupPath, cancellationToken);
         // Either backup already preserves the original, so only a missing
         // pair snapshots; a present pair means re-apply over restored data.
         if (!backupExists && !legacyBackupExists && exists)
@@ -251,15 +250,21 @@ public sealed class GraphicsSettingsApplier
         // auto-migrated); legacy restores keep pre-rename users working.
         // The second probe only runs when no new backup exists, so the
         // common path costs the same single round trip as before.
-        if (_adb.Shell($"[ -d {backupPath} ] && echo 1 || echo 0", cancellationToken).Trim() == "1")
+        if (RemoteFolderExists(backupPath, cancellationToken))
         {
             _adb.Shell($"mv {backupPath} {remotePath}", cancellationToken);
         }
-        else if (_adb.Shell($"[ -d {legacyBackupPath} ] && echo 1 || echo 0", cancellationToken).Trim() == "1")
+        else if (RemoteFolderExists(legacyBackupPath, cancellationToken))
         {
             _adb.Shell($"mv {legacyBackupPath} {remotePath}", cancellationToken);
         }
     }
+
+    /// <summary>
+    /// A single shell round trip asking whether a remote directory exists.
+    /// </summary>
+    private bool RemoteFolderExists(string remotePath, CancellationToken cancellationToken) =>
+        _adb.Shell($"[ -d {remotePath} ] && echo 1 || echo 0", cancellationToken).Trim() == "1";
 
     private bool ChangeProperty(string name, byte value)
     {

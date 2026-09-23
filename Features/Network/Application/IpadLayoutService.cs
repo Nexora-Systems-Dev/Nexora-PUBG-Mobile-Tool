@@ -33,23 +33,12 @@ public sealed class IpadLayoutService : IIpadLayoutService
 
     public OperationResult SetIpadResolution(int width, int height)
     {
-        // GameLoop locks the keymap file and overwrites the resolution
-        // registry values on exit, so patching while it runs is rejected.
-        // The guard lives here (not with callers) so no composition path
-        // can silently skip it.
-        if (_processService is not null)
+        // The guard lives here (not with callers) so no composition path can
+        // silently skip it.
+        var runningNames = FindRunningGameLoopNames();
+        if (runningNames is not null)
         {
-            var running = _processService.FindGameLoopProcesses();
-            if (running.Count > 0)
-            {
-                var names = string.Join(", ", running.Select(process => $"{process.ProcessName}.exe").Distinct(StringComparer.OrdinalIgnoreCase));
-                foreach (var process in running)
-                {
-                    process.Dispose();
-                }
-
-                return OperationResult.Fail($"Close GameLoop before applying iPad View ({names}), then apply it again.");
-            }
+            return OperationResult.Fail($"Close GameLoop before applying iPad View ({runningNames}), then apply it again.");
         }
 
         var originalPath = _options.GetKeymapFilePath();
@@ -63,14 +52,12 @@ public sealed class IpadLayoutService : IIpadLayoutService
         {
             // An existing legacy backup already preserves the pre-patch
             // original, so only snapshot when neither backup exists.
-            if (!_fileSystem.Exists(backupPath) && !_fileSystem.Exists(_options.GetLegacyBackupFilePath())) _fileSystem.Copy(originalPath, backupPath);
-            if (_registry.GetAppSettingDword("VMResWidth") is null || _registry.GetAppSettingDword("VMResHeight") is null)
+            if (!_fileSystem.Exists(backupPath) && !_fileSystem.Exists(_options.GetLegacyBackupFilePath()))
             {
-                var currentWidth = _registry.GetUserDword("VMResWidth");
-                var currentHeight = _registry.GetUserDword("VMResHeight");
-                if (currentWidth is not null) _registry.SetAppSettingDword("VMResWidth", currentWidth.Value);
-                if (currentHeight is not null) _registry.SetAppSettingDword("VMResHeight", currentHeight.Value);
+                _fileSystem.Copy(originalPath, backupPath);
             }
+
+            SnapshotCurrentResolution();
             ApplyLayoutMap(originalPath);
             if (!_registry.SetUserDword("VMResWidth", width) || !_registry.SetUserDword("VMResHeight", height))
             {
@@ -118,17 +105,65 @@ public sealed class IpadLayoutService : IIpadLayoutService
         {
             _fileSystem.Copy(restorePath, originalPath, overwrite: true);
             if (deleteAfterRestore) _fileSystem.Delete(backupPath);
-            var savedWidth = _registry.GetAppSettingDword("VMResWidth");
-            var savedHeight = _registry.GetAppSettingDword("VMResHeight");
-            if (savedWidth is not null) _registry.SetUserDword("VMResWidth", savedWidth.Value);
-            if (savedHeight is not null) _registry.SetUserDword("VMResHeight", savedHeight.Value);
-            _registry.DeleteAppSetting("VMResWidth");
-            _registry.DeleteAppSetting("VMResHeight");
+            // Restore each resolution value from AppSettings, then clear the
+            // snapshot so a later apply records the real current value.
+            foreach (var name in ResolutionValueNames)
+            {
+                var saved = _registry.GetAppSettingDword(name);
+                if (saved is not null) _registry.SetUserDword(name, saved.Value);
+                _registry.DeleteAppSetting(name);
+            }
             return OperationResult.Ok("iPad resolution was reset.");
         }
         catch (Exception ex)
         {
             return OperationResult.Fail($"Could not reset iPad resolution: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// The two GameLoop registry values that together hold the VM resolution.
+    /// </summary>
+    private static readonly string[] ResolutionValueNames = { "VMResWidth", "VMResHeight" };
+
+    /// <summary>
+    /// The comma-joined names of the running GameLoop emulator processes, or
+    /// null when none are running. GameLoop locks the keymap file and
+    /// overwrites the resolution registry values on exit, so patching while it
+    /// runs must be refused. Handles are disposed after the names are read.
+    /// </summary>
+    private string? FindRunningGameLoopNames()
+    {
+        if (_processService is null) return null;
+
+        var running = _processService.FindGameLoopProcesses();
+        try
+        {
+            return running.Count == 0
+                ? null
+                : string.Join(", ", running.Select(process => $"{process.ProcessName}.exe").Distinct(StringComparer.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            foreach (var process in running)
+            {
+                process.Dispose();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Records the current GameLoop VM resolution into AppSettings when it is
+    /// not already stored, so a later reset knows what to restore.
+    /// </summary>
+    private void SnapshotCurrentResolution()
+    {
+        if (ResolutionValueNames.All(name => _registry.GetAppSettingDword(name) is not null)) return;
+
+        foreach (var name in ResolutionValueNames)
+        {
+            var current = _registry.GetUserDword(name);
+            if (current is not null) _registry.SetAppSettingDword(name, current.Value);
         }
     }
 
