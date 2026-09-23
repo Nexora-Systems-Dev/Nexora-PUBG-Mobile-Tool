@@ -23,9 +23,9 @@ public sealed class GraphicsSettingsService : IGraphicsSettingsService
 
     /// <summary>
     /// Reads the four profile values and derives the Korean-version flag. The
-    /// comparison against <see cref="PubgVersionCatalog.KoreanPackage"/> is the
-    /// single place the 1080p path is gated, so the page and the summary cannot
-    /// disagree about which version is loaded.
+    /// gate is <see cref="PubgVersionCatalog.IsKoreanPackage(string?)"/>, the
+    /// single predicate the 1080p path funnels through, so the page and the
+    /// summary cannot disagree about which version is loaded.
     /// </summary>
     public async Task<GraphicsCurrentSettings?> LoadCurrentAsync(CancellationToken cancellationToken = default)
     {
@@ -37,10 +37,7 @@ public sealed class GraphicsSettingsService : IGraphicsSettingsService
             FrameRate: _graphics.GetFrameRate(),
             Style: _graphics.GetGraphicsStyle(),
             ShadowEnabled: ParseShadow(shadow),
-            IsKoreanVersion: string.Equals(
-                _connection.CurrentPackage,
-                PubgVersionCatalog.KoreanPackage,
-                StringComparison.OrdinalIgnoreCase));
+            IsKoreanVersion: PubgVersionCatalog.IsKoreanPackage(_connection.CurrentPackage));
     }
 
     /// <summary>

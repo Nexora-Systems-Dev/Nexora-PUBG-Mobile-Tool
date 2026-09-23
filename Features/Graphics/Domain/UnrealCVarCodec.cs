@@ -101,8 +101,9 @@ public static class UnrealCVarCodec
                 continue;
             }
 
-            var indentationLength = result[index].Length - result[index].TrimStart().Length;
-            result[index] = result[index][..indentationLength] + CVarPrefix + EncodeCVar(varName, targetValue);
+            var line = result[index];
+            var indentationLength = line.Length - line.TrimStart().Length;
+            result[index] = line[..indentationLength] + CVarPrefix + EncodeCVar(varName, targetValue);
             changed = true;
         }
 

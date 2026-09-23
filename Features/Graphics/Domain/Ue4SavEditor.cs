@@ -22,16 +22,8 @@ public sealed class Ue4SavEditor
     /// </summary>
     public byte ReadProperty(string propertyName, byte defaultValue = 0)
     {
-        if (string.IsNullOrWhiteSpace(propertyName))
-        {
-            return defaultValue;
-        }
-
-        var header = CreateHeader(propertyName);
-        var headerIndex = FindSequence(_content, header);
-        var valueIndex = headerIndex + header.Length;
-
-        return headerIndex >= 0 && valueIndex < _content.Length
+        var valueIndex = ValueIndexOf(propertyName);
+        return valueIndex >= 0 && valueIndex < _content.Length
             ? _content[valueIndex]
             : defaultValue;
     }
@@ -41,16 +33,9 @@ public sealed class Ue4SavEditor
     /// </summary>
     public bool ChangeProperty(string propertyName, byte value)
     {
-        if (string.IsNullOrWhiteSpace(propertyName))
-        {
-            return false;
-        }
+        var valueIndex = ValueIndexOf(propertyName);
 
-        var header = CreateHeader(propertyName);
-        var headerIndex = FindSequence(_content, header);
-        var valueIndex = headerIndex + header.Length;
-
-        if (headerIndex < 0 || valueIndex >= _content.Length)
+        if (valueIndex < 0 || valueIndex >= _content.Length)
         {
             return false;
         }
@@ -60,12 +45,28 @@ public sealed class Ue4SavEditor
     }
 
     /// <summary>
+    /// The index of an IntProperty's value byte, or -1 when the property name is
+    /// blank, its header is absent, or the value byte is truncated out of the
+    /// buffer. Both readers funnel through here so the locate step cannot drift
+    /// between a read and a write.
+    /// </summary>
+    private int ValueIndexOf(string? propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(propertyName))
+        {
+            return -1;
+        }
+
+        var header = CreateHeader(propertyName);
+        var headerIndex = FindSequence(_content, header);
+        return headerIndex < 0 ? -1 : headerIndex + header.Length;
+    }
+
+    /// <summary>
     /// Generates the binary search header for an Unreal Engine IntProperty.
     /// </summary>
-    public static byte[] CreateHeader(string propertyName)
-    {
-        return Encoding.UTF8.GetBytes(propertyName + IntPropertyMarker);
-    }
+    public static byte[] CreateHeader(string propertyName) =>
+        Encoding.UTF8.GetBytes(propertyName + IntPropertyMarker);
 
     /// <summary>
     /// Finds the first index of a byte sequence within a buffer, or -1 if not found.
@@ -77,24 +78,6 @@ public sealed class Ue4SavEditor
             return -1;
         }
 
-        for (var i = 0; i <= source.Length - sequence.Length; i++)
-        {
-            var match = true;
-            for (var j = 0; j < sequence.Length; j++)
-            {
-                if (source[i + j] != sequence[j])
-                {
-                    match = false;
-                    break;
-                }
-            }
-
-            if (match)
-            {
-                return i;
-            }
-        }
-
-        return -1;
+        return source.AsSpan().IndexOf(sequence);
     }
 }

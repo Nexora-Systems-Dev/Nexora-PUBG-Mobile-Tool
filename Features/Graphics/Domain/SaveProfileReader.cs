@@ -46,13 +46,9 @@ public sealed class SaveProfileReader
         }
 
         var localShadowPath = _storage.ShadowSettingsPath;
-        if (!_fileSystem.Exists(localShadowPath))
+        if (!await EnsureLocalShadowFileAsync(localShadowPath, cancellationToken))
         {
-            var remoteShadowPath = RemotePaths.For(_session.CurrentPackage).UserCustomIniPath;
-            if (!await _adb.PullAsync(remoteShadowPath, localShadowPath, cancellationToken))
-            {
-                return null;
-            }
+            return null;
         }
 
         foreach (var line in _fileSystem.ReadLines(localShadowPath))
@@ -74,6 +70,22 @@ public sealed class SaveProfileReader
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Ensures the local UserCustom.ini is available, pulling it from the device
+    /// when the working copy is absent. A failed pull returns false so the reader
+    /// reports unreadable instead of scanning a stale or missing file.
+    /// </summary>
+    private async Task<bool> EnsureLocalShadowFileAsync(string localShadowPath, CancellationToken cancellationToken)
+    {
+        if (_fileSystem.Exists(localShadowPath))
+        {
+            return true;
+        }
+
+        var remoteShadowPath = RemotePaths.For(_session.CurrentPackage).UserCustomIniPath;
+        return await _adb.PullAsync(remoteShadowPath, localShadowPath, cancellationToken);
     }
 
     private byte ReadProperty(string name)

@@ -14,6 +14,14 @@ public static class PubgVersionCatalog
     /// </summary>
     public const string KoreanPackage = "com.pubg.krmobile";
 
+    /// <summary>
+    /// Whether a package is the Korean build, which alone exposes the 1080p
+    /// workflow. Every gate funnels through here so the toggle, the summary and
+    /// the apply payload can never disagree about which version is loaded.
+    /// </summary>
+    public static bool IsKoreanPackage(string? packageName) =>
+        string.Equals(packageName, KoreanPackage, StringComparison.OrdinalIgnoreCase);
+
     public static readonly IReadOnlyDictionary<string, string> PubgVersions =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {

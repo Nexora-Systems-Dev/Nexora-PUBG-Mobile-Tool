@@ -40,10 +40,7 @@ public static class GraphicsDisplayFormatter
         null => Placeholder
     };
 
-    /// <summary>
-    /// Formats the six summary cells. Whitespace-only strings are treated as
-    /// unset, matching how an unread profile surfaces today.
-    /// </summary>
+    /// <summary>Formats the six summary cells of the page's summary bar.</summary>
     public static GraphicsSummaryDisplay FormatSummary(
         string? version,
         string? quality,
@@ -51,10 +48,18 @@ public static class GraphicsDisplayFormatter
         string? style,
         bool? shadowEnabled,
         string? adb) => new(
-            Version: string.IsNullOrWhiteSpace(version) ? Placeholder : version,
-            Quality: string.IsNullOrWhiteSpace(quality) ? Placeholder : quality,
-            Fps: string.IsNullOrWhiteSpace(frameRate) ? Placeholder : frameRate,
-            Style: string.IsNullOrWhiteSpace(style) ? Placeholder : style,
+            Version: Cell(version),
+            Quality: Cell(quality),
+            Fps: Cell(frameRate),
+            Style: Cell(style),
             Shadow: FormatShadow(shadowEnabled),
-            Adb: string.IsNullOrWhiteSpace(adb) ? Placeholder : adb);
+            Adb: Cell(adb));
+
+    /// <summary>
+    /// A summary value, or the placeholder when it is blank. Whitespace-only is
+    /// treated as unset, matching how an unread profile surfaces today, so a
+    /// missing read-back can never look like a deliberate setting.
+    /// </summary>
+    private static string Cell(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? Placeholder : value;
 }

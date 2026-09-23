@@ -119,8 +119,7 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
     /// single gate for it, so the toggle, the summary and the apply payload can
     /// never disagree about which version is loaded.
     /// </summary>
-    public bool IsKoreanVersion => string.Equals(
-        _connection.CurrentPackage, PubgVersionCatalog.KoreanPackage, StringComparison.OrdinalIgnoreCase);
+    public bool IsKoreanVersion => PubgVersionCatalog.IsKoreanPackage(_connection.CurrentPackage);
 
     /// <summary>
     /// Connects to GameLoop, or disconnects when a transport is already up. The
@@ -163,6 +162,16 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
             _operationBus.Release();
         }
 
+        await RaiseConnectOutcomeAsync(result);
+    }
+
+    /// <summary>
+    /// Paints the outcome a connect produced: the shell's shortcut list gets the
+    /// discovered versions and the pill gets its phase. A connect that reached a
+    /// version also reads the profile, so that arm does more than a state lookup.
+    /// </summary>
+    private async Task RaiseConnectOutcomeAsync(ConnectionResult result)
+    {
         InstalledVersions = result.InstalledVersions;
 
         if (!result.Success)
@@ -173,18 +182,13 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
 
         if (_connection.IsConnected)
         {
-            var current = await _graphics.LoadCurrentAsync(_connectionCancellation?.Token ?? CancellationToken.None);
-            SettingsLoaded?.Invoke(current);
-            RaiseConnectionState(ConnectionState.FullyConnected, result.Message);
+            SettingsLoaded?.Invoke(await _graphics.LoadCurrentAsync(_connectionCancellation?.Token ?? CancellationToken.None));
         }
-        else if (_connection.IsAdbConnected)
-        {
-            RaiseConnectionState(ConnectionState.TransportConnected, result.Message);
-        }
-        else
-        {
-            RaiseConnectionState(ConnectionState.AwaitingVersion, result.Message);
-        }
+
+        var state = _connection.IsConnected ? ConnectionState.FullyConnected
+            : _connection.IsAdbConnected ? ConnectionState.TransportConnected
+            : ConnectionState.AwaitingVersion;
+        RaiseConnectionState(state, result.Message);
     }
 
     /// <summary>
