@@ -82,7 +82,7 @@
                                                 </Setter>
                                             </Trigger>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="CtaBorder" Property="Background" Value="#111B24" />
+                                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PanelBackground}" />
                                                 <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
                                                 <Setter Property="Foreground" Value="#4B5E6D" />
                                                 <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
@@ -98,7 +98,7 @@
                         <Style x:Key="ShortcutsComboBoxStyle" TargetType="ComboBox">
                             <Setter Property="Background" Value="#0B131B" />
                             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                            <Setter Property="BorderBrush" Value="#1C2E3E" />
+                            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
                             <Setter Property="BorderThickness" Value="1" />
                             <Setter Property="Padding" Value="12,8" />
                             <Setter Property="FontFamily" Value="Segoe UI" />
@@ -126,8 +126,8 @@
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsHighlighted" Value="True">
-                                                            <Setter TargetName="ItemBorder" Property="Background" Value="#102534" />
-                                                            <Setter Property="Foreground" Value="#00D2FF" />
+                                                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentSoft}" />
+                                                            <Setter Property="Foreground" Value="{StaticResource Accent}" />
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -172,7 +172,7 @@
                                                 </Grid>
                                             </Border>
                                             <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
-                                                <Border Background="#0B131B" BorderBrush="#1C2E3E" BorderThickness="1" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                                <Border Background="#0B131B" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
                                                     <ScrollViewer MaxHeight="260">
                                                         <ItemsPresenter />
                                                     </ScrollViewer>
@@ -181,10 +181,10 @@
                                         </Grid>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="#00D2FF" />
+                                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
                                             </Trigger>
                                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="#00D2FF" />
+                                                <Setter TargetName="ComboBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -211,10 +211,10 @@
                                 <TextBlock Text="Create a clean desktop launcher for any installed PUBG Mobile version." Foreground="{StaticResource TextSecondary}" FontSize="13" Margin="0,3,0,0" />
                             </StackPanel>
                         </StackPanel>
-                        <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="6" Padding="12,7">
+                        <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,7">
                             <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
-                                <TextBlock Text="DESKTOP LAUNCHER" Foreground="#00D2FF" FontSize="11" FontWeight="Bold" />
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <TextBlock Text="DESKTOP LAUNCHER" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" />
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -227,7 +227,7 @@
                                 <ColumnDefinition Width="0.88*" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
+                            <Border Grid.Column="0" Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -240,22 +240,22 @@
 
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                            <Border Width="3" Height="15" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                             <TextBlock Text="CREATE A SHORTCUT" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <Border HorizontalAlignment="Right" Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                            <TextBlock Text="DIRECT BOOT" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                                        <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="DIRECT BOOT" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                                         </Border>
                                     </Grid>
 
                                     <TextBlock Grid.Row="1" Text="Choose the PUBG Mobile version to launch directly through GameLoop AppMarket." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,16" LineHeight="18" />
 
                                     <StackPanel Grid.Row="2">
-                                        <TextBlock Text="GAME VERSION" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
+                                        <TextBlock Text="GAME VERSION" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
                                         <ComboBox x:Name="ShortcutComboBox" Style="{StaticResource ShortcutsComboBoxStyle}" SelectionChanged="ShortcutComboBox_SelectionChanged" />
                                     </StackPanel>
 
-                                    <Border Grid.Row="3" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,16,0,16">
+                                    <Border Grid.Row="3" Background="#0B141D" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,16,0,16">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
@@ -271,16 +271,16 @@
 
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                                    <Border Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,8,0">
-                                                        <TextBlock Text="SELECTED PROFILE" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                                                    <Border Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="0,0,8,0">
+                                                        <TextBlock Text="SELECTED PROFILE" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                                                     </Border>
-                                                    <TextBlock Text="TARGET METADATA" Foreground="#6C7F93" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                                                    <TextBlock Text="TARGET METADATA" Foreground="{StaticResource TextMuted}" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
                                                 </StackPanel>
-                                                <TextBlock x:Name="ShortcutDisplayNameText" Text="Choose a PUBG Mobile version" Foreground="#38BDF8" FontFamily="Bahnschrift SemiCondensed" FontSize="15" FontWeight="Bold" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                                <TextBlock x:Name="ShortcutDisplayNameText" Text="Choose a PUBG Mobile version" Foreground="{StaticResource AccentHover}" FontFamily="Bahnschrift SemiCondensed" FontSize="15" FontWeight="Bold" TextWrapping="Wrap" Margin="0,2,0,0" />
                                                 <TextBlock x:Name="ShortcutPackageText" Text="No package selected" Foreground="{StaticResource TextSecondary}" FontSize="12" FontFamily="Consolas" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
                                                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                                    <TextBlock Text="📍" FontSize="10" Foreground="#6C7F93" VerticalAlignment="Center" Margin="0,0,4,0" />
-                                                    <TextBlock x:Name="ShortcutDestinationText" Text="The shortcut will be placed on your desktop." Foreground="#8A9CAE" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                                    <TextBlock Text="📍" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                    <TextBlock x:Name="ShortcutDestinationText" Text="The shortcut will be placed on your desktop." Foreground="{StaticResource TextSecondary}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center" />
                                                 </StackPanel>
                                             </StackPanel>
                                         </Grid>
@@ -288,10 +288,10 @@
 
                                     <WrapPanel Grid.Row="4" Margin="0,0,0,16">
                                         <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
-                                            <TextBlock Text="⚡ Native AppMarket Launcher" Foreground="#8A9CAE" FontSize="11" />
+                                            <TextBlock Text="⚡ Native AppMarket Launcher" Foreground="{StaticResource TextSecondary}" FontSize="11" />
                                         </Border>
                                         <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,0,4">
-                                            <TextBlock Text="🎯 Zero Emulator Navigation" Foreground="#8A9CAE" FontSize="11" />
+                                            <TextBlock Text="🎯 Zero Emulator Navigation" Foreground="{StaticResource TextSecondary}" FontSize="11" />
                                         </Border>
                                     </WrapPanel>
 
@@ -301,7 +301,7 @@
 
                             <Border Grid.Column="1" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
 
-                            <Border Grid.Column="2" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
+                            <Border Grid.Column="2" Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -312,11 +312,11 @@
 
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                            <Border Width="3" Height="15" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                             <TextBlock Text="HOW IT WORKS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <Border HorizontalAlignment="Right" Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                            <TextBlock Text="OFFICIAL LAUNCHER" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                                        <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="OFFICIAL LAUNCHER" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                                         </Border>
                                     </Grid>
 
@@ -330,13 +330,13 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                                <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="14">
+                                                <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1.5" CornerRadius="14">
                                                     <Border.Effect>
                                                         <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.35" />
                                                     </Border.Effect>
-                                                    <TextBlock Text="1" Foreground="#00D2FF" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <TextBlock Text="1" Foreground="{StaticResource Accent}" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Border>
-                                                <Border Width="1.5" Height="28" Background="#1C2E3E" HorizontalAlignment="Center" Margin="0,4,0,4" />
+                                                <Border Width="1.5" Height="28" Background="{StaticResource DividerStroke}" HorizontalAlignment="Center" Margin="0,4,0,4" />
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="1" Margin="12,2,0,0">
@@ -352,13 +352,13 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                                <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="14">
+                                                <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1.5" CornerRadius="14">
                                                     <Border.Effect>
                                                         <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.35" />
                                                     </Border.Effect>
-                                                    <TextBlock Text="2" Foreground="#00D2FF" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <TextBlock Text="2" Foreground="{StaticResource Accent}" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Border>
-                                                <Border Width="1.5" Height="28" Background="#1C2E3E" HorizontalAlignment="Center" Margin="0,4,0,4" />
+                                                <Border Width="1.5" Height="28" Background="{StaticResource DividerStroke}" HorizontalAlignment="Center" Margin="0,4,0,4" />
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="1" Margin="12,2,0,0">
@@ -374,11 +374,11 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                                <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="14">
+                                                <Border Width="28" Height="28" Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1.5" CornerRadius="14">
                                                     <Border.Effect>
                                                         <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.35" />
                                                     </Border.Effect>
-                                                    <TextBlock Text="3" Foreground="#00D2FF" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <TextBlock Text="3" Foreground="{StaticResource Accent}" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Border>
                                             </StackPanel>
 
@@ -389,12 +389,12 @@
                                         </Grid>
                                     </StackPanel>
 
-                                    <Border Grid.Row="3" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,22,0,0">
+                                    <Border Grid.Row="3" Background="#0B141D" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,22,0,0">
                                         <StackPanel Orientation="Horizontal">
-                                            <Border Width="18" Height="18" Background="#0C251F" BorderBrush="#10B981" BorderThickness="1" CornerRadius="9" VerticalAlignment="Center" Margin="0,0,10,0">
-                                                <Ellipse Width="6" Height="6" Fill="#10B981" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Border Width="18" Height="18" Background="#0C251F" BorderBrush="{StaticResource Success}" BorderThickness="1" CornerRadius="9" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <Ellipse Width="6" Height="6" Fill="{StaticResource Success}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </Border>
-                                            <TextBlock Text="Zero risk: No game settings or emulator files are modified by this action." Foreground="#8A9CAE" FontSize="11.5" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                            <TextBlock Text="Zero risk: No game settings or emulator files are modified by this action." Foreground="{StaticResource TextSecondary}" FontSize="11.5" TextWrapping="Wrap" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Border>
                                 </Grid>

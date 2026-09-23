@@ -1,4 +1,7 @@
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Nexora;
 using Nexora.UI.Navigation;
 using Xunit;
 
@@ -70,8 +73,56 @@ public sealed class ShellNavigatorTests
         shown.Values.Should().OnlyContain(v => !v);
     }
 
+    [Fact]
+    public void ProductionRefreshMap_CoversEveryFlaggedItem()
+    {
+        var map = MainWindow.BuildRefreshMap(() => Task.CompletedTask);
+
+        foreach (var item in NavigationItem.All.Where(i => i.RefreshOnNavigate))
+        {
+            map.Should().ContainKey(item.Key, "a flagged page with no refresh entry silently skips its refresh — the CI guard");
+            map[item.Key].Should().NotBeNull("the registered delegate must be wired, not a placeholder");
+        }
+    }
+
+    [Fact]
+    public void TryGetRefresh_MissingEntry_ReturnsFalse()
+    {
+        var navigator = new ShellNavigator(
+            new Dictionary<string, Action<bool>>(),
+            new Dictionary<string, Func<Task>>());
+
+        var found = navigator.TryGetRefresh(NavigationItem.Tuning.Key, out var refresh);
+
+        found.Should().BeFalse();
+        refresh.Should().BeNull();
+    }
+
+    [Fact]
+    public void TryGetRefresh_KnownEntry_ReturnsItsCallback()
+    {
+        var callback = new Func<Task>(() => Task.CompletedTask);
+        var navigator = new ShellNavigator(
+            new Dictionary<string, Action<bool>>(),
+            new Dictionary<string, Func<Task>> { [NavigationItem.Tuning.Key] = callback });
+
+        var found = navigator.TryGetRefresh(NavigationItem.Tuning.Key, out var refresh);
+
+        found.Should().BeTrue();
+        refresh.Should().BeSameAs(callback);
+    }
+
+    /// <summary>
+    /// The complete refresh map for the default build: every page flagged
+    /// <see cref="NavigationItem.RefreshOnNavigate"/> gets a no-op callback, so
+    /// the 4 navigation tests above stay green under the new constructor and the
+    /// flagged set stays pinned by construction.
+    /// </summary>
     private static ShellNavigator Build(Dictionary<string, bool> shown) =>
         new(NavigationItem.All.ToDictionary(
             item => item.Key,
-            item => (Action<bool>)(show => shown[item.Key] = show)));
+            item => (Action<bool>)(show => shown[item.Key] = show)),
+            NavigationItem.All
+                .Where(item => item.RefreshOnNavigate)
+                .ToDictionary(item => item.Key, _ => new Func<Task>(() => Task.CompletedTask)));
 }

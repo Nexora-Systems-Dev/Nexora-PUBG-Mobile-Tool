@@ -90,8 +90,8 @@ public sealed class NetworkViewModel
         }
         catch (OperationCanceledException)
         {
-            var canceled = OperationResult.Fail("Operation canceled.");
-            StatusChanged?.Invoke(canceled.Message, true);
+            var canceled = OperationResult.Skip("Operation canceled.");
+            StatusChanged?.Invoke(canceled.Message, false);
             return canceled;
         }
         catch (Exception ex)
@@ -122,8 +122,8 @@ public sealed class NetworkViewModel
         }
         catch (OperationCanceledException)
         {
-            var canceled = OperationResult.Fail("Operation canceled.");
-            StatusChanged?.Invoke(canceled.Message, true);
+            var canceled = OperationResult.Skip("Operation canceled.");
+            StatusChanged?.Invoke(canceled.Message, false);
             return canceled;
         }
         catch (Exception ex)
@@ -151,8 +151,8 @@ public sealed class NetworkViewModel
         }
         catch (OperationCanceledException)
         {
-            var canceled = OperationResult.Fail("Operation canceled.");
-            StatusChanged?.Invoke(canceled.Message, true);
+            var canceled = OperationResult.Skip("Operation canceled.");
+            StatusChanged?.Invoke(canceled.Message, false);
             return canceled;
         }
         catch (Exception ex)

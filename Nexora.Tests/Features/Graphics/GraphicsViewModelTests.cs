@@ -190,18 +190,20 @@ public sealed class GraphicsViewModelTests
 
     /// <summary>
     /// The store throws on cancellation and the ViewModel must render that as a
-    /// failure instead of letting it escape the page (AdbCancellationTests pins
+    /// skip instead of letting it escape the page (AdbCancellationTests pins
     /// the store half of this contract).
     /// </summary>
     [Fact]
-    public async Task ApplyAsync_TranslatesCancellationIntoAFailure()
+    public async Task ApplyAsync_TranslatesCancellationIntoASkip()
     {
         var settings = new FakeSettings(throwOnApply: true);
         var vm = Build(settings: settings);
 
         var result = await vm.ApplyAsync(Selection);
 
-        result.Success.Should().BeFalse();
+        result.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
         result.Message.Should().Be("Graphics application was canceled.");
     }
 

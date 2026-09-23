@@ -70,6 +70,24 @@ public sealed class TuningViewModelTests
     }
 
     [Fact]
+    public async Task RefreshAsync_CancelMidScan_PreemptsToTimeoutStatus()
+    {
+        var tuning = new FakeTuning { State = IdleState };
+        var vm = Build(tuning: tuning);
+        tuning.OnLoadCalled = () => vm.Cancel();
+
+        var statuses = new List<(string Message, bool IsError)>();
+        vm.StatusChanged += (message, isError) => statuses.Add((message, isError));
+
+        await vm.RefreshAsync();
+
+        tuning.LastToken.CanBeCanceled.Should().BeTrue("Refresh must hand the service a real cancellation source, not CancellationToken.None");
+        vm.CurrentState.Should().BeNull("a scan preempted at close must not paint stale settings");
+        statuses.Should().Contain(("Loading emulator settings timed out.", true));
+        vm.IsBusy.Should().BeFalse("the operation bus must be released once the refresh is preempted");
+    }
+
+    [Fact]
     public async Task RefreshAsync_RunningEmulator_ReportsTheGuardStatus()
     {
         var tuning = new FakeTuning
@@ -152,6 +170,45 @@ public sealed class TuningViewModelTests
     }
 
     [Fact]
+    public async Task ApplyAsync_Cancellation_IsTranslatedToASkippedResult()
+    {
+        var tuning = new FakeTuning { State = IdleState, ThrowOnApply = new OperationCanceledException() };
+        var vm = Build(tuning: tuning);
+
+        var statuses = new List<(string Message, bool IsError)>();
+        vm.StatusChanged += (message, isError) => statuses.Add((message, isError));
+
+        var result = await vm.ApplyAsync(Selection);
+
+        result.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
+        result.Message.Should().Be("Emulator tuning was canceled.");
+        statuses.Should().Contain((result.Message, false));
+    }
+
+    [Fact]
+    public async Task ApplyAsync_CancelMidFlight_PreemptsToASkippedResult()
+    {
+        var tuning = new FakeTuning { State = IdleState };
+        var vm = Build(tuning: tuning);
+        tuning.OnApplyCalled = () => vm.Cancel();
+
+        var statuses = new List<(string Message, bool IsError)>();
+        vm.StatusChanged += (message, isError) => statuses.Add((message, isError));
+
+        var result = await vm.ApplyAsync(Selection);
+
+        tuning.LastToken.CanBeCanceled.Should().BeTrue("Apply must hand the service a real cancellation source, not CancellationToken.None");
+        result.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
+        result.Message.Should().Be("Emulator tuning was canceled.");
+        statuses.Should().Contain((result.Message, false));
+        vm.IsBusy.Should().BeFalse("the operation bus must be released once the apply is preempted");
+    }
+
+    [Fact]
     public async Task EndTaskAsync_KillsProcessesThroughTheProcessService()
     {
         var processes = new FakeProcessService();
@@ -161,6 +218,35 @@ public sealed class TuningViewModelTests
 
         result.Success.Should().BeTrue();
         processes.KillCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task EndTaskAsync_Cancellation_IsTranslatedToASkippedResult()
+    {
+        var processes = new FakeProcessService { ThrowOnKill = new OperationCanceledException() };
+        var vm = Build(processService: processes);
+        var statuses = new List<(string Message, bool IsError)>();
+        vm.StatusChanged += (message, isError) => statuses.Add((message, isError));
+
+        var result = await vm.EndTaskAsync();
+
+        result.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
+        result.Message.Should().Be("Operation canceled.");
+        statuses.Should().Contain((result.Message, false));
+        processes.KillCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public void Cancel_OnAnIdleViewModel_IsSafe()
+    {
+        var vm = Build();
+
+        var act = () => vm.Cancel();
+
+        act.Should().NotThrow();
+        vm.IsBusy.Should().BeFalse();
     }
 
     private static TuningViewModel Build(
@@ -175,6 +261,10 @@ public sealed class TuningViewModelTests
     {
         public EmulatorTuningState State { get; set; } = null!;
         public Exception? ThrowOnLoad { get; set; }
+        public Exception? ThrowOnApply { get; set; }
+        public CancellationToken LastToken { get; private set; }
+        public Action? OnApplyCalled { get; set; }
+        public Action? OnLoadCalled { get; set; }
         public int LoadCalls { get; private set; }
         public EmulatorTuningSelection? LastApplied { get; private set; }
         public OperationResult ApplyOutcome { get; set; } = OperationResult.Ok("Applied 11 emulator settings. Restart GameLoop to take effect.");
@@ -182,6 +272,9 @@ public sealed class TuningViewModelTests
         public Task<EmulatorTuningState> LoadAsync(CancellationToken cancellationToken = default)
         {
             LoadCalls++;
+            LastToken = cancellationToken;
+            OnLoadCalled?.Invoke();
+            cancellationToken.ThrowIfCancellationRequested();
             if (ThrowOnLoad is not null) throw ThrowOnLoad;
             return Task.FromResult(State);
         }
@@ -189,6 +282,10 @@ public sealed class TuningViewModelTests
         public Task<OperationResult> ApplyAsync(EmulatorTuningSelection selection, CancellationToken cancellationToken = default)
         {
             LastApplied = selection;
+            LastToken = cancellationToken;
+            OnApplyCalled?.Invoke();
+            cancellationToken.ThrowIfCancellationRequested();
+            if (ThrowOnApply is not null) throw ThrowOnApply;
             return Task.FromResult(ApplyOutcome);
         }
     }
@@ -196,10 +293,12 @@ public sealed class TuningViewModelTests
     private sealed class FakeProcessService : IGameLoopProcessService
     {
         public int KillCalls { get; private set; }
+        public Exception? ThrowOnKill { get; set; }
 
         public OperationResult KillGameLoopProcesses(CancellationToken cancellationToken = default)
         {
             KillCalls++;
+            if (ThrowOnKill is not null) throw ThrowOnKill;
             return OperationResult.Ok("Ended 1 GameLoop process.");
         }
 

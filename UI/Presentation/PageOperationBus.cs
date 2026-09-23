@@ -7,14 +7,26 @@ namespace Nexora.UI.Presentation;
 /// </summary>
 public sealed class PageOperationBus : IPageOperationBus
 {
-    public bool IsBusy { get; private set; }
+    // Guards the check-then-act acquire/release pair. Callers are UI-thread
+    // affine in practice, but the bus is shared across every page, so two
+    // near-simultaneous clicks must not both observe an idle bus and acquire.
+    private readonly object _gate = new();
+
+    // Volatile so an IsBusy read outside the lock still observes a fresh write.
+    private volatile bool _isBusy;
+
+    public bool IsBusy => _isBusy;
 
     public event EventHandler? BusyChanged;
 
     public bool TryAcquire()
     {
-        if (IsBusy) return false;
-        IsBusy = true;
+        lock (_gate)
+        {
+            if (_isBusy) return false;
+            _isBusy = true;
+        }
+
         BusyChanged?.Invoke(this, EventArgs.Empty);
         return true;
     }
@@ -26,8 +38,12 @@ public sealed class PageOperationBus : IPageOperationBus
     /// </summary>
     public void Release()
     {
-        if (!IsBusy) return;
-        IsBusy = false;
+        lock (_gate)
+        {
+            if (!_isBusy) return;
+            _isBusy = false;
+        }
+
         BusyChanged?.Invoke(this, EventArgs.Empty);
     }
 }

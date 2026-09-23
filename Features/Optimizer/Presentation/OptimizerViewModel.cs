@@ -111,7 +111,7 @@ public sealed class OptimizerViewModel
         }
         catch (OperationCanceledException)
         {
-            result = OperationResult.Fail("Operation canceled.");
+            result = OperationResult.Skip("Operation canceled.");
         }
         catch (Exception ex)
         {

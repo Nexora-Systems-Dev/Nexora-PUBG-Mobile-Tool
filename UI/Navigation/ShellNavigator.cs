@@ -6,15 +6,21 @@ namespace Nexora.UI.Navigation;
 /// key, in which case everything stays hidden — exactly the pre-extraction
 /// shell behavior). Deliberately UI-framework-free: each page is a
 /// show/hide callback, so the routing logic is unit-testable without an STA
-/// thread while the shell keeps owning the actual controls.
+/// thread while the shell keeps owning the actual controls. The
+/// refresh-on-arrive map lives here too for the same reason — it is a
+/// <see cref="Func{TResult}"/> table, not a control table.
 /// </summary>
 public sealed class ShellNavigator
 {
     private readonly IReadOnlyDictionary<string, Action<bool>> _show;
+    private readonly IReadOnlyDictionary<string, Func<Task>> _refresh;
 
-    public ShellNavigator(IReadOnlyDictionary<string, Action<bool>> show)
+    public ShellNavigator(
+        IReadOnlyDictionary<string, Action<bool>> show,
+        IReadOnlyDictionary<string, Func<Task>> refresh)
     {
         _show = show;
+        _refresh = refresh;
     }
 
     /// <summary>
@@ -30,5 +36,17 @@ public sealed class ShellNavigator
         }
 
         return NavigationItem.All.FirstOrDefault(item => item.Key == page);
+    }
+
+    /// <summary>
+    /// Looks up the refresh callback a flagged page registered. Returns false
+    /// for a null key, an unknown page, or a flagged page with no entry — it
+    /// never throws, so a missing registration degrades to today's silent
+    /// skip instead of breaking navigation.
+    /// </summary>
+    public bool TryGetRefresh(string? page, out Func<Task>? refresh)
+    {
+        refresh = null;
+        return page is not null && _refresh.TryGetValue(page, out refresh);
     }
 }

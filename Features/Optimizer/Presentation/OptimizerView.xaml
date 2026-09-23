@@ -3,11 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Margin="34,14,34,10" ClipToBounds="True">
     <UserControl.Resources>
-                        <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
-                        <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
-                        <SolidColorBrush x:Key="AccentHover" Color="#38BDF8" />
                         <SolidColorBrush x:Key="MetricTileBackground" Color="#0B131B" />
-                        <SolidColorBrush x:Key="MetricTileBorder" Color="#1C2E3E" />
 
                         <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
                         <DropShadowEffect x:Key="HeroCtaGlowEffect" Color="#00D2FF" BlurRadius="18" ShadowDepth="2" Opacity="0.45" Direction="270" />
@@ -79,7 +75,7 @@
                                                 </Setter>
                                             </Trigger>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="CtaBorder" Property="Background" Value="#111B24" />
+                                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PanelBackground}" />
                                                 <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
                                                 <Setter Property="Foreground" Value="#4B5E6D" />
                                                 <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
@@ -95,7 +91,7 @@
                         <Style x:Key="OptimizerToolButtonStyle" TargetType="Button">
                             <Setter Property="Background" Value="#0B131B" />
                             <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
-                            <Setter Property="BorderBrush" Value="#1C2E3E" />
+                            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
                             <Setter Property="BorderThickness" Value="1" />
                             <Setter Property="FontFamily" Value="Bahnschrift SemiCondensed" />
                             <Setter Property="FontSize" Value="13.5" />
@@ -116,9 +112,9 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ToolBorder" Property="BorderBrush" Value="#00D2FF" />
+                                                <Setter TargetName="ToolBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
                                                 <Setter TargetName="ToolBorder" Property="Background" Value="#122332" />
-                                                <Setter Property="Foreground" Value="#00D2FF" />
+                                                <Setter Property="Foreground" Value="{StaticResource Accent}" />
                                                 <Setter TargetName="ToolBorder" Property="Effect">
                                                     <Setter.Value>
                                                         <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.35" />
@@ -162,9 +158,9 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#00D2FF" />
+                                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
                                                 <Setter TargetName="ButtonBorder" Property="Background" Value="#152737" />
-                                                <Setter Property="Foreground" Value="#00D2FF" />
+                                                <Setter Property="Foreground" Value="{StaticResource Accent}" />
                                             </Trigger>
                                             <Trigger Property="IsPressed" Value="True">
                                                 <Setter TargetName="ButtonBorder" Property="Background" Value="#0E1B26" />
@@ -246,8 +242,8 @@
                             </StackPanel>
                         </StackPanel>
                         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
-                            <Border Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="6" Padding="12,7" Margin="0,0,10,0">
-                                <TextBlock x:Name="ArchitectureText" Text="GAMELOOP 64-BIT" Foreground="#00D2FF" FontSize="11" FontWeight="Bold" />
+                            <Border Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,7" Margin="0,0,10,0">
+                                <TextBlock x:Name="ArchitectureText" Text="GAMELOOP 64-BIT" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" />
                             </Border>
                             <Button x:Name="RefreshOptimizerButton" Content="↻  REFRESH HARDWARE" Click="RefreshOptimizerButton_Click" Style="{StaticResource OptimizerOutlineButtonStyle}" FontSize="11" Padding="12,8" />
                         </StackPanel>
@@ -269,48 +265,48 @@
                                 <ColumnDefinition Width="1.15*" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="14,10">
+                            <Border Grid.Column="0" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14,10">
                                 <StackPanel VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                        <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                        <TextBlock Text="DETECTED HARDWARE" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" />
+                                        <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="DETECTED HARDWARE" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" />
                                     </StackPanel>
                                     <TextBlock x:Name="HardwareProfileText" Text="Detecting system profile..." Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" Margin="0,0,0,2" />
-                                    <TextBlock x:Name="HardwareGpuText" Text="GPU —" Foreground="#38BDF8" FontSize="11.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="HardwareGpuText" Text="GPU —" Foreground="{StaticResource AccentHover}" FontSize="11.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="2" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                            <Border Grid.Column="2" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="CPU" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                    <TextBlock Text="CPU" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
                                     <TextBlock x:Name="HardwareCpuText" Text="—" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="14" FontWeight="Bold" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="4" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                            <Border Grid.Column="4" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="MEMORY" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
-                                    <TextBlock x:Name="HardwareMemoryText" Text="—" Foreground="#00D2FF" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" />
+                                    <TextBlock Text="MEMORY" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                    <TextBlock x:Name="HardwareMemoryText" Text="—" Foreground="{StaticResource Accent}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="6" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                            <Border Grid.Column="6" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="DISPLAY" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
-                                    <TextBlock x:Name="HardwareDisplayText" Text="—" Foreground="#00D2FF" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" />
+                                    <TextBlock Text="DISPLAY" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                    <TextBlock x:Name="HardwareDisplayText" Text="—" Foreground="{StaticResource Accent}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="8" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                            <Border Grid.Column="8" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="POWER" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
-                                    <TextBlock x:Name="HardwarePowerText" Text="—" Foreground="#38BDF8" FontFamily="Bahnschrift SemiCondensed" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock Text="POWER" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                    <TextBlock x:Name="HardwarePowerText" Text="—" Foreground="{StaticResource AccentHover}" FontFamily="Bahnschrift SemiCondensed" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="10" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource MetricTileBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
+                            <Border Grid.Column="10" Background="{StaticResource MetricTileBackground}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12,10">
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="VIRTUALIZATION" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                    <TextBlock Text="VIRTUALIZATION" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
                                     <TextBlock x:Name="HardwareVirtualizationText" Text="—" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
@@ -326,7 +322,7 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
-                                <Border Background="#0C1722" BorderBrush="#00D2FF" BorderThickness="1.5" CornerRadius="10" Padding="18,16" Margin="0,0,0,14">
+                                <Border Background="#0C1722" BorderBrush="{StaticResource Accent}" BorderThickness="1.5" CornerRadius="10" Padding="18,16" Margin="0,0,0,14">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -334,16 +330,16 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                <Border Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
-                                                    <TextBlock Text="AUTOMATED TUNING" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                                                <Border Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="AUTOMATED TUNING" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                                                 </Border>
-                                                <TextBlock Text="SMART OPTIMIZE" Foreground="#00D2FF" FontFamily="Bahnschrift SemiCondensed" FontSize="19" FontWeight="Bold" VerticalAlignment="Center" />
+                                                <TextBlock Text="SMART OPTIMIZE" Foreground="{StaticResource Accent}" FontFamily="Bahnschrift SemiCondensed" FontSize="19" FontWeight="Bold" VerticalAlignment="Center" />
                                             </StackPanel>
                                             <TextBlock Text="Build a tuned GameLoop profile from your CPU, memory, GPU, display, and power state." Foreground="{StaticResource TextPrimary}" FontSize="13.5" TextWrapping="Wrap" Margin="0,4,20,0" LineHeight="19" />
-                                            <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,10,20,0" HorizontalAlignment="Left">
+                                            <Border Background="#091219" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,6" Margin="0,10,20,0" HorizontalAlignment="Left">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
-                                                    <TextBlock x:Name="SmartPlanText" Text="Recommended plan is ready." Foreground="#38BDF8" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                                    <TextBlock x:Name="SmartPlanText" Text="Recommended plan is ready." Foreground="{StaticResource AccentHover}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>
@@ -357,7 +353,7 @@
                                 </Border>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Border Width="3" Height="16" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <Border Width="3" Height="16" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,8,0" VerticalAlignment="Center" />
                                     <TextBlock Text="MAINTENANCE TOOLS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <Grid Margin="0,0,0,4">
@@ -382,11 +378,11 @@
 
                                 <Button x:Name="AllRecommendedButton" Content="↑  APPLY ALL RECOMMENDED" Click="AllRecommendedButton_Click" Style="{StaticResource OptimizerHeroButtonStyle}" HorizontalAlignment="Left" Padding="26,12" Margin="0,2,0,14" />
 
-                                <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
+                                <Border Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                            <Border Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
-                                                <TextBlock Text="SESSION" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                                            <Border Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                <TextBlock Text="SESSION" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                                             </Border>
                                             <TextBlock Text="PERFORMANCE SESSION" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" />
                                         </StackPanel>
@@ -409,14 +405,14 @@
                             <Border Grid.Column="1" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
 
                             <StackPanel Grid.Column="2">
-                                <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
+                                <Border Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                            <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                            <Border Width="3" Height="14" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                             <TextBlock Text="RECOMMENDED PLAN" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <Border Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="5" Padding="10,5" HorizontalAlignment="Left" Margin="0,0,0,12">
-                                            <TextBlock x:Name="PlanTierText" Text="—" Foreground="#00D2FF" FontSize="12" FontWeight="Bold" />
+                                        <Border Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="5" Padding="10,5" HorizontalAlignment="Left" Margin="0,0,0,12">
+                                            <TextBlock x:Name="PlanTierText" Text="—" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="Bold" />
                                         </Border>
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -436,7 +432,7 @@
                                             <TextBlock Grid.Row="2" x:Name="PlanRenderText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
 
                                             <TextBlock Grid.Row="3" Text="Frame rate mode" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                            <TextBlock Grid.Row="3" x:Name="PlanFpsText" Text="—" Foreground="#00D2FF" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="3" x:Name="PlanFpsText" Text="—" Foreground="{StaticResource Accent}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" />
 
                                             <TextBlock Grid.Row="4" Text="GPU route" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
                                             <TextBlock Grid.Row="4" x:Name="PlanGpuText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
@@ -444,19 +440,19 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14">
+                                <Border Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16,14">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                            <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                            <Border Width="3" Height="14" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                             <TextBlock Text="ACTIVITY" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                                         </StackPanel>
                                         <TextBlock Text="Actions report their result here. Restart GameLoop when a setting requests it." Foreground="{StaticResource TextSecondary}" FontSize="12.5" TextWrapping="Wrap" Margin="0,0,0,12" LineHeight="17" />
-                                        <TextBlock Text="STATUS" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
-                                        <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
-                                            <TextBlock x:Name="OptimizerStatusText" Text="Ready" Foreground="#38BDF8" FontSize="13" TextWrapping="Wrap" />
+                                        <TextBlock Text="STATUS" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                        <Border Background="#091219" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                            <TextBlock x:Name="OptimizerStatusText" Text="Ready" Foreground="{StaticResource AccentHover}" FontSize="13" TextWrapping="Wrap" />
                                         </Border>
-                                        <TextBlock Text="DETAILS" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
-                                        <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                        <TextBlock Text="DETAILS" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4" />
+                                        <Border Background="#091219" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,8">
                                             <TextBlock x:Name="OptimizerActivityText" Text="No boost run yet. Each step reports Applied, Skipped, or Failed here." Foreground="{StaticResource TextSecondary}" FontSize="12" TextWrapping="Wrap" />
                                         </Border>
                                     </StackPanel>

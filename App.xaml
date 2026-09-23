@@ -7,12 +7,16 @@
         <SolidColorBrush x:Key="PanelBackground" Color="#111B24" />
         <SolidColorBrush x:Key="PanelAltBackground" Color="#17232D" />
         <SolidColorBrush x:Key="BorderBrush" Color="#2D3F4D" />
+        <SolidColorBrush x:Key="CardBorder" Color="#1C2E3E" />
+        <SolidColorBrush x:Key="CardSurface" Color="#0A121A" />
+        <SolidColorBrush x:Key="DividerStroke" Color="#1C2E3E" />
         <SolidColorBrush x:Key="BrightOutlineBrush" Color="#4B5D69" />
         <SolidColorBrush x:Key="TextPrimary" Color="#F2EEE7" />
         <SolidColorBrush x:Key="TextSecondary" Color="#9DA8B2" />
         <SolidColorBrush x:Key="TextMuted" Color="#677580" />
         <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
         <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
+        <SolidColorBrush x:Key="AccentHover" Color="#38BDF8" />
         <SolidColorBrush x:Key="Success" Color="#10B981" />
         <SolidColorBrush x:Key="Warning" Color="#FBBF24" />
         <SolidColorBrush x:Key="Danger" Color="#EF4444" />
@@ -269,7 +273,7 @@
         <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource OutlineButtonStyle}">
             <Setter Property="Background" Value="{StaticResource Accent}" />
             <Setter Property="Foreground" Value="#0B1118" />
-            <Setter Property="BorderBrush" Value="#38BDF8" />
+            <Setter Property="BorderBrush" Value="{StaticResource AccentHover}" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Padding" Value="26,14" />
             <Setter Property="Template">
@@ -280,7 +284,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PrimaryBorder" Property="Background" Value="#38BDF8" />
+                                <Setter TargetName="PrimaryBorder" Property="Background" Value="{StaticResource AccentHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="PrimaryBorder" Property="Background" Value="#0284C7" />

@@ -153,6 +153,60 @@ public sealed class NetworkViewModelTests
     }
 
     [Fact]
+    public async Task ApplyDnsAsync_Cancellation_IsTranslatedToASkippedResult()
+    {
+        var network = new FakeNetworkTools { ThrowOnChange = new OperationCanceledException() };
+        var vm = Build(networkTools: network);
+        var statuses = new List<(string, bool)>();
+        vm.StatusChanged += (message, isError) => statuses.Add((message, isError));
+
+        var result = await vm.ApplyDnsAsync(DnsCatalog.Labels[0]);
+
+        result.Should().NotBeNull();
+        result!.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
+        result.Message.Should().Be("Operation canceled.");
+        statuses.Should().Contain((result.Message, false));
+        network.ChangeCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ResetIpadAsync_Cancellation_IsTranslatedToASkippedResult()
+    {
+        var ipad = new FakeIpadLayout { ThrowOnReset = new OperationCanceledException() };
+        var vm = Build(ipadLayout: ipad);
+        var statuses = new List<(string, bool)>();
+        vm.StatusChanged += (message, isError) => statuses.Add((message, isError));
+
+        var result = await vm.ResetIpadAsync();
+
+        result.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
+        result.Message.Should().Be("Operation canceled.");
+        statuses.Should().Contain((result.Message, false));
+        ipad.ResetCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ApplyIpadAsync_Cancellation_IsTranslatedToASkippedResult()
+    {
+        var ipad = new FakeIpadLayout { ThrowOnApply = new OperationCanceledException() };
+        var vm = Build(ipadLayout: ipad);
+        var statuses = new List<(string, bool)>();
+        vm.StatusChanged += (message, isError) => statuses.Add((message, isError));
+
+        var result = await vm.ApplyIpadAsync(IpadPresetCatalog.Presets[0]);
+
+        result.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
+        result.Message.Should().Be("Operation canceled.");
+        statuses.Should().Contain((result.Message, false));
+    }
+
+    [Fact]
     public async Task MutatingOperations_WhileBusy_AreRefusedWithoutTouchingServices()
     {
         var network = new FakeNetworkTools();
@@ -188,11 +242,13 @@ public sealed class NetworkViewModelTests
         public int PingCalls { get; private set; }
         public int ChangeCalls { get; private set; }
         public string? LastChanged { get; private set; }
+        public Exception? ThrowOnChange { get; set; }
 
         public OperationResult ChangeDns(string primary, string secondary)
         {
             ChangeCalls++;
             LastChanged = primary;
+            if (ThrowOnChange is not null) throw ThrowOnChange;
             return OperationResult.Ok($"Applied: {primary} / {secondary}");
         }
 
@@ -209,17 +265,21 @@ public sealed class NetworkViewModelTests
         public int ResetCalls { get; private set; }
         public (int Width, int Height)? LastApplied { get; private set; }
         public OperationResult ApplyOutcome { get; set; } = OperationResult.Ok("Applied.");
+        public Exception? ThrowOnApply { get; set; }
+        public Exception? ThrowOnReset { get; set; }
 
         public OperationResult SetIpadResolution(int width, int height)
         {
             ApplyCalls++;
             LastApplied = (width, height);
+            if (ThrowOnApply is not null) throw ThrowOnApply;
             return ApplyOutcome;
         }
 
         public OperationResult ResetIpadResolution()
         {
             ResetCalls++;
+            if (ThrowOnReset is not null) throw ThrowOnReset;
             return OperationResult.Ok("Restored.");
         }
     }

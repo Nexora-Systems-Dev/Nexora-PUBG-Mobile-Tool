@@ -7,10 +7,12 @@ namespace Nexora.UI.Presentation;
 /// operation another page already started.
 /// </summary>
 /// <remarks>
-/// UI-thread-affine: every caller is an async method resuming on the UI thread,
-/// so there is no locking. <see cref="TryAcquire"/> is not re-entrant — a busy
-/// bus refuses, and the caller renders that refusal instead of queueing — and
-/// every acquire is paired with a <see cref="Release"/> in a finally block.
+/// Callers are async methods resuming on the UI thread, but the bus is shared
+/// across every page, so the implementation lock-guards its check-then-act
+/// acquire/release pair: concurrent callers can never both observe an idle bus.
+/// <see cref="TryAcquire"/> is not re-entrant — a busy bus refuses, and the
+/// caller renders that refusal instead of queueing — and every acquire is
+/// paired with a <see cref="Release"/> in a finally block.
 /// </remarks>
 public interface IPageOperationBus
 {

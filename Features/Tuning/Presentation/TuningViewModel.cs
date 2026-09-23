@@ -23,6 +23,7 @@ public sealed class TuningViewModel : INotifyPropertyChanged
     private readonly IEmulatorSettingsService _tuning;
     private readonly IGameLoopProcessService _processService;
     private readonly IPageOperationBus _operationBus;
+    private CancellationTokenSource? _toolCancellation;
 
     public TuningViewModel(
         IEmulatorSettingsService tuning,
@@ -94,15 +95,19 @@ public sealed class TuningViewModel : INotifyPropertyChanged
         LoadingChanged?.Invoke(true);
         StatusChanged?.Invoke("Loading emulator settings...", false);
 
+        _toolCancellation = new CancellationTokenSource();
         EmulatorTuningState state;
         try
         {
             // The hardware scan runs off-thread, so this token genuinely
             // pre-empts a stuck scan and hands control back to the user at
             // 15 s worst case, instead of freezing the UI for the full CIM
-            // timeout.
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            state = await _tuning.LoadAsync(cts.Token);
+            // timeout. The bound is linked onto the shared tool source, so a
+            // window-close Cancel() pre-empts the scan immediately rather than
+            // waiting for the timeout to expire.
+            using var bound = CancellationTokenSource.CreateLinkedTokenSource(_toolCancellation.Token);
+            bound.CancelAfter(TimeSpan.FromSeconds(15));
+            state = await _tuning.LoadAsync(bound.Token);
         }
         catch (OperationCanceledException)
         {
@@ -118,6 +123,7 @@ public sealed class TuningViewModel : INotifyPropertyChanged
         {
             LoadingChanged?.Invoke(false);
             _operationBus.Release();
+            CancelAndDisposeTool();
         }
 
         CurrentState = state;
@@ -143,16 +149,17 @@ public sealed class TuningViewModel : INotifyPropertyChanged
 
         BusyVisualChanged?.Invoke(true);
         StatusChanged?.Invoke("Applying emulator settings...", false);
+        _toolCancellation = new CancellationTokenSource();
         try
         {
-            var result = await _tuning.ApplyAsync(selection, CancellationToken.None);
+            var result = await _tuning.ApplyAsync(selection, _toolCancellation.Token);
             StatusChanged?.Invoke(result.Message, !result.Success);
             return result;
         }
         catch (OperationCanceledException)
         {
-            var canceled = OperationResult.Fail("Emulator tuning was canceled.");
-            StatusChanged?.Invoke(canceled.Message, true);
+            var canceled = OperationResult.Skip("Emulator tuning was canceled.");
+            StatusChanged?.Invoke(canceled.Message, false);
             return canceled;
         }
         catch (Exception ex)
@@ -165,6 +172,7 @@ public sealed class TuningViewModel : INotifyPropertyChanged
         {
             BusyVisualChanged?.Invoke(false);
             _operationBus.Release();
+            CancelAndDisposeTool();
         }
     }
 
@@ -178,16 +186,17 @@ public sealed class TuningViewModel : INotifyPropertyChanged
 
         BusyVisualChanged?.Invoke(true);
         StatusChanged?.Invoke("Ending GameLoop tasks...", false);
+        _toolCancellation = new CancellationTokenSource();
         try
         {
-            var result = await Task.Run(() => _processService.KillGameLoopProcesses(CancellationToken.None));
+            var result = await Task.Run(() => _processService.KillGameLoopProcesses(_toolCancellation.Token));
             StatusChanged?.Invoke(result.Message, !result.Success);
             return result;
         }
         catch (OperationCanceledException)
         {
-            var canceled = OperationResult.Fail("Operation canceled.");
-            StatusChanged?.Invoke(canceled.Message, true);
+            var canceled = OperationResult.Skip("Operation canceled.");
+            StatusChanged?.Invoke(canceled.Message, false);
             return canceled;
         }
         catch (Exception ex)
@@ -200,6 +209,29 @@ public sealed class TuningViewModel : INotifyPropertyChanged
         {
             BusyVisualChanged?.Invoke(false);
             _operationBus.Release();
+            CancelAndDisposeTool();
+        }
+    }
+
+    /// <summary>
+    /// Cancels whatever tuning operation is in flight. Called at window close
+    /// so an outstanding refresh, apply or end-task can never outlive the
+    /// shell: a scan in flight at close is preempted now, not at its timeout.
+    /// </summary>
+    public void Cancel() => CancelAndDisposeTool();
+
+    private void CancelAndDisposeTool()
+    {
+        var cancellation = _toolCancellation;
+        _toolCancellation = null;
+        if (cancellation is null) return;
+        try
+        {
+            cancellation.Cancel();
+        }
+        finally
+        {
+            cancellation.Dispose();
         }
     }
 

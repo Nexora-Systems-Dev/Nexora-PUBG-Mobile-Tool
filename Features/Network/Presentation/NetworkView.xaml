@@ -3,10 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Margin="34,14,34,10" ClipToBounds="True">
     <UserControl.Resources>
-        <SolidColorBrush x:Key="Accent" Color="#00D2FF" />
-        <SolidColorBrush x:Key="AccentSoft" Color="#102534" />
-        <SolidColorBrush x:Key="AccentHover" Color="#38BDF8" />
-
         <DropShadowEffect x:Key="AccentGlowEffect" Color="#00D2FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55" />
         <DropShadowEffect x:Key="HeroCtaGlowEffect" Color="#00D2FF" BlurRadius="18" ShadowDepth="2" Opacity="0.45" Direction="270" />
 
@@ -82,7 +78,7 @@
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="CtaBorder" Property="Background" Value="#111B24" />
+                                <Setter TargetName="CtaBorder" Property="Background" Value="{StaticResource PanelBackground}" />
                                 <Setter TargetName="CtaBorder" Property="BorderBrush" Value="#1E2B38" />
                                 <Setter Property="Foreground" Value="#4B5E6D" />
                                 <Setter TargetName="CtaBorder" Property="Effect" Value="{x:Null}" />
@@ -118,9 +114,9 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#00D2FF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{StaticResource Accent}" />
                                 <Setter TargetName="ButtonBorder" Property="Background" Value="#152737" />
-                                <Setter Property="Foreground" Value="#00D2FF" />
+                                <Setter Property="Foreground" Value="{StaticResource Accent}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="ButtonBorder" Property="Background" Value="#0E1B26" />
@@ -137,7 +133,7 @@
 
         <Style x:Key="NetworkComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource InputComboBoxStyle}">
             <Setter Property="Background" Value="#0B131B" />
-            <Setter Property="BorderBrush" Value="#1C2E3E" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
             <Setter Property="Height" Value="42" />
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
@@ -160,8 +156,8 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter TargetName="ItemBorder" Property="Background" Value="#102534" />
-                                            <Setter Property="Foreground" Value="#00D2FF" />
+                                            <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentSoft}" />
+                                            <Setter Property="Foreground" Value="{StaticResource Accent}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -192,10 +188,10 @@
                     <TextBlock Text="Tune your connection with esports DNS and calibrate iPad aspect ratio canvas." Foreground="{StaticResource TextSecondary}" FontSize="13" Margin="0,3,0,0" />
                 </StackPanel>
             </StackPanel>
-            <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0C1D2A" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="6" Padding="12,7">
+            <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,7">
                 <StackPanel Orientation="Horizontal">
-                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
-                    <TextBlock Text="LOW LATENCY ROUTING" Foreground="#00D2FF" FontSize="11" FontWeight="Bold" />
+                    <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center" />
+                    <TextBlock Text="LOW LATENCY ROUTING" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" />
                 </StackPanel>
             </Border>
         </Grid>
@@ -208,7 +204,7 @@
                     <ColumnDefinition Width="1.08*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
+                <Border Grid.Column="0" Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -222,17 +218,17 @@
 
                         <Grid Grid.Row="0" Margin="0,0,0,4">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <Border Width="3" Height="15" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                 <TextBlock Text="DNS CHANGER" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
-                            <Border HorizontalAlignment="Right" Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                <TextBlock Text="ADAPTER ROUTING" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                            <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                <TextBlock Text="ADAPTER ROUTING" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                             </Border>
                         </Grid>
 
                         <TextBlock Grid.Row="1" Text="Select an esports provider, test real-time ping latency, and apply direct routing to active network adapters." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,14" LineHeight="18" />
 
-                        <TextBlock Grid.Row="2" Text="DNS PROVIDER" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
+                        <TextBlock Grid.Row="2" Text="DNS PROVIDER" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
                         <ComboBox Grid.Row="3" x:Name="DnsComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="DnsComboBox_SelectionChanged">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -241,22 +237,22 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
 
-                        <Border Grid.Row="4" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
+                        <Border Grid.Row="4" Background="#0B141D" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="CONNECTION TELEMETRY" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                    <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="CONNECTION TELEMETRY" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
                                 </StackPanel>
-                                <TextBlock x:Name="DnsStatusText" Text="Choose a provider to test response time." Foreground="#38BDF8" FontFamily="Bahnschrift SemiCondensed" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                <TextBlock x:Name="DnsStatusText" Text="Choose a provider to test response time." Foreground="{StaticResource AccentHover}" FontFamily="Bahnschrift SemiCondensed" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,2,0,0" />
                             </StackPanel>
                         </Border>
 
                         <WrapPanel Grid.Row="5" Margin="0,0,0,16">
                             <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
-                                <TextBlock Text="⚡ Low Jitter Direct Route" Foreground="#8A9CAE" FontSize="11" />
+                                <TextBlock Text="⚡ Low Jitter Direct Route" Foreground="{StaticResource TextSecondary}" FontSize="11" />
                             </Border>
                             <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,0,4">
-                                <TextBlock Text="🛡️ Anti-DDoS DNS Protection" Foreground="#8A9CAE" FontSize="11" />
+                                <TextBlock Text="🛡️ Anti-DDoS DNS Protection" Foreground="{StaticResource TextSecondary}" FontSize="11" />
                             </Border>
                         </WrapPanel>
 
@@ -266,7 +262,7 @@
 
                 <Border Grid.Column="1" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
 
-                <Border Grid.Column="2" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
+                <Border Grid.Column="2" Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,18" VerticalAlignment="Top">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -280,17 +276,17 @@
 
                         <Grid Grid.Row="0" Margin="0,0,0,4">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <Border Width="3" Height="15" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                 <TextBlock Text="IPAD VIEW" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
-                            <Border HorizontalAlignment="Right" Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
-                                <TextBlock Text="4:3 ASPECT RATIO" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                            <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                <TextBlock Text="4:3 ASPECT RATIO" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                             </Border>
                         </Grid>
 
                         <TextBlock Grid.Row="1" Text="Apply a tested iPad-style aspect ratio and matching GameLoop key layout. Close GameLoop first, then restart it after applying." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,14" LineHeight="18" />
 
-                        <TextBlock Grid.Row="2" Text="DISPLAY PRESET" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
+                        <TextBlock Grid.Row="2" Text="DISPLAY PRESET" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
                         <ComboBox Grid.Row="3" x:Name="IpadComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="IpadComboBox_SelectionChanged" ToolTip="Select an iPad display profile">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -299,11 +295,11 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
 
-                        <Border Grid.Row="4" Background="#0B141D" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
+                        <Border Grid.Row="4" Background="#0B141D" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,14,0,14">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <Ellipse Width="6" Height="6" Fill="#00D2FF" Margin="0,0,7,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="PRESET PROFILE DETAILS" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                    <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="PRESET PROFILE DETAILS" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <TextBlock x:Name="IpadPresetDetailsText" Text="Choose a tested iPad display profile." Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="14" FontWeight="Bold" TextWrapping="Wrap" Margin="0,2,0,2" />
                                 <TextBlock x:Name="IpadApplyStatusText" Text="No profile selected." Foreground="{StaticResource TextMuted}" FontSize="12" TextWrapping="Wrap" />
@@ -312,10 +308,10 @@
 
                         <WrapPanel Grid.Row="5" Margin="0,0,0,16">
                             <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,8,4">
-                                <TextBlock Text="📐 Expanded Camera FOV" Foreground="#8A9CAE" FontSize="11" />
+                                <TextBlock Text="📐 Expanded Camera FOV" Foreground="{StaticResource TextSecondary}" FontSize="11" />
                             </Border>
                             <Border Background="#0D1722" BorderBrush="#1B2B38" BorderThickness="1" CornerRadius="4" Padding="8,4" Margin="0,0,0,4">
-                                <TextBlock Text="🎯 Keymap Layout Aligned" Foreground="#8A9CAE" FontSize="11" />
+                                <TextBlock Text="🎯 Keymap Layout Aligned" Foreground="{StaticResource TextSecondary}" FontSize="11" />
                             </Border>
                         </WrapPanel>
 

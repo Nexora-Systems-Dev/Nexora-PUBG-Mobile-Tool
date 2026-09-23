@@ -259,7 +259,7 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
         }
         catch (OperationCanceledException)
         {
-            return OperationResult.Fail("Graphics application was canceled.");
+            return OperationResult.Skip("Graphics application was canceled.");
         }
         catch (Exception ex)
         {

@@ -27,10 +27,10 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="3" Height="15" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                <Border Width="3" Height="15" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                 <TextBlock Text="EMULATOR TUNING" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
-                <Border Background="#102534" BorderBrush="#00D2FF" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="MANUAL REGISTRY" Foreground="#00D2FF" FontSize="9" FontWeight="Bold" />
+                <Border Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="MANUAL REGISTRY" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                 </Border>
             </StackPanel>
             <TextBlock Grid.Row="1" Text="Set processor cores, memory, and emulator internals. Values are forced into the GameLoop registry and take effect after an emulator restart." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,10" LineHeight="18" />
@@ -49,7 +49,7 @@
                      VerticalAlignment="Bottom" Margin="20,0,20,-1"
                      IsIndeterminate="True" IsHitTestVisible="False"
                      Visibility="Collapsed" BorderThickness="0"
-                     Foreground="#00D2FF" Background="Transparent" />
+                     Foreground="{StaticResource Accent}" Background="Transparent" />
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="18,0,20,2">
             <Grid>
@@ -64,10 +64,10 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Column="0" Grid.Row="0">
-                    <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" Margin="0,0,0,16">
+                    <Border Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,18" Margin="0,0,0,16">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <Border Width="3" Height="14" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                 <TextBlock Text="PERFORMANCE" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
                             <Grid Margin="0,8,0,4">
@@ -83,10 +83,10 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18">
+                    <Border Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,18">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <Border Width="3" Height="14" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                 <TextBlock Text="SYSTEM" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
                             <CheckBox x:Name="TuningAdbCheck" Content="ADB debugging" Foreground="{StaticResource TextPrimary}" FontSize="13.5" IsChecked="True" Margin="0,10,0,0" />
@@ -97,13 +97,13 @@
                 <Border Grid.Column="1" Grid.Row="0" Width="1" Background="#1B2B38" HorizontalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Grid.Row="0">
-                    <Border Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="10" Padding="20,18" Margin="0,0,0,16">
+                    <Border Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="20,18" Margin="0,0,0,16">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                                <Border Width="3" Height="14" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                                 <TextBlock Text="GRAPHICS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
-                            <TextBlock Text="SCREEN DPI" Foreground="#6C7F93" FontSize="10" FontWeight="Bold" Margin="0,10,0,6" />
+                            <TextBlock Text="SCREEN DPI" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,10,0,6" />
                             <ComboBox x:Name="TuningDpiComboBox" Style="{StaticResource InputComboBoxStyle}" Margin="0,0,0,6">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
@@ -121,14 +121,14 @@
                     </Border>
                 </StackPanel>
 
-                <Border Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Background="#0A121A" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,14">
+                <Border Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Background="{StaticResource CardSurface}" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,0,0,14">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Border Width="3" Height="14" Background="#00D2FF" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
+                            <Border Width="3" Height="14" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
                             <TextBlock Text="APPLY" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                         </StackPanel>
-                        <Border Background="#091219" BorderBrush="#1C2E3E" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
-                            <TextBlock x:Name="TuningStatusText" Text="Open this page to load the emulator's current settings." Foreground="#38BDF8" FontSize="13" TextWrapping="Wrap" />
+                        <Border Background="#091219" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                            <TextBlock x:Name="TuningStatusText" Text="Open this page to load the emulator's current settings." Foreground="{StaticResource AccentHover}" FontSize="13" TextWrapping="Wrap" />
                         </Border>
                         <TextBlock Text="To apply settings, click the button." Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,10" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

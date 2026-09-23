@@ -75,7 +75,7 @@ public sealed class ShortcutsViewModel
         }
         catch (OperationCanceledException)
         {
-            result = OperationResult.Fail("Operation canceled.");
+            result = OperationResult.Skip("Operation canceled.");
         }
         catch (Exception ex)
         {

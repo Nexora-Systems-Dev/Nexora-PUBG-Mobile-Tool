@@ -86,17 +86,31 @@ public partial class MainWindow : Window
 
         // The About page owns its own content, including the version pill —
         // the shell keeps no About state.
-        _navigator = new ShellNavigator(new Dictionary<string, Action<bool>>
-        {
-            [NavigationItem.Graphics.Key] = show => GraphicsView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-            [NavigationItem.Optimizer.Key] = show => OptimizerView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-            [NavigationItem.Tuning.Key] = show => TuningView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-            [NavigationItem.Network.Key] = show => NetworkView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-            [NavigationItem.Shortcuts.Key] = show => ShortcutsView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-            [NavigationItem.About.Key] = show => AboutView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
-        });
+        _navigator = new ShellNavigator(
+            new Dictionary<string, Action<bool>>
+            {
+                [NavigationItem.Graphics.Key] = show => GraphicsView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
+                [NavigationItem.Optimizer.Key] = show => OptimizerView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
+                [NavigationItem.Tuning.Key] = show => TuningView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
+                [NavigationItem.Network.Key] = show => NetworkView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
+                [NavigationItem.Shortcuts.Key] = show => ShortcutsView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
+                [NavigationItem.About.Key] = show => AboutView.Visibility = show ? Visibility.Visible : Visibility.Collapsed,
+            },
+            BuildRefreshMap(() => TuningView.RefreshAsync()));
         SetStatus("Ready to connect to GameLoop.");
     }
+
+    /// <summary>
+    /// The single home of the refresh-on-arrive registrations: one entry per
+    /// page flagged <see cref="NavigationItem.RefreshOnNavigate"/>. The delegate
+    /// arrives as a parameter rather than being captured from a page control, so
+    /// the wiring is testable without a Window instance —
+    /// <see cref="Nexora.Tests.UI.ShellNavigatorTests"/> covers it off the STA
+    /// thread, and a flagged page with no entry here fails that test in CI
+    /// instead of silently skipping its refresh.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, Func<Task>> BuildRefreshMap(Func<Task> tuningRefresh) =>
+        new Dictionary<string, Func<Task>> { [NavigationItem.Tuning.Key] = tuningRefresh };
 
     /// <summary>
     /// The sidebar's connect button. It drives the Graphics page's connection
@@ -152,6 +166,7 @@ public partial class MainWindow : Window
         _closeRequested = true;
 
         _graphicsViewModel.Cancel();
+        TuningView.ViewModel.Cancel();
         ShortcutsView.ViewModel.Cancel();
         _chromeHook?.Dispose();
         _chromeHook = null;
@@ -199,12 +214,21 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Pure navigation command: the router owns the page-visibility map, so
-    /// the shell never names a page twice. Only Tuning refreshes on arrival.
+    /// the shell never names a page twice. A page opts into refresh-on-arrival
+    /// by setting <see cref="NavigationItem.RefreshOnNavigate"/> and adding an
+    /// entry in <see cref="BuildRefreshMap(Func{Task})"/>; a flagged page with
+    /// no entry is a no-op rather than an error, so adding a refresh target is
+    /// one map entry plus one flag — no shell logic to edit.
     /// </summary>
     private async void NavigationButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not RadioButton button || button.Tag is not string page) return;
-        if (_navigator.Navigate(page)?.RefreshOnNavigate is true) await TuningView.RefreshAsync();
+        var item = _navigator.Navigate(page);
+        if (item is not { RefreshOnNavigate: true }) return;
+        if (_navigator.TryGetRefresh(item.Key, out var refresh) && refresh is not null)
+        {
+            await refresh();
+        }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

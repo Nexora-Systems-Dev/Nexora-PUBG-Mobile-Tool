@@ -122,13 +122,15 @@ public sealed class OptimizerViewModelTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_Cancellation_IsTranslatedToACanceledResult()
+    public async Task ExecuteAsync_Cancellation_IsTranslatedToASkippedResult()
     {
         var vm = Build();
 
         var result = await vm.ExecuteAsync(_ => Task.FromException<OperationResult>(new OperationCanceledException()));
 
-        result.Success.Should().BeFalse();
+        result.Success.Should().BeTrue();
+        result.IsSkipped.Should().BeTrue();
+        result.Outcome.Should().Be(StepOutcome.Skipped);
         result.Message.Should().Be("Operation canceled.");
         vm.IsBusy.Should().BeFalse();
     }

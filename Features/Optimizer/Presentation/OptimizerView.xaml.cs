@@ -141,7 +141,7 @@ public partial class OptimizerView : UserControl
     }
 
     private async void ForceCloseButton_Click(object sender, RoutedEventArgs e) =>
-        await RunOptimizerToolAsync(ForceCloseButton, ct => Task.Run(() => _viewModel.ProcessService.KillGameLoopProcesses(), ct), refreshAfter: false);
+        await RunOptimizerToolAsync(ForceCloseButton, ct => Task.Run(() => _viewModel.ProcessService.KillGameLoopProcesses(ct), ct), refreshAfter: false);
 
     private async void PerformanceSessionButton_Click(object sender, RoutedEventArgs e) =>
         await RunOptimizerToolAsync(PerformanceSessionButton, ct => Task.Run(() => _viewModel.Engine.ApplyPerformanceSession(), ct), refreshAfter: false);
