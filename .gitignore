@@ -55,3 +55,7 @@ graphify-out/
 ECC/
 .axme-code/
 .codedev-mcp/
+
+# Local-only working files (owner decision: never committed, never pushed)
+/AGENTS.md
+/CLAUDE.md
