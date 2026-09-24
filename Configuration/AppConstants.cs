@@ -14,7 +14,7 @@ public static class AppConstants
     /// <summary>
     /// Current release tag matching the project version in Nexora.csproj.
     /// </summary>
-    public const string CurrentVersion = "v1.1.0";
+    public const string CurrentVersion = "v1.3.0";
 
     public static class Tools
     {
