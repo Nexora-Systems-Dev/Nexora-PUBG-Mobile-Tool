@@ -100,7 +100,7 @@ public static class UpdateArchiveValidator
         {
             if (MatchesExpectedChecksum(executablePath, expectedSha256)) return true;
 
-            errorMessage = "The update executable hash does not match the expected checksum.";
+            errorMessage = "The update executable is not signed by the trusted publisher and its hash does not match the expected checksum.";
             return false;
         }
 
@@ -156,9 +156,12 @@ public static class UpdateArchiveValidator
     /// <summary>
     /// Verifies that the file carries a valid Authenticode signature from the expected publisher.
     /// </summary>
-    internal static bool IsAuthenticodeSigned(string filePath, string? expectedPublisher = null, UpdateOptions? updates = null)
+    internal static bool IsAuthenticodeSigned(string filePath, UpdateOptions? updates = null)
     {
-        expectedPublisher ??= (updates ?? new UpdateOptions()).ExpectedPublisher;
+        // The expected publisher always resolves through options. Taking it as
+        // an argument let a caller pass an empty string, which IsExpectedPublisher
+        // treats as "any publisher is fine" — a silent widening of this check.
+        var expectedPublisher = (updates ?? new UpdateOptions()).ExpectedPublisher;
         try
         {
 #pragma warning disable CS0618

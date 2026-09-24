@@ -91,7 +91,11 @@ public sealed class UpdateService : IUpdateService
     /// <returns>A failure result when the request is invalid; null when it can proceed.</returns>
     private static OperationResult? ValidateUpdateRequest(UpdateInfo update)
     {
-        if (!update.Available || string.IsNullOrWhiteSpace(update.DownloadUrl) || string.IsNullOrWhiteSpace(update.AssetName)) return OperationResult.Fail("No downloadable update was found.");
+        if (!update.Available) return OperationResult.Fail("No downloadable update was found.");
+        if (string.IsNullOrWhiteSpace(update.DownloadUrl) || string.IsNullOrWhiteSpace(update.AssetName))
+        {
+            return OperationResult.Fail("The latest release published no downloadable update archive.");
+        }
         if (!IsTrustedDownloadUrl(update.DownloadUrl)) return OperationResult.Fail("The update download address was rejected.");
         return null;
     }
