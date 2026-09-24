@@ -123,7 +123,39 @@ public sealed class UpdateService : IUpdateService
             return (OperationResult.Fail(integrityError), null);
         }
 
+        PruneExtractionToAllowlist(extractionRoot, executablePath);
         return (null, executablePath);
+    }
+
+    /// <summary>
+    /// Deletes every extracted entry except the verified executable and the
+    /// release notes the packaging script ships beside it
+    /// (<c>RELEASE-README.txt</c>), so nothing else can ride the handoff into
+    /// the install directory. Leftovers stay in staging and die with it.
+    /// </summary>
+    private static void PruneExtractionToAllowlist(string extractionRoot, string executablePath)
+    {
+        var keepExecutable = Path.GetFullPath(executablePath);
+        var keepReadme = Path.GetFullPath(Path.Combine(extractionRoot, "RELEASE-README.txt"));
+        foreach (var file in Directory.EnumerateFiles(extractionRoot, "*", SearchOption.AllDirectories).ToList())
+        {
+            var fullPath = Path.GetFullPath(file);
+            if (fullPath.Equals(keepExecutable, StringComparison.OrdinalIgnoreCase) ||
+                fullPath.Equals(keepReadme, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            File.Delete(fullPath);
+        }
+
+        foreach (var directory in Directory.EnumerateDirectories(extractionRoot, "*", SearchOption.AllDirectories).ToList().OrderByDescending(static path => path.Length))
+        {
+            if (!Directory.EnumerateFileSystemEntries(directory).Any())
+            {
+                Directory.Delete(directory);
+            }
+        }
     }
 
     /// <summary>

@@ -67,29 +67,16 @@ if (Test-Path -LiteralPath $targetExe -PathType Leaf) {
     }
 }
 
-# 4. Copy payload files and replace target executable with retry
+# 4. Copy allowlisted payload files and replace target executable with retry.
+# Only the verified executable (copied below) and the release notes shipped
+# beside it by the packaging script may enter the install directory;
+# anything else in staging dies with the staging tree in step 6.
 $copySuccess = $false
 for ($attempt = 1; $attempt -le 5; $attempt++) {
     try {
-        if (Test-Path -LiteralPath $extractionRoot -PathType Container) {
-            Get-ChildItem -LiteralPath $extractionRoot -Recurse | ForEach-Object {
-                $item = $_
-                if ($item.FullName -ne $sourceExe) {
-                    $relPath = $item.FullName.Substring($extractionRoot.Length).TrimStart('\', '/')
-                    $destPath = Join-Path $targetDir $relPath
-                    if ($item.PSIsContainer) {
-                        if (-not (Test-Path -LiteralPath $destPath)) {
-                            [System.IO.Directory]::CreateDirectory($destPath) | Out-Null
-                        }
-                    } else {
-                        $destParent = Split-Path -Parent $destPath
-                        if (-not (Test-Path -LiteralPath $destParent)) {
-                            [System.IO.Directory]::CreateDirectory($destParent) | Out-Null
-                        }
-                        Copy-Item -LiteralPath $item.FullName -Destination $destPath -Force -ErrorAction Stop
-                    }
-                }
-            }
+        $readmeSource = Join-Path $extractionRoot "RELEASE-README.txt"
+        if (Test-Path -LiteralPath $readmeSource -PathType Leaf) {
+            Copy-Item -LiteralPath $readmeSource -Destination $targetDir -Force -ErrorAction Stop
         }
 
         Copy-Item -LiteralPath $sourceExe -Destination $targetExe -Force -ErrorAction Stop
