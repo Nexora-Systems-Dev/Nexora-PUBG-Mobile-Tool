@@ -83,17 +83,17 @@ public sealed class EmulatorOptions
 
         public string WorkFolderName { get; init; } = AppConstants.ApplicationName;
 
-        public string PreviousSavFileName { get; init; } = "old.mkvip";
+        public string PreviousSavFileName { get; init; } = "nexora-previous.mkvip";
 
-        public string PendingSavFileName { get; init; } = "new.mkvip";
+        public string PendingSavFileName { get; init; } = "nexora-pending.mkvip";
 
-        public string ShadowSettingsFileName { get; init; } = "user.mkvip";
+        public string ShadowSettingsFileName { get; init; } = "nexora-shadow.mkvip";
 
-        public string ConnectionProbeFileName { get; init; } = "testADB.mkvip";
+        public string ConnectionProbeFileName { get; init; } = "nexora-probe.mkvip";
 
-        public string KoreanResolutionFileName { get; init; } = "mk_kr.ini";
+        public string KoreanResolutionFileName { get; init; } = "nexora-kr.ini";
 
-        public string NvidiaProfileFileName { get; init; } = "mk.nip";
+        public string NvidiaProfileFileName { get; init; } = "nexora.nip";
 
         public string NvidiaInspectorFileName { get; init; } = "nvidiaProfileInspector.exe";
     }
