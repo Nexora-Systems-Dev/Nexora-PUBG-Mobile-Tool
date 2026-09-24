@@ -14,10 +14,12 @@ publish/
 publish-*/
 artifacts/
 
-# Staged release binaries (notes and checksums stay tracked)
+# Staged release output (regenerated per release; checksums ship in the GitHub release body)
 Release/*.exe
 Release/*.zip
 Release/*.tar.gz
+Release/*.txt
+Release/*.md
 
 # Test and coverage output
 TestResults/

@@ -62,7 +62,7 @@ This produces `Nexora-v1.2.0-win-x64.exe`, `Nexora-v1.2.0-win-x64.zip`, and a `S
 - `MainWindow.xaml(.cs)` is a 250-line shell: navigation, lifecycle, chrome. Each page is a `UserControl` + ViewModel under `Features/<Feature>/Presentation/`.
 - One folder per feature (`Graphics`, `Tuning`, `Network`, `Optimizer`, `Shortcuts`, `About`, `GameLoop`, `Performance`, `Updates`, `Security`), each with `Application` / `Domain` / `Infrastructure` layers.
 - Composition lives in `Bootstrap/`; GameLoop paths are resolved from registry, running processes, and standard locations — never hardcoded, never assumed to be on a particular drive.
-- Full structure, conventions, and the refactor record: [`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`docs/plans/PROJECT-LAYOUT.md`](./docs/plans/PROJECT-LAYOUT.md) · [`CHANGELOG.md`](./CHANGELOG.md)
+- Full structure, conventions, and the refactor record: [`ARCHITECTURE.md`](./ARCHITECTURE.md) · [`docs/archive/PROJECT-LAYOUT.md`](./docs/archive/PROJECT-LAYOUT.md) · [`CHANGELOG.md`](./CHANGELOG.md)
 
 ## Operational notes
 

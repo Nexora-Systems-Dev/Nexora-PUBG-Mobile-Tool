@@ -6,7 +6,7 @@ Version tags match `AppConstants.CurrentVersion` and the GitHub release tags (`v
 ## [Unreleased] — Feature-first reorganization (no behavior change)
 
 ### Changed
-- Pure structural refactor per `docs/plans/PROJECT-LAYOUT.md` / `docs/plans/execution-plan.md`
+- Pure structural refactor per `docs/archive/PROJECT-LAYOUT.md` / `docs/archive/execution-plan.md`
   (Phases 1–4): every non-UI file moved into its feature folder with
   folder-matching namespaces; the six `MainWindow.xaml` page regions became
   standalone `UserControl`s with ViewModels under
@@ -34,7 +34,7 @@ Version tags match `AppConstants.CurrentVersion` and the GitHub release tags (`v
   and auto-refreshes the page state.
 - `IEmulatorSettingsService` (`Features/GameLoop/EmulatorSettingsService.cs`)
   with `EmulatorTuningCatalog` as the single home for all tuning value names,
-  bounds, and the DPI allow-list. Full spec in `docs/plans/EMULATOR-TUNING-PLAN.md`.
+  bounds, and the DPI allow-list. Full spec in `docs/archive/EMULATOR-TUNING-PLAN.md`.
 - 16 new unit tests (`EmulatorSettingsServiceTests`): load/apply round-trip,
   hardware clamping, DPI rejection, inverted ADB mapping, paired GPU writes,
   write-failure and read-back-mismatch paths, cancellation, running-guard.
