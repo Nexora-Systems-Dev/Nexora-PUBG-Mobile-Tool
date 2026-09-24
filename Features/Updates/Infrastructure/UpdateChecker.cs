@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
 using Nexora.Configuration;
@@ -38,7 +39,40 @@ public sealed class UpdateChecker
         var assetName = ReadAssetString(asset, "name");
         var downloadUrl = ReadAssetString(asset, "browser_download_url");
         var expectedSha256 = UpdateArchiveValidator.TryExtractSha256(changelog);
-        return new UpdateInfo(!string.Equals(AppConstants.CurrentVersion, latest, StringComparison.OrdinalIgnoreCase), latest, assetName, downloadUrl, changelog, expectedSha256);
+        return new UpdateInfo(IsNewerThan(AppConstants.CurrentVersion, latest), latest, assetName, downloadUrl, changelog, expectedSha256);
+    }
+
+    /// <summary>
+    /// Reports whether the feed tag names a release newer than the running
+    /// build. Both tags must parse as vX.Y.Z; anything unparsable fails
+    /// closed, so garbage never prompts and a stale feed never downgrades.
+    /// </summary>
+    internal static bool IsNewerThan(string currentVersion, string latestVersion) =>
+        TryParseReleaseVersion(currentVersion, out var current) &&
+        TryParseReleaseVersion(latestVersion, out var latest) &&
+        latest.CompareTo(current) > 0;
+
+    /// <summary>
+    /// Parses a release tag such as "v1.3.0": surrounding whitespace ignored,
+    /// one optional leading v/V, then exactly three non-negative integer parts.
+    /// </summary>
+    private static bool TryParseReleaseVersion(string? version, out Version parsed)
+    {
+        parsed = new Version(0, 0, 0);
+        var text = version?.Trim();
+        if (string.IsNullOrEmpty(text)) return false;
+        if (text.StartsWith("v", StringComparison.OrdinalIgnoreCase)) text = text[1..];
+        var parts = text.Split('.');
+        if (parts.Length != 3) return false;
+        if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var major) ||
+            !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var minor) ||
+            !int.TryParse(parts[2], NumberStyles.None, CultureInfo.InvariantCulture, out var patch))
+        {
+            return false;
+        }
+
+        parsed = new Version(major, minor, patch);
+        return true;
     }
 
     /// <summary>Reads a string property from a possibly-absent release asset element.</summary>
