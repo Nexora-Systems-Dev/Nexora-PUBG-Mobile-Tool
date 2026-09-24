@@ -26,15 +26,19 @@
                     <Ellipse Grid.RowSpan="2" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource PageCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
 
                     <Grid Grid.Row="0" Margin="18,12,18,16">
-                        <StackPanel Orientation="Horizontal">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
                             <Border Width="4" Height="48" Background="{StaticResource Accent}" CornerRadius="2" Margin="0,0,14,0" Effect="{StaticResource AccentGlowEffect}" />
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="DESKTOP LAUNCHER ENGINE" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="SemiBold" Margin="0,0,0,3" />
-                                <TextBlock Text="SHORTCUTS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="29" FontWeight="SemiBold" />
-                                <TextBlock Text="Create a clean desktop launcher for any installed PUBG Mobile version." Foreground="{StaticResource TextSecondary}" FontSize="13" Margin="0,3,0,0" />
+                                <TextBlock Text="SHORTCUTS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="29" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="Create a clean desktop launcher for any installed PUBG Mobile version." Foreground="{StaticResource TextSecondary}" FontSize="13" Margin="0,3,0,0" TextWrapping="Wrap" />
                             </StackPanel>
                         </StackPanel>
-                        <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,7">
+                        <Border Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,7" Margin="12,0,0,0">
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center" />
                                 <TextBlock Text="DESKTOP LAUNCHER" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" />
@@ -62,11 +66,15 @@
                                     </Grid.RowDefinitions>
 
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Width="3" Height="15" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
-                                            <TextBlock Text="CREATE A SHORTCUT" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                                            <TextBlock Text="CREATE A SHORTCUT" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
-                                        <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                        <Border Grid.Column="1" HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="8,0,0,0">
                                             <TextBlock Text="DIRECT BOOT" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                                         </Border>
                                     </Grid>
@@ -134,11 +142,15 @@
                                     </Grid.RowDefinitions>
 
                                     <Grid Grid.Row="0" Margin="0,0,0,4">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Width="3" Height="15" Background="{StaticResource Accent}" CornerRadius="1.5" Margin="0,0,7,0" VerticalAlignment="Center" />
-                                            <TextBlock Text="HOW IT WORKS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" />
+                                            <TextBlock Text="HOW IT WORKS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
-                                        <Border HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                        <Border Grid.Column="1" HorizontalAlignment="Right" Background="{StaticResource AccentSoft}" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="8,0,0,0">
                                             <TextBlock Text="OFFICIAL LAUNCHER" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="Bold" />
                                         </Border>
                                     </Grid>

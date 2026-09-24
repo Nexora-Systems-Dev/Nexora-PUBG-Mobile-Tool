@@ -64,13 +64,21 @@
                                 <TextBlock Text="PERFORMANCE" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
                             <Grid Margin="0,8,0,4">
-                                <TextBlock Text="Processor (CPU cores)" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                <TextBlock x:Name="TuningCpuText" Text="4 cores" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Processor (CPU cores)" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" x:Name="TuningCpuText" Text="4 cores" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="160" Margin="8,0,0,0" />
                             </Grid>
                             <Slider x:Name="TuningCpuSlider" Minimum="1" Maximum="8" TickFrequency="1" IsSnapToTickEnabled="True" Value="4" ValueChanged="TuningCpuSlider_ValueChanged" Margin="0,0,0,12" />
                             <Grid Margin="0,0,0,4">
-                                <TextBlock Text="Memory" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                <TextBlock x:Name="TuningMemoryText" Text="4096 MB" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Memory" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" x:Name="TuningMemoryText" Text="4096 MB" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="160" Margin="8,0,0,0" />
                             </Grid>
                             <Slider x:Name="TuningMemorySlider" Minimum="1024" Maximum="16384" TickFrequency="512" IsSnapToTickEnabled="True" Value="4096" ValueChanged="TuningMemorySlider_ValueChanged" />
                         </StackPanel>

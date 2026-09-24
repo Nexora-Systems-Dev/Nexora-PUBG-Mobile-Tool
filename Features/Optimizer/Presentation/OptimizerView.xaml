@@ -110,15 +110,19 @@
                     <Ellipse Grid.RowSpan="3" Width="480" Height="480" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-175,-175" Fill="{StaticResource OptimizerCoolGlowBrush}" Opacity="0.25" IsHitTestVisible="False" />
 
                     <Grid Grid.Row="0" Margin="18,6,18,12">
-                        <StackPanel Orientation="Horizontal">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
                             <Border Width="4" Height="48" Background="{StaticResource Accent}" CornerRadius="2" Margin="0,0,14,0" Effect="{StaticResource AccentGlowEffect}" />
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="PERFORMANCE PROFILE" Foreground="{StaticResource Accent}" FontSize="9" FontWeight="SemiBold" Margin="0,0,0,3" />
-                                <TextBlock Text="PERFORMANCE CENTER" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="29" FontWeight="SemiBold" />
-                                <TextBlock Text="Tune the GameLoop 64-bit environment around your real hardware." Foreground="{StaticResource TextSecondary}" FontSize="13" Margin="0,3,0,0" />
+                                <TextBlock Text="PERFORMANCE CENTER" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="29" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="Tune the GameLoop 64-bit environment around your real hardware." Foreground="{StaticResource TextSecondary}" FontSize="13" Margin="0,3,0,0" TextWrapping="Wrap" />
                             </StackPanel>
                         </StackPanel>
-                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
                             <Border Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,7" Margin="0,0,10,0">
                                 <TextBlock Text="GAMELOOP 64-BIT" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" />
                             </Border>
@@ -299,20 +303,24 @@
                                                 <RowDefinition Height="32" />
                                                 <RowDefinition Height="32" />
                                             </Grid.RowDefinitions>
-                                            <TextBlock Grid.Row="0" Text="CPU allocation" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                            <TextBlock Grid.Row="0" x:Name="PlanCpuText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="CPU allocation" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="PlanCpuText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
 
-                                            <TextBlock Grid.Row="1" Text="Memory" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                            <TextBlock Grid.Row="1" x:Name="PlanMemoryText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Memory" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="PlanMemoryText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
 
-                                            <TextBlock Grid.Row="2" Text="Render scale" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                            <TextBlock Grid.Row="2" x:Name="PlanRenderText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Render scale" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="PlanRenderText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
 
-                                            <TextBlock Grid.Row="3" Text="Frame rate mode" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                            <TextBlock Grid.Row="3" x:Name="PlanFpsText" Text="—" Foreground="{StaticResource Accent}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Frame rate mode" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="PlanFpsText" Text="—" Foreground="{StaticResource Accent}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
 
-                                            <TextBlock Grid.Row="4" Text="GPU route" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
-                                            <TextBlock Grid.Row="4" x:Name="PlanGpuText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
+                                            <TextBlock Grid.Row="4" Grid.Column="0" Text="GPU route" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="PlanGpuText" Text="—" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="180" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>
