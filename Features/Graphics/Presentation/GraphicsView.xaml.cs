@@ -288,14 +288,14 @@ public partial class GraphicsView : UserControl
 
     private void PaintSuccessDot()
     {
-        ConnectionDot.Fill = GetBrush("Success") ?? Brushes.LimeGreen;
+        ConnectionDot.Fill = GetBrush("Success");
         ConnectionDot.Effect = CreateSuccessGlow();
         SummaryAdb.Text = "Connected";
     }
 
     private void PaintDisconnectedDot()
     {
-        ConnectionDot.Fill = GetBrush("TextMuted") ?? Brushes.Gray;
+        ConnectionDot.Fill = GetBrush("TextMuted");
         ConnectionDot.Effect = null;
     }
 
@@ -349,7 +349,7 @@ public partial class GraphicsView : UserControl
         }
     }
 
-    private Brush? GetBrush(string key) => FindResource(key) as Brush;
+    private Brush GetBrush(string key) => ResourceBrushLookup.Get(this, key);
 
     private static DropShadowEffect CreateSuccessGlow() =>
         new() { Color = Color.FromRgb(0x10, 0xB9, 0x81), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 };

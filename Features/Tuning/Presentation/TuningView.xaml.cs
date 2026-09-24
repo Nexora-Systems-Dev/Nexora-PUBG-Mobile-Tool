@@ -192,5 +192,5 @@ public partial class TuningView : UserControl
         AdbEnabled: TuningAdbCheck.IsChecked == true,
         AntiAliasingEnabled: TuningAntiAliasingCheck.IsChecked == true);
 
-    private Brush? GetBrush(string key) => FindResource(key) as Brush;
+    private Brush GetBrush(string key) => ResourceBrushLookup.Get(this, key);
 }

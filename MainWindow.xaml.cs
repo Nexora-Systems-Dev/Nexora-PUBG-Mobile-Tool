@@ -27,6 +27,12 @@ public partial class MainWindow : Window
     private readonly ShellConnectionPresenter _connection;
     private readonly CancellationTokenSource _loadedCts = new();
 
+    /// <summary>
+    /// The page on screen. Starts on Graphics — the XAML default visible page —
+    /// so the first navigate-away cancels nothing.
+    /// </summary>
+    private string _currentPage = NavigationItem.Graphics.Key;
+
     private IDisposable? _chromeHook;
 
     public MainWindow()
@@ -246,11 +252,43 @@ public partial class MainWindow : Window
     private async void NavigationButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not RadioButton button || button.Tag is not string page) return;
+        // Navigate-away mirror of the close-path cancels: an in-flight connect
+        // poll (or tool run) on the page being left must settle before the new
+        // page paints, or its late completion repaints the wrong page through
+        // the shared status/connection events. Same page set as Window_Closing.
+        if (!string.Equals(page, _currentPage, StringComparison.Ordinal))
+        {
+            CancelPageWork(_currentPage);
+            _currentPage = page;
+        }
+
         var item = _navigator.Navigate(page);
         if (item is not { RefreshOnNavigate: true }) return;
         if (_navigator.TryGetRefresh(item.Key, out var refresh) && refresh is not null)
         {
             await refresh();
+        }
+    }
+
+    /// <summary>
+    /// Cancels the leavable work of one page. Mirrors <see cref="Window_Closing"/>
+    /// exactly: Graphics (orphaned connect poll), Tuning and Shortcuts (tool
+    /// runs). Optimizer is excluded to match close — widening that asymmetry
+    /// is its own slice — and Network/About own no cancellable work.
+    /// </summary>
+    private void CancelPageWork(string page)
+    {
+        if (string.Equals(page, NavigationItem.Graphics.Key, StringComparison.Ordinal))
+        {
+            _graphicsViewModel.Cancel();
+        }
+        else if (string.Equals(page, NavigationItem.Tuning.Key, StringComparison.Ordinal))
+        {
+            TuningView.ViewModel.Cancel();
+        }
+        else if (string.Equals(page, NavigationItem.Shortcuts.Key, StringComparison.Ordinal))
+        {
+            ShortcutsView.ViewModel.Cancel();
         }
     }
 

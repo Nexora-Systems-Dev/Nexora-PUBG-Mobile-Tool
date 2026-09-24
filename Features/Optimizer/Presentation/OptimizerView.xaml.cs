@@ -221,5 +221,5 @@ public partial class OptimizerView : UserControl
         SmartPlanText.Text = display.SmartPlanSummary;
     }
 
-    private Brush? GetBrush(string key) => FindResource(key) as Brush;
+    private Brush GetBrush(string key) => ResourceBrushLookup.Get(this, key);
 }

@@ -140,6 +140,9 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
 
         CancelConnection();
         _connectionCancellation = new CancellationTokenSource();
+        // Captured once: the field may be nulled by a disconnect/close that
+        // lands mid-connect, and no later line may re-read it across an await.
+        var connectionToken = _connectionCancellation.Token;
         BusyVisualChanged?.Invoke(true);
         StatusChanged?.Invoke("Connecting to GameLoop...", false);
 
@@ -149,7 +152,7 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
             // Progress posts to the captured UI context and reuses the existing
             // status event — no new event types, no new thread coupling.
             var progress = new Progress<string>(message => StatusChanged?.Invoke(message, false));
-            result = await _connection.ConnectAsync(_connectionCancellation.Token, progress);
+            result = await _connection.ConnectAsync(connectionToken, progress);
         }
         catch (OperationCanceledException)
         {
@@ -165,27 +168,33 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
             _operationBus.Release();
         }
 
-        await RaiseConnectOutcomeAsync(result);
+        await RaiseConnectOutcomeAsync(result, connectionToken);
     }
 
     /// <summary>
     /// Paints the outcome a connect produced: the shell's shortcut list gets the
     /// discovered versions and the pill gets its phase. A connect that reached a
     /// version also reads the profile, so that arm does more than a state lookup.
+    /// The token is the connect's own, passed as a parameter — never re-read
+    /// from the field — and every paint below re-checks liveness first: a
+    /// disconnect landing mid-load leaves the Disconnected paint standing and
+    /// no stale versions or profile ever reach the tree.
     /// </summary>
-    private async Task RaiseConnectOutcomeAsync(ConnectionResult result)
+    private async Task RaiseConnectOutcomeAsync(ConnectionResult result, CancellationToken connectionToken)
     {
-        InstalledVersions = result.InstalledVersions;
-
         if (!result.Success)
         {
+            InstalledVersions = result.InstalledVersions;
             RaiseConnectionState(ConnectionState.Failed, result.Message);
             return;
         }
 
         if (_connection.IsConnected)
         {
-            SettingsLoaded?.Invoke(await _graphics.LoadCurrentAsync(_connectionCancellation?.Token ?? CancellationToken.None));
+            var current = await _graphics.LoadCurrentAsync(connectionToken);
+            if (!_connection.IsConnected) return;
+            InstalledVersions = result.InstalledVersions;
+            SettingsLoaded?.Invoke(current);
         }
 
         var state = _connection.IsConnected ? ConnectionState.FullyConnected

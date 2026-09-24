@@ -83,7 +83,7 @@ public sealed class ShellConnectionPresenter
 
     private void ShowSuccess()
     {
-        var success = GetBrush("Success") ?? Brushes.LimeGreen;
+        var success = GetBrush("Success");
         var emeraldGlow = CreateSuccessGlow();
         _topDot.Fill = success;
         _topDot.Effect = emeraldGlow;
@@ -96,7 +96,7 @@ public sealed class ShellConnectionPresenter
 
     private void ShowFailure()
     {
-        var danger = GetBrush("Danger") ?? Brushes.Crimson;
+        var danger = GetBrush("Danger");
         var dangerGlow = new DropShadowEffect { Color = Color.FromRgb(0xEF, 0x44, 0x44), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.85 };
         _topDot.Fill = danger;
         _topDot.Effect = dangerGlow;
@@ -109,7 +109,7 @@ public sealed class ShellConnectionPresenter
 
     private void ShowDisconnected()
     {
-        var muted = GetBrush("TextMuted") ?? Brushes.Gray;
+        var muted = GetBrush("TextMuted");
         _topDot.Fill = muted;
         _topDot.Effect = null;
         _topText.Text = "Not connected";
@@ -120,7 +120,7 @@ public sealed class ShellConnectionPresenter
         _adbText.Text = "ADB: Offline";
     }
 
-    private Brush? GetBrush(string key) => _resourceHost.FindResource(key) as Brush;
+    private Brush GetBrush(string key) => ResourceBrushLookup.Get(_resourceHost, key);
 
     private static DropShadowEffect CreateSuccessGlow() =>
         new() { Color = Color.FromRgb(0x10, 0xB9, 0x81), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 };
