@@ -74,6 +74,9 @@ public sealed class ShortcutServiceTests
         public ProcessResult RunPowerShell(string script, TimeSpan? timeout = null) =>
             throw new InvalidOperationException("Process runner must not be used when path resolution fails.");
 
+        public Task<ProcessResult> RunAsync(string fileName, IEnumerable<string> arguments, TimeSpan? timeout, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Process runner must not be used when path resolution fails.");
+
         public bool StartDetachedElevated(string fileName, string arguments = "") =>
             throw new InvalidOperationException("Process runner must not be used when path resolution fails.");
     }

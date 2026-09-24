@@ -509,6 +509,9 @@ public sealed class UpdateReplacementTests
         public ProcessResult Run(string fileName, IEnumerable<string> arguments, TimeSpan? timeout = null) =>
             new(0, string.Empty, string.Empty, false);
 
+        public Task<ProcessResult> RunAsync(string fileName, IEnumerable<string> arguments, TimeSpan? timeout, CancellationToken cancellationToken) =>
+            Task.FromResult(Run(fileName, arguments, timeout));
+
         public ProcessResult RunPowerShell(string script, TimeSpan? timeout = null) =>
             new(0, string.Empty, string.Empty, false);
 

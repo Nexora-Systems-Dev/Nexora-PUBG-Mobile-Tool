@@ -44,30 +44,37 @@ public sealed class GameLoopConnector
 
     /// <summary>
     /// Checks prerequisites, waits for ADB boot, and detects installed PUBG Mobile packages.
+    /// Phase reports flow to the caller's progress sink; the sync prerequisite
+    /// checks below stay on-thread (named in the F4 report) because they are
+    /// in-process reads with no child processes behind them.
     /// </summary>
-    public async Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken)
+    public async Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken, IProgress<string>? progress = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         _session.Reset();
 
+        progress?.Report("Checking GameLoop status...");
         var registryFailure = CheckAdbRegistryStatus();
         if (registryFailure is not null) return registryFailure;
 
         var livenessFailure = CheckGameLoopRunning();
         if (livenessFailure is not null) return livenessFailure;
 
-        if (!await EnsureBootCompletedAsync(cancellationToken))
+        progress?.Report("Waiting for the emulator to finish booting...");
+        if (!await EnsureBootCompletedAsync(cancellationToken, progress))
         {
             return new ConnectionResult(false, "GameLoop ADB did not finish booting.", Array.Empty<PubgVersion>());
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        if (!await PullConnectionProbeAsync(cancellationToken))
+        progress?.Report("Reading the connection probe...");
+        if (!await PullConnectionProbeAsync(cancellationToken, progress))
         {
             return new ConnectionResult(false, "Could not connect to GameLoop ADB.", Array.Empty<PubgVersion>());
         }
 
-        var installedVersions = DetectInstalledVersions(cancellationToken);
+        progress?.Report("Detecting installed versions...");
+        var installedVersions = await DetectInstalledVersionsAsync(cancellationToken, progress);
         if (installedVersions.Count == 0)
         {
             return new ConnectionResult(false, "No supported PUBG Mobile version was found.", installedVersions);
@@ -112,30 +119,30 @@ public sealed class GameLoopConnector
     /// <summary>
     /// Waits for the ADB bridge to finish booting, stopping ADB on failure.
     /// </summary>
-    private async Task<bool> EnsureBootCompletedAsync(CancellationToken cancellationToken)
+    private async Task<bool> EnsureBootCompletedAsync(CancellationToken cancellationToken, IProgress<string>? progress)
     {
-        if (await _adb.WaitForBootAsync(cancellationToken)) return true;
-        _adb.StopAdb();
+        if (await _adb.WaitForBootAsync(cancellationToken, progress)) return true;
+        await _adb.StopAdbAsync(cancellationToken);
         return false;
     }
 
     /// <summary>
     /// Pulls the connection probe file, stopping ADB on failure.
     /// </summary>
-    private async Task<bool> PullConnectionProbeAsync(CancellationToken cancellationToken)
+    private async Task<bool> PullConnectionProbeAsync(CancellationToken cancellationToken, IProgress<string>? progress)
     {
         _storage.EnsureDirectoryCreated();
-        if (await _adb.PullAsync("/default.prop", _storage.ConnectionProbePath, cancellationToken)) return true;
-        _adb.StopAdb();
+        if (await _adb.PullAsync("/default.prop", _storage.ConnectionProbePath, cancellationToken, progress)) return true;
+        await _adb.StopAdbAsync(cancellationToken);
         return false;
     }
 
     /// <summary>
     /// Detects installed PUBG Mobile packages and maps them to known versions.
     /// </summary>
-    private List<PubgVersion> DetectInstalledVersions(CancellationToken cancellationToken)
+    private async Task<List<PubgVersion>> DetectInstalledVersionsAsync(CancellationToken cancellationToken, IProgress<string>? progress)
     {
-        var installedPackages = _adb.FindInstalledPackages(PubgVersionCatalog.PubgVersions.Keys, cancellationToken);
+        var installedPackages = await _adb.FindInstalledPackagesAsync(PubgVersionCatalog.PubgVersions.Keys, cancellationToken, progress);
         return installedPackages
             .Where(PubgVersionCatalog.PubgVersions.ContainsKey)
             .Select(package => new PubgVersion(package, PubgVersionCatalog.PubgVersions[package]))

@@ -52,6 +52,29 @@ public sealed class AdbClient : IAdbClient
     }
 
     /// <summary>
+    /// Async twin of <see cref="Run"/> at the service boundary: the adb wait
+    /// honors the token and never blocks the calling (UI) thread.
+    /// Missing-binary handling mirrors <see cref="Run"/>.
+    /// </summary>
+    private async Task<ProcessResult> RunAsync(CancellationToken cancellationToken, params string[] arguments)
+    {
+        var adbPath = AdbPath;
+        var result = await _runner.RunAsync(adbPath, arguments, _gameLoop.Timeouts.AdbCommandTimeout, cancellationToken);
+        if (!result.TimedOut && result.ExitCode == -1)
+        {
+            // The executable never ran (missing file, bad path): fail loudly
+            // with the repair hint instead of a bare process-start error.
+            return new ProcessResult(
+                result.ExitCode,
+                result.StandardOutput,
+                $"ADB executable could not be started at '{adbPath}'. Repair the GameLoop installation or set NEXORA_GAMELOOP_ROOT to a custom install directory. Details: {result.StandardError}",
+                result.TimedOut);
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Re-probes the GameLoop installation for adb immediately, so a
     /// repair/reinstall is picked up without waiting for cache expiry.
     /// </summary>
@@ -92,22 +115,24 @@ public sealed class AdbClient : IAdbClient
         return Shell(command);
     }
 
-    public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken)
+    public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null)
     {
-        return TransferWithRetryAsync("pull", remotePath, localPath, cancellationToken);
+        return TransferWithRetryAsync("pull", remotePath, localPath, cancellationToken, progress);
     }
 
-    public Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken)
+    public Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken, IProgress<string>? progress = null)
     {
-        return TransferWithRetryAsync("push", localPath, remotePath, cancellationToken);
+        return TransferWithRetryAsync("push", localPath, remotePath, cancellationToken, progress);
     }
 
-    private async Task<bool> TransferWithRetryAsync(string operation, string source, string destination, CancellationToken cancellationToken)
+    private async Task<bool> TransferWithRetryAsync(string operation, string source, string destination, CancellationToken cancellationToken, IProgress<string>? progress)
     {
-        for (var attempt = 1; attempt <= _gameLoop.Timeouts.AdbTransferMaxAttempts; attempt++)
+        var maxAttempts = _gameLoop.Timeouts.AdbTransferMaxAttempts;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var result = Run("-s", DeviceSerial, operation, source, destination);
+            if (attempt > 1) progress?.Report($"Retrying file transfer (attempt {attempt} of {maxAttempts})...");
+            var result = await RunAsync(cancellationToken, "-s", DeviceSerial, operation, source, destination);
             var transferred = result.Succeeded &&
                 (operation.Equals("push", StringComparison.OrdinalIgnoreCase) || File.Exists(destination));
             if (transferred)
@@ -122,25 +147,29 @@ public sealed class AdbClient : IAdbClient
 
             // Refresh device serial before retrying in case the bridge restarted.
             await Task.Delay(_gameLoop.Timeouts.AdbTransferRetryDelay, cancellationToken);
-            TrySelectDevice(cancellationToken);
+            await TrySelectDeviceAsync(cancellationToken, progress);
         }
 
         return false;
     }
 
-    public async Task<bool> WaitForBootAsync(CancellationToken cancellationToken)
+    public async Task<bool> WaitForBootAsync(CancellationToken cancellationToken, IProgress<string>? progress = null)
     {
         // Check cancellation before device selection runs child adb processes.
         cancellationToken.ThrowIfCancellationRequested();
-        if (!TrySelectDevice(cancellationToken))
+        if (!await TrySelectDeviceAsync(cancellationToken, progress))
         {
             return false;
         }
 
-        for (var attempt = 0; attempt < _gameLoop.Timeouts.AdbBootPollAttempts; attempt++)
+        var maxAttempts = _gameLoop.Timeouts.AdbBootPollAttempts;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var result = Run("-s", DeviceSerial, "shell", "getprop", "dev.bootcomplete");
+            progress?.Report(attempt == 0
+                ? "Waiting for the emulator to finish booting..."
+                : $"Waiting for the emulator to finish booting (attempt {attempt + 1} of {maxAttempts})...");
+            var result = await RunAsync(cancellationToken, "-s", DeviceSerial, "shell", "getprop", "dev.bootcomplete");
             if (result.Succeeded && result.StandardOutput.Trim() == "1")
             {
                 return true;
@@ -150,7 +179,7 @@ public sealed class AdbClient : IAdbClient
                 result.StandardError.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
                 result.StandardOutput.Contains("not found", StringComparison.OrdinalIgnoreCase))
             {
-                TrySelectDevice(cancellationToken);
+                await TrySelectDeviceAsync(cancellationToken, progress);
             }
 
             await Task.Delay(_gameLoop.Timeouts.AdbBootPollDelay, cancellationToken);
@@ -159,10 +188,10 @@ public sealed class AdbClient : IAdbClient
         return false;
     }
 
-    private bool TrySelectDevice(CancellationToken cancellationToken)
+    private async Task<bool> TrySelectDeviceAsync(CancellationToken cancellationToken, IProgress<string>? progress)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var devices = Run("devices");
+        var devices = await RunAsync(cancellationToken, "devices");
         if (!devices.Succeeded)
         {
             return false;
@@ -179,9 +208,10 @@ public sealed class AdbClient : IAdbClient
 
         // Connect to local loopback port if GameLoop exposes bridge on TCP 5555.
         cancellationToken.ThrowIfCancellationRequested();
-        Run("connect", _gameLoop.Adb.LoopbackEndpoint);
+        progress?.Report("Connecting to the emulator bridge...");
+        await RunAsync(cancellationToken, "connect", _gameLoop.Adb.LoopbackEndpoint);
         cancellationToken.ThrowIfCancellationRequested();
-        devices = Run("devices");
+        devices = await RunAsync(cancellationToken, "devices");
         connectedSerials = ParseDeviceSerials(devices.StandardOutput);
 
         _deviceSerial = SelectPreferredSerial(connectedSerials);
@@ -236,7 +266,30 @@ public sealed class AdbClient : IAdbClient
         return installed;
     }
 
+    public async Task<IReadOnlyList<string>> FindInstalledPackagesAsync(IEnumerable<string> packageNames, CancellationToken cancellationToken, IProgress<string>? progress = null)
+    {
+        var installed = new List<string>();
+        foreach (var packageName in packageNames)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!AppConstants.Validation.IsValidAndroidPackageName(packageName))
+            {
+                throw new ArgumentException($"Invalid Android package name: '{packageName}'.", nameof(packageNames));
+            }
+
+            var result = await RunAsync(cancellationToken, "-s", DeviceSerial, "shell", "pm", "list", "packages", packageName);
+            if (result.Succeeded && result.StandardOutput.Contains(packageName, StringComparison.OrdinalIgnoreCase))
+            {
+                installed.Add(packageName);
+            }
+        }
+
+        return installed;
+    }
+
     public void StopAdb() => KillAdb(_runner, _gameLoop);
+
+    public Task StopAdbAsync(CancellationToken cancellationToken) => KillAdbAsync(_runner, _gameLoop, cancellationToken);
 
     public static void KillAdb(IProcessRunner runner, GameLoopOptions? gameLoop = null)
     {
@@ -248,6 +301,30 @@ public sealed class AdbClient : IAdbClient
                 AppConstants.Tools.TaskkillFileName,
                 new[] { "/F", "/IM", gameLoop.Adb.FileName },
                 TimeSpan.FromMilliseconds(gameLoop.Timeouts.AdbKillWaitMilliseconds));
+        }
+        catch
+        {
+            // Ignore errors if ADB was not running.
+        }
+    }
+
+    /// <summary>
+    /// Async twin of <see cref="KillAdb"/> for UI-context callers: the taskkill
+    /// wait runs off-thread, bounded by the configured kill timeout.
+    /// Best-effort like the sync twin — never throws, including on cancel,
+    /// because teardown has no result channel to report through.
+    /// </summary>
+    public static async Task KillAdbAsync(IProcessRunner runner, GameLoopOptions? gameLoop, CancellationToken cancellationToken)
+    {
+        if (runner is null) throw new ArgumentNullException(nameof(runner));
+        gameLoop ??= new GameLoopOptions();
+        try
+        {
+            await runner.RunAsync(
+                AppConstants.Tools.TaskkillFileName,
+                new[] { "/F", "/IM", gameLoop.Adb.FileName },
+                TimeSpan.FromMilliseconds(gameLoop.Timeouts.AdbKillWaitMilliseconds),
+                cancellationToken);
         }
         catch
         {

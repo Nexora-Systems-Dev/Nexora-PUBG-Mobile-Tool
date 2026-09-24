@@ -146,7 +146,10 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
         ConnectionResult result;
         try
         {
-            result = await _connection.ConnectAsync(_connectionCancellation.Token);
+            // Progress posts to the captured UI context and reuses the existing
+            // status event — no new event types, no new thread coupling.
+            var progress = new Progress<string>(message => StatusChanged?.Invoke(message, false));
+            result = await _connection.ConnectAsync(_connectionCancellation.Token, progress);
         }
         catch (OperationCanceledException)
         {
@@ -192,17 +195,19 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Tears the transport down and stops adb. Report goes through the same
-    /// state event as a connect so the disconnected paint is identical from
-    /// either direction.
+    /// Tears the transport down and stops adb. Genuinely async: the taskkill
+    /// wait runs off-thread, bounded by the configured kill timeout, so the
+    /// caller thread is free immediately. CancellationToken.None — not the
+    /// just-canceled connect token — because best-effort teardown must still
+    /// run; it never throws. Report goes through the same state event as a
+    /// connect so the disconnected paint is identical from either direction.
     /// </summary>
-    public Task DisconnectAsync()
+    public async Task DisconnectAsync()
     {
         CancelConnection();
         _connection.Disconnect();
-        _adb.StopAdb();
+        await _adb.StopAdbAsync(CancellationToken.None);
         RaiseConnectionState(ConnectionState.Disconnected, "Disconnected from GameLoop.");
-        return Task.CompletedTask;
     }
 
     /// <summary>

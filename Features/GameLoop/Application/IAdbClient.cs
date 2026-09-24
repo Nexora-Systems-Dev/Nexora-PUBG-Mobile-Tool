@@ -27,13 +27,27 @@ public interface IAdbClient
     /// </summary>
     string Shell(string command, CancellationToken cancellationToken);
 
-    Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken);
+    Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null);
 
-    Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken);
+    Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken, IProgress<string>? progress = null);
 
-    Task<bool> WaitForBootAsync(CancellationToken cancellationToken);
+    Task<bool> WaitForBootAsync(CancellationToken cancellationToken, IProgress<string>? progress = null);
 
     IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// True-async twin of <see cref="FindInstalledPackages"/> for UI-context
+    /// callers: each package probe awaits the offloaded adb wait instead of
+    /// blocking the calling thread. Validation still throws synchronously.
+    /// </summary>
+    Task<IReadOnlyList<string>> FindInstalledPackagesAsync(IEnumerable<string> packageNames, CancellationToken cancellationToken, IProgress<string>? progress = null);
+
     void StopAdb();
+
+    /// <summary>
+    /// True-async twin of <see cref="StopAdb"/> for UI-context callers: the
+    /// taskkill wait runs off-thread, bounded by the configured kill timeout.
+    /// Best-effort like the sync twin — never throws, including on cancel.
+    /// </summary>
+    Task StopAdbAsync(CancellationToken cancellationToken);
 }

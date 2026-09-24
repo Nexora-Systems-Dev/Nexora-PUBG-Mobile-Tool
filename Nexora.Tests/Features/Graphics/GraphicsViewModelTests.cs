@@ -253,7 +253,7 @@ public sealed class GraphicsViewModelTests
         public int LoadCalls { get; private set; }
         public OperationResult LoadResult { get; set; } = OperationResult.Ok("Loaded.");
 
-        public Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken)
+        public Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken, IProgress<string>? progress = null)
         {
             ConnectCalls++;
             if (ConnectResult.Success)
@@ -313,16 +313,25 @@ public sealed class GraphicsViewModelTests
 
         public string Shell(string command, CancellationToken cancellationToken) => string.Empty;
 
-        public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken) =>
+        public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(true);
 
-        public Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken) =>
+        public Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(false);
 
-        public Task<bool> WaitForBootAsync(CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<bool> WaitForBootAsync(CancellationToken cancellationToken, IProgress<string>? progress = null) => Task.FromResult(true);
 
         public IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames, CancellationToken cancellationToken) => [];
 
+        public Task<IReadOnlyList<string>> FindInstalledPackagesAsync(IEnumerable<string> packageNames, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
+            Task.FromResult(FindInstalledPackages(packageNames, cancellationToken));
+
         public void StopAdb() => StopCalls++;
+
+        public Task StopAdbAsync(CancellationToken cancellationToken)
+        {
+            StopCalls++;
+            return Task.CompletedTask;
+        }
     }
 }

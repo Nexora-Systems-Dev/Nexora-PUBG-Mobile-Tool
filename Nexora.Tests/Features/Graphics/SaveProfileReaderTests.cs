@@ -185,20 +185,25 @@ public sealed class SaveProfileReaderTests
             return Shell(command);
         }
 
-        public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken) =>
+        public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(pullSucceeds);
 
-        public Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken) =>
+        public Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(false);
 
-        public Task<bool> WaitForBootAsync(CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<bool> WaitForBootAsync(CancellationToken cancellationToken, IProgress<string>? progress = null) => Task.FromResult(true);
 
         public IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames, CancellationToken cancellationToken) =>
             [];
 
+        public Task<IReadOnlyList<string>> FindInstalledPackagesAsync(IEnumerable<string> packageNames, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
+            Task.FromResult(FindInstalledPackages(packageNames, cancellationToken));
+
         public void StopAdb()
         {
         }
+
+        public Task StopAdbAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class FakeFileSystem(bool exists, string[] lines) : IFileSystem

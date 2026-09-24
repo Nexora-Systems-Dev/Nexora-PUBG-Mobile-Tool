@@ -26,7 +26,7 @@ public interface IGameLoopConnection
 
     void Disconnect();
 
-    Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken);
+    Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken, IProgress<string>? progress = null);
 
     Task<OperationResult> LoadVersionAsync(string packageName, CancellationToken cancellationToken);
 }

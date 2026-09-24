@@ -226,16 +226,21 @@ public sealed class GameLoopSessionConcurrencyTests
             return Shell(command);
         }
 
-        public Task<bool> WaitForBootAsync(CancellationToken cancellationToken) => Task.FromResult(true);
+        public Task<bool> WaitForBootAsync(CancellationToken cancellationToken, IProgress<string>? progress = null) => Task.FromResult(true);
 
         public IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames, CancellationToken cancellationToken) =>
             packageNames.ToList();
+
+        public Task<IReadOnlyList<string>> FindInstalledPackagesAsync(IEnumerable<string> packageNames, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
+            Task.FromResult(FindInstalledPackages(packageNames, cancellationToken));
 
         public void StopAdb()
         {
         }
 
-        public async Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken)
+        public Task StopAdbAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public async Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null)
         {
             lock (_sync)
             {
@@ -264,7 +269,7 @@ public sealed class GameLoopSessionConcurrencyTests
             }
         }
 
-        public async Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken)
+        public async Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken, IProgress<string>? progress = null)
         {
             lock (_sync) _pushesInFlight++;
 

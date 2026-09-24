@@ -68,12 +68,12 @@ public sealed class GameLoopService : IGameLoopConnection, IGraphicsProfileStore
     /// </summary>
     public void Disconnect() => _session.Reset();
 
-    public async Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken)
+    public async Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken, IProgress<string>? progress = null)
     {
         await _operationGate.WaitAsync(cancellationToken);
         try
         {
-            return await _connector.ConnectAsync(cancellationToken);
+            return await _connector.ConnectAsync(cancellationToken, progress);
         }
         finally
         {

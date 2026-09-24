@@ -146,7 +146,7 @@ public sealed class GraphicsSettingsServiceTests
 
         public void Disconnect() { }
 
-        public Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken) =>
+        public Task<ConnectionResult> ConnectAsync(CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(new ConnectionResult(true, "Connected", Array.Empty<PubgVersion>()));
 
         public Task<OperationResult> LoadVersionAsync(string packageName, CancellationToken cancellationToken) =>
