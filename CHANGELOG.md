@@ -3,6 +3,44 @@
 All notable changes to Nexora PUBG Mobile Tool are documented here.
 Version tags match `AppConstants.CurrentVersion` and the GitHub release tags (`vX.Y.Z`).
 
+## [v1.3.0] — 2026-09-24
+
+Covers `origin/main..HEAD` (20 commits): the reliability program, clean-code
+Rounds 1–4c plus the complexity watch, the update-trust program F1–F4, and the
+dead-code cleanup round. No release-process or version-semantics changes.
+
+### Reliability and UI-token improvement program
+
+- `790d5a0`: operation-bus lock, cancel-as-Skip with preemption, navigation dispatch, full XAML token vocabulary, drift guard tests.
+
+### Clean-code Rounds 1–4c and complexity watch
+
+- `865c6fd` (Round 1): dead usings, comment consolidation, single-resolve factory, expression-bodied startup task.
+- `b258252` (Round 2): resolver tier extraction, registry DWORD helper, runner initializer, named constants.
+- `22ae7df` (Round 3a): Tuning tool spine, write-set data split, icon path helper, invariant formatting, MarketUnder extraction.
+- `a47694c` (Round 3b): Korean-package predicate, connect outcome split, sav locate unification, span search, shadow-file prerequisite.
+- `ace78ca` (Round 3c): network operation spine, iPad guard/snapshot homes, sav-batch and shell-probe helpers.
+- `13907bb` (Round 3d): plan-axis decomposition, scan-phase helpers, monitor stop spine, stale-check ternary.
+- `e7e31c5` (Round 3e): vendor marker home, refresh-rate prerequisite, power capture split, routing outcome, XML mutation pipeline, registry tables.
+- `914946a` (Round 3f): staging-tree step, executable-path ladder, checksum/signature prerequisites, handoff prompt split.
+- `af2d625` (Round 4a): shell factory extraction, visibility/refresh map pairing, tier selector, close-once split.
+- `f9fb71c` (Round 4b): page chrome consolidated into shared App styles, dead keys removed, docs repointed.
+- `5cabca0` (Round 4c): shared operation spine for Optimizer and Shortcuts tool paths.
+- `4778dd7` (complexity watch): SetIpadResolution write-step extraction, dead usings removed.
+
+### Update-trust program F1–F4
+
+- `fbf3e16`: publisher resolution through options, precise refusal and mismatch messages.
+- `eb9c087` (F1): file-bound Authenticode check via WinVerifyTrust plus binding controls.
+- `8d31bbb` (F2): exact-CN publisher identity replacing DN substring match.
+- `2b93977` (F3): trusted-host validation on every redirect hop of the update fetch.
+- `31a2366` (F4): handoff allowlist limited to the verified executable plus release notes.
+
+### Dead-code cleanup round
+
+- `27688e0`: seven unreferenced XAML element names removed.
+- `ebaaf3d`: superseded plans archived, tracked release copies dropped, regenerated release output ignored.
+
 ## [Unreleased] — Feature-first reorganization (no behavior change)
 
 ### Changed
