@@ -228,8 +228,27 @@ public sealed class NetworkViewModelTests
         bus.Release();
     }
 
+    [Fact]
+    public async Task ProbeDnsAsync_SupersededProbe_DiesInFlightInsteadOfStacking()
+    {
+        var gate = new TaskCompletionSource<int?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var network = new GatedPingTools(gate.Task);
+        var vm = Build(networkTools: network);
+        var first = DnsCatalog.Labels[0];
+        var second = DnsCatalog.Labels[1];
+
+        var superseded = vm.ProbeDnsAsync(first, () => second);
+        var current = vm.ProbeDnsAsync(second, () => second);
+        gate.TrySetResult(12);
+
+        (await superseded).Should().BeNull("a superseded probe must die in flight, never throw, never paint");
+        var probe = await current;
+        probe.Should().NotBeNull();
+        probe!.PingMs.Should().Be(12);
+    }
+
     private static NetworkViewModel Build(
-        FakeNetworkTools? networkTools = null,
+        INetworkToolsService? networkTools = null,
         FakeIpadLayout? ipadLayout = null,
         PageOperationBus? operationBus = null) =>
         new(networkTools ?? new FakeNetworkTools(),
@@ -257,6 +276,15 @@ public sealed class NetworkViewModelTests
             PingCalls++;
             return Task.FromResult(PingMs);
         }
+    }
+
+    private sealed class GatedPingTools(Task<int?> gate) : INetworkToolsService
+    {
+        public OperationResult ChangeDns(string primary, string secondary) =>
+            OperationResult.Ok($"Applied: {primary} / {secondary}");
+
+        public async Task<int?> PingDnsAsync(string host, CancellationToken cancellationToken = default) =>
+            await gate.WaitAsync(cancellationToken);
     }
 
     private sealed class FakeIpadLayout : IIpadLayoutService

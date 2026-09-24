@@ -27,6 +27,13 @@ public sealed class NetworkViewModel
     private readonly IIpadLayoutService _ipadLayout;
     private readonly IPageOperationBus _operationBus;
 
+    /// <summary>
+    /// The in-flight probe's cancellation: each new selection supersedes the
+    /// previous ping (which honors the token) instead of stacking behind it.
+    /// A superseded probe settles as a discard, never a throw.
+    /// </summary>
+    private CancellationTokenSource? _probeCancellation;
+
     public NetworkViewModel(
         INetworkToolsService networkTools,
         IIpadLayoutService ipadLayout,
@@ -64,13 +71,31 @@ public sealed class NetworkViewModel
     {
         if (!DnsCatalog.TryGet(label, out var entry) || entry is null) return null;
 
-        var ping = await _networkTools.PingDnsAsync(entry.Primary, cancellationToken);
+        _probeCancellation?.Cancel();
+        _probeCancellation?.Dispose();
+        var probeCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _probeCancellation = probeCancellation;
+        try
+        {
+            var ping = await _networkTools.PingDnsAsync(entry.Primary, probeCancellation.Token);
 
-        // The selection may have changed (or the page closed) while the ping
-        // was in flight; a stale answer must never overwrite the new row.
-        if (!string.Equals(getSelectedLabel(), label, StringComparison.OrdinalIgnoreCase)) return null;
+            // The selection may have changed (or the page closed) while the ping
+            // was in flight; a stale answer must never overwrite the new row.
+            if (!string.Equals(getSelectedLabel(), label, StringComparison.OrdinalIgnoreCase)) return null;
 
-        return new DnsProbeResult(entry, ping);
+            return new DnsProbeResult(entry, ping);
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer selection (or the caller's token): discard
+            // exactly like a stale answer so the view's await never throws.
+            return null;
+        }
+        finally
+        {
+            if (_probeCancellation == probeCancellation) _probeCancellation = null;
+            probeCancellation.Dispose();
+        }
     }
 
     /// <summary>

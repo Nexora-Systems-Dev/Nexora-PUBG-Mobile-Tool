@@ -126,13 +126,17 @@ public partial class NetworkView : UserControl
             var result = await _viewModel.ApplyDnsAsync(label);
             if (result is null) return;
             if (!DnsCatalog.TryGet(label, out var entry) || entry is null) return;
+            // Mutating paths outlive the probe's guards: a close landing
+            // mid-apply must not paint (or re-enable) a dead tree (QA F-005).
+            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
             DnsStatusText.Text = result.Success
                 ? $"{entry.ShortName} • Applied: {entry.Primary} / {entry.Secondary}"
                 : result.Message;
         }
         finally
         {
-            ChangeDnsButton.IsEnabled = true;
+            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                ChangeDnsButton.IsEnabled = true;
         }
     }
 
@@ -145,6 +149,7 @@ public partial class NetworkView : UserControl
         try
         {
             var result = await _viewModel.ApplyIpadAsync(preset);
+            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
             IpadApplyStatusText.Text = result.Success
                 ? $"Applied: {preset.Label} • {preset.Width} × {preset.Height}. Restart GameLoop to load it."
                 : result.Message;
@@ -152,8 +157,10 @@ public partial class NetworkView : UserControl
         }
         finally
         {
-            // Re-enabled only when a preset is selected, per the details paint.
-            UpdateIpadPresetDetails();
+            // Re-enabled only when a preset is selected, per the details paint —
+            // and never on a dead tree.
+            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                UpdateIpadPresetDetails();
         }
     }
 
@@ -191,7 +198,8 @@ public partial class NetworkView : UserControl
         }
         finally
         {
-            ResetIpadButton.IsEnabled = true;
+            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                ResetIpadButton.IsEnabled = true;
         }
     }
 
