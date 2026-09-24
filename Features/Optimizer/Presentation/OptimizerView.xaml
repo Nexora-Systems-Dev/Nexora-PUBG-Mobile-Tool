@@ -120,7 +120,7 @@
                         </StackPanel>
                         <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
                             <Border Background="#0C1D2A" BorderBrush="{StaticResource Accent}" BorderThickness="1" CornerRadius="6" Padding="12,7" Margin="0,0,10,0">
-                                <TextBlock x:Name="ArchitectureText" Text="GAMELOOP 64-BIT" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" />
+                                <TextBlock Text="GAMELOOP 64-BIT" Foreground="{StaticResource Accent}" FontSize="11" FontWeight="Bold" />
                             </Border>
                             <Button x:Name="RefreshOptimizerButton" Content="↻  REFRESH HARDWARE" Click="RefreshOptimizerButton_Click" Style="{StaticResource PageOutlineButtonStyle}" FontSize="11" Padding="12,8" />
                         </StackPanel>

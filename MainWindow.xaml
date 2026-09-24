@@ -25,7 +25,7 @@
         Loaded="Window_Loaded"
         Closing="Window_Closing">
         <Border Background="{StaticResource PageBackground}" BorderBrush="#263642" BorderThickness="1">
-        <Grid x:Name="MainLayoutGrid">
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="76" />
                 <RowDefinition Height="*" />
@@ -36,7 +36,7 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Row="0" Grid.ColumnSpan="2" Background="{StaticResource HeaderBackgroundBrush}" BorderBrush="#1B2936" BorderThickness="0,0,0,1" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid x:Name="TitleBarGrid">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition x:Name="TitleBrandColumn" Width="260" />
                         <ColumnDefinition Width="*" />
@@ -78,13 +78,13 @@
                     </StackPanel>
                     <Border Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0" Background="#080E14" BorderBrush="#1B2936" BorderThickness="1" CornerRadius="8" Padding="2">
                         <StackPanel Orientation="Horizontal">
-                            <Button x:Name="MinimizeWindowButton" Click="MinimizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Minimize">
+                            <Button Click="MinimizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Minimize">
                                 <Path Data="M 4,14 L 16,14" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                             </Button>
-                            <Button x:Name="MaximizeWindowButton" Click="MaximizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Maximize / Restore">
+                            <Button Click="MaximizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Maximize / Restore">
                                 <Path Data="M 4,4 L 16,4 L 16,16 L 4,16 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeLineJoin="Round" Fill="Transparent" />
                             </Button>
-                            <Button x:Name="CloseWindowButton" Click="CloseButton_Click" Width="36" Height="28" Style="{StaticResource CloseWindowButtonStyle}" ToolTip="Close">
+                            <Button Click="CloseButton_Click" Width="36" Height="28" Style="{StaticResource CloseWindowButtonStyle}" ToolTip="Close">
                                 <Path Data="M 5,5 L 15,15 M 15,5 L 5,15" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                             </Button>
                         </StackPanel>

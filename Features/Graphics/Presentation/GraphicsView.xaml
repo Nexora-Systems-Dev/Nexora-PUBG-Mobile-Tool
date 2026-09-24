@@ -282,7 +282,7 @@
                         <Grid>
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse x:Name="ConnectionDot" Width="11" Height="11" Fill="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,11,0" />
-                                <TextBlock x:Name="ConnectionTitle" Text="GAMELOOP CONNECTION" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <TextBlock Text="GAMELOOP CONNECTION" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
                             </StackPanel>
                             <Button x:Name="ConnectButton" Content="CONNECT" Click="ConnectButton_Click" Style="{StaticResource GraphicsConnectButtonStyle}" HorizontalAlignment="Right" Padding="12,7" FontSize="11" />
                         </Grid>
