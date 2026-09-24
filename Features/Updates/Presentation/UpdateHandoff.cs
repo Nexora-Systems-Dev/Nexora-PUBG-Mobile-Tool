@@ -36,17 +36,25 @@ public sealed class UpdateHandoff
     /// Runs the check-and-prompt flow once. Every branch below is verbatim
     /// the pre-extraction shell flow: the slow-network shutdown guards, the
     /// prompt text, the downloading line, and the close-on-success handoff.
+    /// Cancellation (the shell's close-linked token) settles as a reported
+    /// cancel, never a throw — and stays silent when the window is already
+    /// going away.
     /// </summary>
-    public async Task RunAsync()
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            var update = await _updates.CheckAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+            var update = await _updates.CheckAsync(cancellationToken);
             // The check can now outlive the window (a slow network plus a user
             // close, or the refresh settling first); never show UI on a
             // dispatcher that is already torn down.
             if (_isShutdown()) return;
             if (update.Available) await PromptAndDownloadAsync(update);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!_isShutdown()) _setStatus("Update check canceled.", true);
         }
         catch (Exception ex)
         {

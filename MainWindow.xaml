@@ -185,7 +185,7 @@
             <Grid Grid.Row="1" Grid.Column="1" Background="{StaticResource PageBackground}">
                 <graphics:GraphicsView x:Name="GraphicsView" />
 
-                <optimizer:OptimizerView x:Name="OptimizerView" />
+                <optimizer:OptimizerView x:Name="OptimizerView" Visibility="Collapsed" />
 
                 <tuning:TuningView x:Name="TuningView" Visibility="Collapsed" />
 

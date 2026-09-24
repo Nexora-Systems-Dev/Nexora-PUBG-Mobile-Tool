@@ -60,10 +60,13 @@ public partial class OptimizerView : UserControl
     /// <summary>
     /// Reloads the hardware snapshot and its recommended plan. Called by the
     /// shell on startup and after the operations that change what the plan
-    /// recommends; a busy bus makes it a no-op.
+    /// recommends; a busy bus makes it a no-op. Cancellation (the shell's
+    /// close-linked token) is a silent no-op, never a throw — the tiles keep
+    /// their XAML placeholder content instead of painting over a dead tree.
     /// </summary>
-    public async Task RefreshProfileAsync()
+    public async Task RefreshProfileAsync(CancellationToken cancellationToken = default)
     {
+        if (cancellationToken.IsCancellationRequested) return;
         if (_viewModel.IsBusy || RefreshOptimizerButton is null) return;
         RefreshOptimizerButton.IsEnabled = false;
         try
@@ -72,6 +75,7 @@ public partial class OptimizerView : UserControl
             // The startup refresh runs beside the update check and can settle
             // after the update handoff has closed the window; a dead
             // dispatcher must never touch the visual tree (QA F-006).
+            if (cancellationToken.IsCancellationRequested) return;
             if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
             if (outcome is null) return;
             if (outcome.ErrorMessage is not null)

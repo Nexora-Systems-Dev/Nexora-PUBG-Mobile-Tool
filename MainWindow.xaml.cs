@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private readonly GraphicsViewModel _graphicsViewModel;
     private readonly ShellNavigator _navigator;
     private readonly ShellConnectionPresenter _connection;
+    private readonly CancellationTokenSource _loadedCts = new();
 
     private IDisposable? _chromeHook;
 
@@ -39,6 +40,12 @@ public partial class MainWindow : Window
         GameLoopOptions? gameLoopOptions = null)
     {
         InitializeComponent();
+        // First paint already uses tier values: the XAML-declared 1440 width
+        // selects the tier before first measure, so SizeChanged on show only
+        // re-applies identical values (dependency-property equal-sets are
+        // layout no-ops). If the OS shows the window at a different size,
+        // that single SizeChanged pass is the one correction.
+        ApplyResponsiveTier(Width);
         ResourceFreezer.FreezeAll(GraphicsView, OptimizerView, TuningView, NetworkView, ShortcutsView, AboutView);
         _gameLoopOptions = gameLoopOptions ?? new GameLoopOptions();
         var fallback = DesignerFallback.Create();
@@ -148,8 +155,10 @@ public partial class MainWindow : Window
         // or slow network can no longer leave the panel empty for the whole
         // timeout window. Each task owns its own error handling and
         // shutdown-guarded UI writes, so a failure in one never blocks or
-        // suppresses the other (QA F-006).
-        await Task.WhenAll(_updateHandoff.RunAsync(), OptimizerView.RefreshProfileAsync());
+        // suppresses the other (QA F-006). Both share the close-linked token,
+        // so a user close settles them as failed results instead of letting
+        // them outlive the window — neither ever throws out of this handler.
+        await Task.WhenAll(_updateHandoff.RunAsync(_loadedCts.Token), OptimizerView.RefreshProfileAsync(_loadedCts.Token));
     }
 
     private bool _closeRequested;
@@ -175,6 +184,7 @@ public partial class MainWindow : Window
         _graphicsViewModel.Cancel();
         TuningView.ViewModel.Cancel();
         ShortcutsView.ViewModel.Cancel();
+        _loadedCts.Cancel();
         _chromeHook?.Dispose();
         _chromeHook = null;
 
@@ -261,13 +271,22 @@ public partial class MainWindow : Window
         _chromeHook = WindowChromeBehavior.Attach(this);
     }
 
-    private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void Window_SizeChanged(object sender, SizeChangedEventArgs e) =>
+        ApplyResponsiveTier(e.NewSize.Width);
+
+    /// <summary>
+    /// Applies one responsive tier — sidebar width plus all six page margins —
+    /// from the pure <see cref="ResponsiveLayoutManager"/> selectors, adding no
+    /// logic of its own. Called once in the ctor (pre-first-measure) and on
+    /// every <see cref="Window_SizeChanged"/> after.
+    /// </summary>
+    private void ApplyResponsiveTier(double windowWidth)
     {
-        var sidebarWidth = ResponsiveLayoutManager.GetSidebarWidth(e.NewSize.Width);
+        var sidebarWidth = ResponsiveLayoutManager.GetSidebarWidth(windowWidth);
         SidebarColumn.Width = new GridLength(sidebarWidth);
         TitleBrandColumn.Width = new GridLength(sidebarWidth);
 
-        var pageMargin = ResponsiveLayoutManager.GetPageMargin(e.NewSize.Width);
+        var pageMargin = ResponsiveLayoutManager.GetPageMargin(windowWidth);
         GraphicsView.Margin = pageMargin;
         OptimizerView.Margin = pageMargin;
         NetworkView.Margin = pageMargin;

@@ -63,6 +63,40 @@ public sealed class UpdateHandoffTests
         closed.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task RunAsync_CanceledBeforeClose_ReportsCancelWithoutClosingOrThrowing()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var service = new FakeUpdateService { Info = NoneAvailable };
+        var statuses = new List<(string, bool)>();
+        var closed = false;
+        var handoff = new UpdateHandoff(service, () => false, (m, e) => statuses.Add((m, e)), () => closed = true);
+
+        await handoff.RunAsync(cts.Token);
+
+        service.CheckCalls.Should().Be(0);
+        statuses.Should().ContainSingle().Which.Should().Be(("Update check canceled.", true));
+        closed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RunAsync_CanceledDuringShutdown_StaysSilent()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var service = new FakeUpdateService { Info = NoneAvailable };
+        var statuses = new List<(string, bool)>();
+        var closed = false;
+        var handoff = new UpdateHandoff(service, () => true, (m, e) => statuses.Add((m, e)), () => closed = true);
+
+        await handoff.RunAsync(cts.Token);
+
+        service.CheckCalls.Should().Be(0);
+        statuses.Should().BeEmpty();
+        closed.Should().BeFalse();
+    }
+
     private sealed class FakeUpdateService : IUpdateService
     {
         public UpdateInfo Info { get; set; } = NoneAvailable;
