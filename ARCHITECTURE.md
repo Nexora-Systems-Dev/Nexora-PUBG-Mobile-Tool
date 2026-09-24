@@ -6,7 +6,7 @@ Runs with elevated administrator privileges (`app.manifest` execution level `req
 
 Solution layout: `Nexora.slnx`
 - **Application:** `Nexora.csproj`
-- **Automated Test Suite:** `Nexora.Tests/Nexora.Tests.csproj` (519 standard tests passing; five optional Live Emulator Verification tests require a configured running GameLoop instance).
+- **Automated Test Suite:** `Nexora.Tests/Nexora.Tests.csproj` (534 tests; five optional Live Emulator Verification tests require a configured running GameLoop instance).
 
 ---
 
@@ -215,7 +215,7 @@ Nexora contains a dedicated, non-destructive live verification suite ([`LiveGame
 ## 6. Verification & Test Suite Summary
 
 - **Build Quality:** `dotnet build Nexora.slnx` → 0 Errors, 0 Warnings (`<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`).
-- **Automated Test Suite:** `dotnet test Nexora.slnx --filter "Category!=LiveFunctionalVerification"` → **519 standard tests passing** (419 baseline at refactor start, plus page ViewModel suites, formatter/service suites, DI registration tests, and the `ArchitectureGuardTests` source guards below; the one recurring failure, `ProcessPriority_OfflineGameLoop_ReturnsSkipped_AndArmsMonitor`, is environmental — it fails identically on the clean tree when a leftover GameLoop/AppMarket process is running).
+- **Automated Test Suite:** `dotnet test Nexora.slnx --filter "Category!=LiveFunctionalVerification"` → **534 tests** (419 baseline at refactor start, plus page ViewModel suites, formatter/service suites, DI registration tests, and the `ArchitectureGuardTests` source guards below; the one recurring failure, `ProcessPriority_OfflineGameLoop_ReturnsSkipped_AndArmsMonitor`, is environmental — it fails identically on the clean tree when a leftover GameLoop/AppMarket process is running).
   - **Live GameLoop Verification:** five opt-in tests cover connection and diagnostics, graphics settings and SavEditor, Performance Center and hardware telemetry, DNS latency and iPad layout guards, and dynamic path resolution. Run them with `--filter "Category=LiveFunctionalVerification"` on a configured GameLoop machine.
   - **Security & Integrity Tests:** Authenticode signature validation, publisher pinning, GitHub domain verification, dual-format SHA-256 extraction, and untrusted update rejection.
   - **Defender Exclusion Trust Tests:** Registry-only path resolution, TxGameAssistant directory segment validation, and rejection of system directories and prefix spoofing.
