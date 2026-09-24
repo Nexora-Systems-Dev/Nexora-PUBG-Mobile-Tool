@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Net;
 using System.Net.Http;
 using Nexora.Configuration;
 using Nexora.Shared.Kernel;
@@ -17,11 +18,13 @@ public sealed class UpdateService : IUpdateService
     private readonly string? _currentExecutablePath;
     private readonly string? _stagingBaseDirectory;
     private readonly Func<string, bool>? _signatureCheck;
+    private readonly bool _httpClientInjected;
 
     public UpdateService(IProcessRunner runner, HttpClient? httpClient = null, string? currentExecutablePath = null, string? stagingBaseDirectory = null, UpdateOptions? updates = null, Func<string, bool>? signatureCheck = null)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
         _updates = updates ?? new UpdateOptions();
+        _httpClientInjected = httpClient is not null;
         _httpClient = httpClient ?? new HttpClient { Timeout = _updates.HttpTimeout };
         _checker = new UpdateChecker(_httpClient, _updates);
         _currentExecutablePath = currentExecutablePath;
@@ -107,8 +110,8 @@ public sealed class UpdateService : IUpdateService
     private async Task<(OperationResult? Failure, string? ExecutablePath)> StageUpdateArchiveAsync(UpdateInfo update, string archivePath, string extractionRoot, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(extractionRoot);
-        await using (var source = await _httpClient.GetStreamAsync(update.DownloadUrl, cancellationToken))
-        await using (var destination = File.Create(archivePath)) await source.CopyToAsync(destination, cancellationToken);
+        var downloadFailure = await DownloadArchiveWithTrustedRedirectsAsync(update.DownloadUrl, archivePath, cancellationToken);
+        if (downloadFailure is not null) return (downloadFailure, null);
         using var archive = ZipFile.OpenRead(archivePath);
         var executableEntry = UpdateArchiveValidator.FindExpectedExecutable(archive, update.LatestVersion, _updates);
         if (executableEntry is null) return (OperationResult.Fail("The update archive does not contain the expected Nexora executable."), null);
@@ -122,6 +125,88 @@ public sealed class UpdateService : IUpdateService
 
         return (null, executablePath);
     }
+
+    /// <summary>
+    /// Maximum redirect hops followed for an update download. GitHub release
+    /// downloads settle in one or two hops; five is the conventional
+    /// manual-walk ceiling and keeps the whole fetch inside one HttpTimeout.
+    /// </summary>
+    private const int MaxDownloadRedirects = 5;
+
+    /// <summary>
+    /// Streams the update archive to <paramref name="archivePath"/>, validating
+    /// every redirect hop with <see cref="IsTrustedDownloadUrl"/> before
+    /// requesting it. Fails closed on untrusted hops, loops, hop exhaustion,
+    /// and redirect responses without a Location header.
+    /// </summary>
+    /// <returns>A failure result when the download was refused or the chain was
+    /// invalid; null after the archive has been fully written.</returns>
+    private async Task<OperationResult?> DownloadArchiveWithTrustedRedirectsAsync(string downloadUrl, string archivePath, CancellationToken cancellationToken)
+    {
+        // One deadline for the whole fetch: all hops plus the body share a
+        // single HttpTimeout instead of each hop getting its own, so a long
+        // chain can never stretch the download into minutes. The linked token
+        // also carries the caller's cancellation into every stalled hop.
+        using var budgetSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        budgetSource.CancelAfter(_updates.HttpTimeout);
+        var budget = budgetSource.Token;
+
+        // The shared client keeps its default handler (auto-redirect on) for
+        // the releases feed. The archive fetch must observe each hop to
+        // validate it, so default-constructed transports download through a
+        // local client with auto-redirect off. Caller-injected clients (the
+        // test seam) are used as-is: stub handlers surface responses without
+        // following redirects, which keeps the manual walk — and the per-hop
+        // trust check — genuine on that path too.
+        using HttpClient? noRedirectClient = _httpClientInjected
+            ? null
+            : new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
+        var fetchClient = noRedirectClient ?? _httpClient;
+
+        var current = new Uri(downloadUrl, UriKind.Absolute);
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { current.AbsoluteUri };
+        for (var hop = 0; ; hop++)
+        {
+            budget.ThrowIfCancellationRequested();
+            if (!IsTrustedDownloadUrl(current.AbsoluteUri))
+            {
+                return OperationResult.Fail("The update download address was rejected.");
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, current);
+            using var response = await fetchClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, budget);
+            if (!IsRedirect(response.StatusCode))
+            {
+                response.EnsureSuccessStatusCode();
+                await using var source = await response.Content.ReadAsStreamAsync(budget);
+                await using var destination = File.Create(archivePath);
+                await source.CopyToAsync(destination, budget);
+                return null;
+            }
+
+            if (hop >= MaxDownloadRedirects)
+            {
+                throw new InvalidOperationException($"The update download was redirected too many times (>{MaxDownloadRedirects}).");
+            }
+
+            var location = response.Headers.Location ?? throw new InvalidOperationException("The update download redirect is missing its target address.");
+            var next = location.IsAbsoluteUri ? location : new Uri(current, location);
+            if (!visited.Add(next.AbsoluteUri))
+            {
+                throw new InvalidOperationException("The update download was redirected in a loop.");
+            }
+
+            current = next;
+        }
+    }
+
+    /// <summary>Reports whether a status code is a GET-followable redirect.</summary>
+    private static bool IsRedirect(HttpStatusCode statusCode) =>
+        statusCode is HttpStatusCode.MovedPermanently // 301
+            or HttpStatusCode.Found // 302
+            or HttpStatusCode.SeeOther // 303
+            or HttpStatusCode.TemporaryRedirect // 307
+            or HttpStatusCode.PermanentRedirect; // 308
 
     /// <summary>
     /// Builds the restart handoff script and launches it in an elevated shell.
