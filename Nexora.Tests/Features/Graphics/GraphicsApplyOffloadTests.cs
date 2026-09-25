@@ -37,8 +37,11 @@ public sealed class GraphicsApplyOffloadTests
             // this thread while this thread was not free to run it. A plain thread-id
             // comparison after an await would not do it: the test runner is itself on a
             // pool thread, and the await hands the caller's slot straight back to the pool.
+            // The 30 s fuse is load headroom, not timing: under the full suite the pool
+            // is shared with blocking process tests (a 4000-line PowerShell drain among
+            // them), and a 5 s fuse flaked there while passing in isolation every time.
             var applyTask = service.ApplyAsync(GraphicsSelection.Defaults);
-            SpinWait.SpinUntil(() => store.WorkThreadId.HasValue, TimeSpan.FromSeconds(5));
+            SpinWait.SpinUntil(() => store.WorkThreadId.HasValue, TimeSpan.FromSeconds(30));
 
             store.WorkThreadId.Should().NotBeNull("the apply must start without the caller awaiting it");
             store.WorkThreadId.Should().NotBe(callingThreadId,

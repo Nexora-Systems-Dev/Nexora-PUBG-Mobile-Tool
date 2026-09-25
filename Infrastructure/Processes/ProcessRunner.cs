@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Nexora.Configuration;
 using Nexora.Shared.Kernel;
 
@@ -44,6 +45,27 @@ public sealed class ProcessRunner : IProcessRunner
                 return new ProcessResult(-1, string.Empty, "Process did not start.", false);
             }
 
+            // U-06: drain BOTH pipes before the wait. A child emitting more
+            // than the OS pipe buffer (~64 KB) would otherwise block forever
+            // on a full pipe while we sit in WaitForExit, then be misreported
+            // as TimedOut and killed. Event handlers plus Begin read calls
+            // keep the pipes draining with no Task objects involved, so the
+            // ArchitectureGuard ban on blocking task waits cannot trigger;
+            // the parameterless WaitForExit after the timed wait flushes the
+            // handlers before we snapshot the builders.
+            var stdout = new StringBuilder();
+            var stderr = new StringBuilder();
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data is not null) stdout.AppendLine(e.Data);
+            };
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data is not null) stderr.AppendLine(e.Data);
+            };
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
             var waitTime = timeout ?? _gameLoop.Timeouts.DefaultProcessTimeout;
             if (!process.WaitForExit((int)waitTime.TotalMilliseconds))
             {
@@ -51,10 +73,12 @@ public sealed class ProcessRunner : IProcessRunner
                 return new ProcessResult(-1, string.Empty, "Process timed out.", true);
             }
 
+            process.WaitForExit();
+
             return new ProcessResult(
                 process.ExitCode,
-                process.StandardOutput.ReadToEnd(),
-                process.StandardError.ReadToEnd(),
+                stdout.ToString(),
+                stderr.ToString(),
                 false);
         }
         catch (Exception ex)
