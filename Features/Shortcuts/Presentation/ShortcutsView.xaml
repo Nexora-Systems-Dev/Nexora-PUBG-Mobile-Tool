@@ -83,7 +83,7 @@
 
                                     <StackPanel Grid.Row="2">
                                         <TextBlock Text="GAME VERSION" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
-                                        <ComboBox x:Name="ShortcutComboBox" Style="{StaticResource ShortcutsComboBoxStyle}" SelectionChanged="ShortcutComboBox_SelectionChanged" />
+                                        <ComboBox x:Name="ShortcutComboBox" Style="{StaticResource ShortcutsComboBoxStyle}" SelectionChanged="ShortcutComboBox_SelectionChanged" AutomationProperties.Name="Game version" />
                                     </StackPanel>
 
                                     <Border Grid.Row="3" Background="#0B141D" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,16,0,16">
@@ -97,7 +97,7 @@
                                                 <Border.Effect>
                                                     <DropShadowEffect Color="#00D2FF" BlurRadius="8" ShadowDepth="0" Opacity="0.2" />
                                                 </Border.Effect>
-                                                <Image x:Name="ShortcutIcon" Width="36" Height="36" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <Image x:Name="ShortcutIcon" Width="36" Height="36" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="" />
                                             </Border>
 
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">

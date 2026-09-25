@@ -52,7 +52,7 @@
                                         <Border.Effect>
                                             <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.3" />
                                         </Border.Effect>
-                                        <Image Source="/Assets/Icons/nexora.ico" Width="40" Height="40" Stretch="Uniform" />
+                                        <Image Source="/Assets/Icons/nexora.ico" Width="40" Height="40" Stretch="Uniform" AutomationProperties.Name="" />
                                     </Border>
                                     <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="NEXORA" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="26" FontWeight="SemiBold" />

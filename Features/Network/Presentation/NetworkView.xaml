@@ -84,7 +84,7 @@
                         <TextBlock Grid.Row="1" Text="Select an esports provider, test real-time ping latency, and apply direct routing to active network adapters." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,14" LineHeight="18" />
 
                         <TextBlock Grid.Row="2" Text="DNS PROVIDER" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
-                        <ComboBox Grid.Row="3" x:Name="DnsComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="DnsComboBox_SelectionChanged">
+                        <ComboBox Grid.Row="3" x:Name="DnsComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="DnsComboBox_SelectionChanged" AutomationProperties.Name="DNS provider">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontFamily="Segoe UI" />
@@ -98,7 +98,7 @@
                                     <Ellipse Width="6" Height="6" Fill="{StaticResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center" />
                                     <TextBlock Text="CONNECTION TELEMETRY" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
                                 </StackPanel>
-                                <TextBlock x:Name="DnsStatusText" Text="Choose a provider to test response time." Foreground="{StaticResource AccentHover}" FontFamily="Bahnschrift SemiCondensed" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                <TextBlock x:Name="DnsStatusText" Text="Choose a provider to test response time." Foreground="{StaticResource AccentHover}" FontFamily="Bahnschrift SemiCondensed" FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,2,0,0" AutomationProperties.LiveSetting="Polite" />
                             </StackPanel>
                         </Border>
 
@@ -146,7 +146,7 @@
                         <TextBlock Grid.Row="1" Text="Apply a tested iPad-style aspect ratio and matching GameLoop key layout. Close GameLoop first, then restart it after applying." Foreground="{StaticResource TextSecondary}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,14" LineHeight="18" />
 
                         <TextBlock Grid.Row="2" Text="DISPLAY PRESET" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,0,0,6" />
-                        <ComboBox Grid.Row="3" x:Name="IpadComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="IpadComboBox_SelectionChanged" ToolTip="Select an iPad display profile">
+                        <ComboBox Grid.Row="3" x:Name="IpadComboBox" Style="{StaticResource NetworkComboBoxStyle}" SelectionChanged="IpadComboBox_SelectionChanged" ToolTip="Select an iPad display profile" AutomationProperties.Name="iPad display preset">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontFamily="Segoe UI" />
@@ -161,7 +161,7 @@
                                     <TextBlock Text="PRESET PROFILE DETAILS" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <TextBlock x:Name="IpadPresetDetailsText" Text="Choose a tested iPad display profile." Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="14" FontWeight="Bold" TextWrapping="Wrap" Margin="0,2,0,2" />
-                                <TextBlock x:Name="IpadApplyStatusText" Text="No profile selected." Foreground="{StaticResource TextMuted}" FontSize="12" TextWrapping="Wrap" />
+                                <TextBlock x:Name="IpadApplyStatusText" Text="No profile selected." Foreground="{StaticResource TextMuted}" FontSize="12" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
                             </StackPanel>
                         </Border>
 

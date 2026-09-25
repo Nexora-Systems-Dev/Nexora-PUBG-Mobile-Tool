@@ -202,7 +202,7 @@
             </StackPanel>
             <StackPanel Grid.Column="1" HorizontalAlignment="Right" Width="270">
                 <TextBlock Text="PUBG MOBILE VERSION" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8" />
-                <ComboBox x:Name="PubgVersionComboBox" Style="{StaticResource InputComboBoxStyle}" SelectionChanged="PubgVersionComboBox_SelectionChanged" />
+                <ComboBox x:Name="PubgVersionComboBox" Style="{StaticResource InputComboBoxStyle}" SelectionChanged="PubgVersionComboBox_SelectionChanged" AutomationProperties.Name="PUBG Mobile version" />
             </StackPanel>
         </Grid>
 
@@ -252,19 +252,19 @@
                     <TextBlock Text="VISUAL STYLE" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="18" FontWeight="SemiBold" />
                     <TextBlock Text="Apply a visual filter to change color and atmosphere." Style="{StaticResource SmallLabelStyle}" Margin="0,6,0,12" />
                     <UniformGrid Columns="5" Height="132" Margin="0,0,0,18">
-                        <ToggleButton x:Name="ClassicButton" Tag="Classic" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0">
+                        <ToggleButton x:Name="ClassicButton" Tag="Classic" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0" AutomationProperties.Name="Classic style">
                             <Image Source="/Assets/Styles/Classic.png" Stretch="UniformToFill" />
                         </ToggleButton>
-                        <ToggleButton x:Name="ColorfulButton" Tag="Colorful" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0">
+                        <ToggleButton x:Name="ColorfulButton" Tag="Colorful" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0" AutomationProperties.Name="Colorful style">
                             <Image Source="/Assets/Styles/Colorful.png" Stretch="UniformToFill" />
                         </ToggleButton>
-                        <ToggleButton x:Name="RealisticButton" Tag="Realistic" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0">
+                        <ToggleButton x:Name="RealisticButton" Tag="Realistic" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0" AutomationProperties.Name="Realistic style">
                             <Image Source="/Assets/Styles/Realistic.png" Stretch="UniformToFill" />
                         </ToggleButton>
-                        <ToggleButton x:Name="SoftButton" Tag="Soft" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0">
+                        <ToggleButton x:Name="SoftButton" Tag="Soft" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" Margin="0,0,10,0" AutomationProperties.Name="Soft style">
                             <Image Source="/Assets/Styles/Soft.png" Stretch="UniformToFill" />
                         </ToggleButton>
-                        <ToggleButton x:Name="MovieButton" Tag="Movie" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked">
+                        <ToggleButton x:Name="MovieButton" Tag="Movie" Style="{StaticResource GraphicsStyleCardButton}" Checked="StyleButton_Checked" AutomationProperties.Name="Movie style">
                             <Image Source="/Assets/Styles/Movie.png" Stretch="UniformToFill" />
                         </ToggleButton>
                     </UniformGrid>
@@ -351,7 +351,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                 <Ellipse Width="7" Height="7" Fill="{StaticResource TextMuted}" Margin="0,0,8,0" />
-                <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource TextSecondary}" FontSize="13" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource TextSecondary}" FontSize="13" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" />
             </StackPanel>
             <!-- The hero CTA with this page's Segoe label set inline; the ramp,
             glow and states come from HeroButtonStyle so the check-mark content

@@ -58,7 +58,7 @@
                             <Border.Effect>
                                 <DropShadowEffect Color="#00D2FF" BlurRadius="12" ShadowDepth="0" Opacity="0.35" />
                             </Border.Effect>
-                            <Image Source="Assets/Icons/nexora.ico" Width="26" Height="26" Stretch="Uniform" />
+                            <Image Source="Assets/Icons/nexora.ico" Width="26" Height="26" Stretch="Uniform" AutomationProperties.Name="" />
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="NEXORA" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="22" FontWeight="SemiBold" />
@@ -71,20 +71,20 @@
                                 <Border Width="16" Height="16" CornerRadius="8" Background="#060C12" BorderBrush="#142330" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,8,0">
                                     <Ellipse x:Name="TopConnectionDot" Width="6" Height="6" Fill="{StaticResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
-                                <TextBlock x:Name="TopConnectionText" Text="Not connected" Foreground="{StaticResource TextSecondary}" FontFamily="Segoe UI" FontSize="12" FontWeight="Medium" VerticalAlignment="Center" />
+                                <TextBlock x:Name="TopConnectionText" Text="Not connected" Foreground="{StaticResource TextSecondary}" FontFamily="Segoe UI" FontSize="12" FontWeight="Medium" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
                             </StackPanel>
                         </Border>
                         <Border Width="1" Height="22" Background="#1C2D3C" Margin="16,0,16,0" />
                     </StackPanel>
                     <Border Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0" Background="#080E14" BorderBrush="#1B2936" BorderThickness="1" CornerRadius="8" Padding="2">
                         <StackPanel Orientation="Horizontal">
-                            <Button Click="MinimizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Minimize">
+                            <Button Click="MinimizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Minimize" AutomationProperties.Name="Minimize">
                                 <Path Data="M 4,14 L 16,14" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                             </Button>
-                            <Button Click="MaximizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Maximize / Restore">
+                            <Button Click="MaximizeButton_Click" Width="36" Height="28" Margin="0,0,2,0" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Maximize / Restore" AutomationProperties.Name="Maximize or restore">
                                 <Path Data="M 4,4 L 16,4 L 16,16 L 4,16 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeLineJoin="Round" Fill="Transparent" />
                             </Button>
-                            <Button Click="CloseButton_Click" Width="36" Height="28" Style="{StaticResource CloseWindowButtonStyle}" ToolTip="Close">
+                            <Button Click="CloseButton_Click" Width="36" Height="28" Style="{StaticResource CloseWindowButtonStyle}" ToolTip="Close" AutomationProperties.Name="Close">
                                 <Path Data="M 5,5 L 15,15 M 15,5 L 5,15" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                             </Button>
                         </StackPanel>

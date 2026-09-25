@@ -39,10 +39,11 @@
              in flight. Lives in the fixed header row, is hit-test invisible, and
              takes no layout space, so the scrolling content below never reflows. -->
         <ProgressBar x:Name="TuningLoadingBar" Grid.Row="0" Height="2"
-                     VerticalAlignment="Bottom" Margin="20,0,20,-1"
-                     IsIndeterminate="True" IsHitTestVisible="False"
-                     Visibility="Collapsed" BorderThickness="0"
-                     Foreground="{StaticResource Accent}" Background="Transparent" />
+                      VerticalAlignment="Bottom" Margin="20,0,20,-1"
+                      IsIndeterminate="True" IsHitTestVisible="False"
+                      Visibility="Collapsed" BorderThickness="0"
+                      Foreground="{StaticResource Accent}" Background="Transparent"
+                      AutomationProperties.Name="Scan progress" AutomationProperties.LiveSetting="Polite" />
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="18,0,20,2">
             <Grid>
@@ -71,7 +72,7 @@
                                 <TextBlock Grid.Column="0" Text="Processor (CPU cores)" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1" x:Name="TuningCpuText" Text="4 cores" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="160" Margin="8,0,0,0" />
                             </Grid>
-                            <Slider x:Name="TuningCpuSlider" Minimum="1" Maximum="8" TickFrequency="1" IsSnapToTickEnabled="True" Value="4" ValueChanged="TuningCpuSlider_ValueChanged" Margin="0,0,0,12" />
+                            <Slider x:Name="TuningCpuSlider" Minimum="1" Maximum="8" TickFrequency="1" IsSnapToTickEnabled="True" Value="4" ValueChanged="TuningCpuSlider_ValueChanged" Margin="0,0,0,12" AutomationProperties.Name="Processor CPU cores" />
                             <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -80,7 +81,7 @@
                                 <TextBlock Grid.Column="0" Text="Memory" Style="{StaticResource SmallLabelStyle}" VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1" x:Name="TuningMemoryText" Text="4096 MB" Foreground="{StaticResource TextPrimary}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="160" Margin="8,0,0,0" />
                             </Grid>
-                            <Slider x:Name="TuningMemorySlider" Minimum="1024" Maximum="16384" TickFrequency="512" IsSnapToTickEnabled="True" Value="4096" ValueChanged="TuningMemorySlider_ValueChanged" />
+                            <Slider x:Name="TuningMemorySlider" Minimum="1024" Maximum="16384" TickFrequency="512" IsSnapToTickEnabled="True" Value="4096" ValueChanged="TuningMemorySlider_ValueChanged" AutomationProperties.Name="Memory" />
                         </StackPanel>
                     </Border>
 
@@ -105,7 +106,7 @@
                                 <TextBlock Text="GRAPHICS" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                             </StackPanel>
                             <TextBlock Text="SCREEN DPI" Foreground="{StaticResource TextMuted}" FontSize="10" FontWeight="Bold" Margin="0,10,0,6" />
-                            <ComboBox x:Name="TuningDpiComboBox" Style="{StaticResource InputComboBoxStyle}" Margin="0,0,0,6">
+                            <ComboBox x:Name="TuningDpiComboBox" Style="{StaticResource InputComboBoxStyle}" Margin="0,0,0,6" AutomationProperties.Name="Screen DPI">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}" FontSize="13.5" FontFamily="Segoe UI" />
@@ -129,7 +130,7 @@
                             <TextBlock Text="APPLY" Foreground="{StaticResource TextPrimary}" FontFamily="Bahnschrift SemiCondensed" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                         </StackPanel>
                         <Border Background="#091219" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
-                            <TextBlock x:Name="TuningStatusText" Text="Open this page to load the emulator's current settings." Foreground="{StaticResource AccentHover}" FontSize="13" TextWrapping="Wrap" />
+                            <TextBlock x:Name="TuningStatusText" Text="Open this page to load the emulator's current settings." Foreground="{StaticResource AccentHover}" FontSize="13" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
                         </Border>
                         <TextBlock Text="To apply settings, click the button." Foreground="{StaticResource TextSecondary}" FontSize="12.5" Margin="0,0,0,10" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
