@@ -345,18 +345,12 @@
         </Grid>
 
         <Grid Grid.Row="2" Margin="18,18,18,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Ellipse Width="7" Height="7" Fill="{StaticResource TextMuted}" Margin="0,0,8,0" />
-                <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource TextSecondary}" FontSize="13" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" />
-            </StackPanel>
             <!-- The hero CTA with this page's Segoe label set inline; the ramp,
             glow and states come from HeroButtonStyle so the check-mark content
-            is the only page-specific piece. -->
-            <Button Grid.Column="1" x:Name="ApplyButton" Click="ApplyButton_Click" Style="{StaticResource HeroButtonStyle}" FontFamily="Segoe UI" FontSize="13" BorderBrush="#5AE1FF" Foreground="#061219" Padding="32,13" HorizontalAlignment="Right" IsEnabled="False" Margin="12,0,0,0">
+            is the only page-specific piece. The window status bar lives in the
+            shell now, so this row keeps only the apply action, right-aligned
+            exactly where it was. -->
+            <Button x:Name="ApplyButton" Click="ApplyButton_Click" Style="{StaticResource HeroButtonStyle}" FontFamily="Segoe UI" FontSize="13" BorderBrush="#5AE1FF" Foreground="#061219" Padding="32,13" HorizontalAlignment="Right" IsEnabled="False" Margin="12,0,0,0">
                 <StackPanel Orientation="Horizontal">
                     <Path Data="M 1,6 L 4.5,9.5 L 11,2"
                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"

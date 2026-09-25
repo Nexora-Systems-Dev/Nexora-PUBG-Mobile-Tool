@@ -183,18 +183,34 @@
             </Border>
 
             <Grid Grid.Row="1" Grid.Column="1" Background="{StaticResource PageBackground}">
-                <graphics:GraphicsView x:Name="GraphicsView" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <graphics:GraphicsView x:Name="GraphicsView" />
 
-                <optimizer:OptimizerView x:Name="OptimizerView" Visibility="Collapsed" />
+                    <optimizer:OptimizerView x:Name="OptimizerView" Visibility="Collapsed" />
 
-                <tuning:TuningView x:Name="TuningView" Visibility="Collapsed" />
+                    <tuning:TuningView x:Name="TuningView" Visibility="Collapsed" />
 
-                <network:NetworkView x:Name="NetworkView" Visibility="Collapsed" />
+                    <network:NetworkView x:Name="NetworkView" Visibility="Collapsed" />
 
-                <shortcuts:ShortcutsView x:Name="ShortcutsView" Visibility="Collapsed" />
+                    <shortcuts:ShortcutsView x:Name="ShortcutsView" Visibility="Collapsed" />
 
-                <about:AboutView x:Name="AboutView" Visibility="Collapsed" />
+                    <about:AboutView x:Name="AboutView" Visibility="Collapsed" />
 
+                </Grid>
+                <!-- The window-wide status bar, shell-owned: every status writer
+                (page forwards, update handoff, connection paint) lands here no
+                matter which page shows, instead of painting into the Graphics
+                page's collapsed tree. -->
+                <Border Grid.Row="1" Background="{StaticResource PageBackground}" BorderBrush="#1B2936" BorderThickness="0,1,0,0" Padding="34,8,34,8">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="7" Height="7" Fill="{StaticResource TextMuted}" Margin="0,0,8,0" />
+                        <TextBlock x:Name="ShellStatusText" Text="Ready" Foreground="{StaticResource TextSecondary}" FontSize="13" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" />
+                    </StackPanel>
+                </Border>
             </Grid>
         </Grid>
     </Border>

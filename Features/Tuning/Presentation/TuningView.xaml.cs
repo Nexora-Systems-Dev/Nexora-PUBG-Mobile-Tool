@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Microsoft.Extensions.DependencyInjection;
 using Nexora.Features.Performance.Application;
 using Nexora.Features.Performance.Infrastructure;
 using Nexora.Features.Tuning.Application;
@@ -67,12 +66,14 @@ public partial class TuningView : UserControl
         // XAML constructs this view with the parameterless ctor, so the view
         // takes its ViewModel from the running container when there is one
         // and only falls back to a locally built graph for the designer and
-        // for direct construction. The fallback mirrors the container's
-        // singletons: one registry, one process service.
+        // for direct construction (see ShellHelper.TryResolveViewModel). The
+        // fallback mirrors the container's singletons: one registry, one
+        // process service.
         if (tuning is null && processService is null && operationBus is null
-            && System.Windows.Application.Current is App && App.Services is IServiceProvider services)
+            && ShellHelper.TryResolveViewModel(out TuningViewModel? resolved)
+            && resolved is not null)
         {
-            if (services.GetService<TuningViewModel>() is { } resolved) return resolved;
+            return resolved;
         }
 
         var registry = new RegistryService();
@@ -192,5 +193,5 @@ public partial class TuningView : UserControl
         AdbEnabled: TuningAdbCheck.IsChecked == true,
         AntiAliasingEnabled: TuningAntiAliasingCheck.IsChecked == true);
 
-    private Brush GetBrush(string key) => ResourceBrushLookup.Get(this, key);
+    private Brush GetBrush(string key) => ShellHelper.GetBrush(this, key);
 }

@@ -1,5 +1,5 @@
 using System.Windows.Controls;
-using Microsoft.Extensions.DependencyInjection;
+using Nexora.UI.Presentation;
 
 namespace Nexora.Features.About.Presentation;
 
@@ -36,12 +36,14 @@ public partial class AboutView : UserControl
         // XAML constructs this view with the parameterless ctor, so the view
         // takes its ViewModel from the running container when there is one
         // and only falls back to a locally built instance for the designer
-        // and for direct construction. The ViewModel is dependency-free, so
-        // the fallback is a plain construction.
+        // and for direct construction (see ShellHelper.TryResolveViewModel).
+        // The ViewModel is dependency-free, so the fallback is a plain
+        // construction.
         if (viewModel is null
-            && System.Windows.Application.Current is App && App.Services is IServiceProvider services)
+            && ShellHelper.TryResolveViewModel(out AboutViewModel? resolved)
+            && resolved is not null)
         {
-            if (services.GetService<AboutViewModel>() is { } resolved) return resolved;
+            return resolved;
         }
 
         return viewModel ?? new AboutViewModel();

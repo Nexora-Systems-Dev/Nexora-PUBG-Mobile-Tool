@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Microsoft.Extensions.DependencyInjection;
 using Nexora.Features.Optimizer.Application;
 using Nexora.Features.Performance.Application;
 using Nexora.Features.Performance.Infrastructure;
@@ -78,7 +77,7 @@ public partial class OptimizerView : UserControl
             // after the update handoff has closed the window; a dead
             // dispatcher must never touch the visual tree (QA F-006).
             if (cancellationToken.IsCancellationRequested) return;
-            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+            if (!ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished)) return;
             if (outcome is null) return;
             if (outcome.ErrorMessage is not null)
             {
@@ -91,7 +90,7 @@ public partial class OptimizerView : UserControl
         }
         finally
         {
-            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+            if (ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished))
                 RefreshOptimizerButton.IsEnabled = true;
         }
     }
@@ -105,13 +104,15 @@ public partial class OptimizerView : UserControl
         // XAML constructs this view with the parameterless ctor, so the view
         // takes its ViewModel from the running container when there is one
         // and only falls back to a locally built graph for the designer and
-        // for direct construction. The fallback mirrors the container's
-        // singletons: one registry, one process service, one temp cleanup,
-        // one shared priority store behind the engine.
+        // for direct construction (see ShellHelper.TryResolveViewModel). The
+        // fallback mirrors the container's singletons: one registry, one
+        // process service, one temp cleanup, one shared priority store behind
+        // the engine.
         if (engine is null && tempCleanup is null && processService is null && operationBus is null
-            && System.Windows.Application.Current is App && App.Services is IServiceProvider services)
+            && ShellHelper.TryResolveViewModel(out OptimizerViewModel? resolved)
+            && resolved is not null)
         {
-            if (services.GetService<OptimizerViewModel>() is { } resolved) return resolved;
+            return resolved;
         }
 
         var registry = new RegistryService();
@@ -183,11 +184,11 @@ public partial class OptimizerView : UserControl
             // A close landing mid-tool must not re-enable (or paint) a dead
             // tree — the Network page's post-await shutdown idiom, applied
             // to the continuation this page was missing (QA F-005).
-            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+            if (ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished))
                 button.IsEnabled = true;
         }
 
-        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+        if (!ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished)) return;
         RenderOptimizerReport(result);
         StatusChanged?.Invoke(ActivityReportFormatter.Format(result).StatusLine, !result.Success);
 
@@ -228,5 +229,5 @@ public partial class OptimizerView : UserControl
         SmartPlanText.Text = display.SmartPlanSummary;
     }
 
-    private Brush GetBrush(string key) => ResourceBrushLookup.Get(this, key);
+    private Brush GetBrush(string key) => ShellHelper.GetBrush(this, key);
 }

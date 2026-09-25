@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using Microsoft.Extensions.DependencyInjection;
 using Nexora.Features.Network.Application;
 using Nexora.Features.Network.Domain;
 using Nexora.Features.Performance.Application;
@@ -62,12 +61,14 @@ public partial class NetworkView : UserControl
         // XAML constructs this view with the parameterless ctor, so the view
         // takes its ViewModel from the running container when there is one
         // and only falls back to a locally built graph for the designer and
-        // for direct construction. The fallback mirrors the container's
-        // singletons: one registry, one process service, one file system.
+        // for direct construction (see ShellHelper.TryResolveViewModel). The
+        // fallback mirrors the container's singletons: one registry, one
+        // process service, one file system.
         if (networkTools is null && ipadLayout is null && operationBus is null
-            && System.Windows.Application.Current is App && App.Services is IServiceProvider services)
+            && ShellHelper.TryResolveViewModel(out NetworkViewModel? resolved)
+            && resolved is not null)
         {
-            if (services.GetService<NetworkViewModel>() is { } resolved) return resolved;
+            return resolved;
         }
 
         var registry = new RegistryService();
@@ -99,13 +100,13 @@ public partial class NetworkView : UserControl
         // Shutdown-aware: a closed window reads as a moved selection, so the
         // stale probe is discarded before it can touch a dead control.
         var probe = await _viewModel.ProbeDnsAsync(label, () =>
-            Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished
-                ? null
-                : DnsComboBox.SelectedItem as string);
+            ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished)
+                ? DnsComboBox.SelectedItem as string
+                : null);
 
         // This continuation can outlive a closed window: the shutdown guard
         // is still required even though no Dispatcher.Invoke is needed (QA F-005).
-        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+        if (!ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished)) return;
 
         // A null probe means the selection moved on while the ping was in
         // flight (or the window closed): the stale answer stays unpainted.
@@ -128,14 +129,14 @@ public partial class NetworkView : UserControl
             if (!DnsCatalog.TryGet(label, out var entry) || entry is null) return;
             // Mutating paths outlive the probe's guards: a close landing
             // mid-apply must not paint (or re-enable) a dead tree (QA F-005).
-            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+            if (!ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished)) return;
             DnsStatusText.Text = result.Success
                 ? $"{entry.ShortName} • Applied: {entry.Primary} / {entry.Secondary}"
                 : result.Message;
         }
         finally
         {
-            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+            if (ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished))
                 ChangeDnsButton.IsEnabled = true;
         }
     }
@@ -149,7 +150,7 @@ public partial class NetworkView : UserControl
         try
         {
             var result = await _viewModel.ApplyIpadAsync(preset);
-            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+            if (!ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished)) return;
             IpadApplyStatusText.Text = result.Success
                 ? $"Applied: {preset.Label} • {preset.Width} × {preset.Height}. Restart GameLoop to load it."
                 : result.Message;
@@ -159,7 +160,7 @@ public partial class NetworkView : UserControl
         {
             // Re-enabled only when a preset is selected, per the details paint —
             // and never on a dead tree.
-            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+            if (ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished))
                 UpdateIpadPresetDetails();
         }
     }
@@ -198,10 +199,10 @@ public partial class NetworkView : UserControl
         }
         finally
         {
-            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+            if (ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished))
                 ResetIpadButton.IsEnabled = true;
         }
     }
 
-    private Brush GetBrush(string key) => ResourceBrushLookup.Get(this, key);
+    private Brush GetBrush(string key) => ShellHelper.GetBrush(this, key);
 }

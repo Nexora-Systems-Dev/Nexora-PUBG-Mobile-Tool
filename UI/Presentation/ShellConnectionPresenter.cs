@@ -120,7 +120,7 @@ public sealed class ShellConnectionPresenter
         _adbText.Text = "ADB: Offline";
     }
 
-    private Brush GetBrush(string key) => ResourceBrushLookup.Get(_resourceHost, key);
+    private Brush GetBrush(string key) => ShellHelper.GetBrush(_resourceHost, key);
 
     private static DropShadowEffect CreateSuccessGlow() =>
         new() { Color = Color.FromRgb(0x10, 0xB9, 0x81), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 };

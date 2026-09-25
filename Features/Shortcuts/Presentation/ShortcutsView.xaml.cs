@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Extensions.DependencyInjection;
 using Nexora.Configuration;
 using Nexora.Features.GameLoop.Domain;
 using Nexora.Features.Graphics.Domain;
@@ -79,12 +78,14 @@ public partial class ShortcutsView : UserControl
         // XAML constructs this view with the parameterless ctor, so the view
         // takes its ViewModel from the running container when there is one
         // and only falls back to a locally built graph for the designer and
-        // for direct construction. The fallback mirrors the container's
-        // singletons: one runner, one path resolver, the same asset root.
+        // for direct construction (see ShellHelper.TryResolveViewModel). The
+        // fallback mirrors the container's singletons: one runner, one path
+        // resolver, the same asset root.
         if (shortcuts is null && operationBus is null
-            && System.Windows.Application.Current is App && App.Services is IServiceProvider services)
+            && ShellHelper.TryResolveViewModel(out ShortcutsViewModel? resolved)
+            && resolved is not null)
         {
-            if (services.GetService<ShortcutsViewModel>() is { } resolved) return resolved;
+            return resolved;
         }
 
         var runner = new ProcessRunner();

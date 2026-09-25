@@ -50,9 +50,9 @@ public sealed class GraphicsViewModel : INotifyPropertyChanged
     public event Action<ConnectionState, string>? ConnectionStateChanged;
 
     /// <summary>
-    /// A status line for the page's status bar. The shell's own statuses reach
-    /// that same surface through the view, so the bar still has one writer per
-    /// message even though it is now hosted inside the page.
+    /// A status line for the shell-owned window status bar. The shell's own
+    /// statuses reach that same surface directly, so the bar still has one
+    /// writer per message even though the page only forwards through its view.
     /// </summary>
     public event Action<string, bool>? StatusChanged;
 

@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using Microsoft.Extensions.DependencyInjection;
 using Nexora.Features.GameLoop.Application;
 using Nexora.Features.GameLoop.Domain;
 using Nexora.Features.GameLoop.Infrastructure;
@@ -48,7 +47,7 @@ public partial class GraphicsView : UserControl
 
         _viewModel = BuildViewModel(connection, graphics, adb, operationBus);
         _viewModel.ConnectionStateChanged += OnConnectionStateChanged;
-        _viewModel.StatusChanged += (message, isError) => SetStatus(message, isError);
+        _viewModel.StatusChanged += (message, isError) => StatusChanged?.Invoke(message, isError);
         _viewModel.SettingsLoaded += OnSettingsLoaded;
         _viewModel.BusyVisualChanged += OnBusyVisualChanged;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -68,14 +67,11 @@ public partial class GraphicsView : UserControl
     public GraphicsViewModel ViewModel => _viewModel;
 
     /// <summary>
-    /// The page's status cell. The shell writes its own statuses through here
-    /// — the surface stays in one place even though the bar moved with the page.
+    /// Re-emitted for the shell, which owns the window status bar. The page
+    /// has no status cell of its own — every outcome travels here, exactly
+    /// like the Optimizer and Shortcuts pages.
     /// </summary>
-    public void SetStatus(string message, bool isError = false)
-    {
-        StatusText.Text = message;
-        StatusText.Foreground = GetBrush(isError ? "Danger" : "TextSecondary");
-    }
+    public event Action<string, bool>? StatusChanged;
 
     private static GraphicsViewModel BuildViewModel(
         IGameLoopConnection? connection,
@@ -86,13 +82,15 @@ public partial class GraphicsView : UserControl
         // XAML constructs this view with the parameterless ctor, so the view
         // takes its ViewModel from the running container when there is one and
         // only falls back to a locally built graph for the designer and for
-        // direct construction. The fallback shares one GameLoopService between
-        // both facets, mirroring the container's factory-forwards, so the
-        // connection and the profile store never fork.
+        // direct construction (see ShellHelper.TryResolveViewModel). The
+        // fallback shares one GameLoopService between both facets, mirroring
+        // the container's factory-forwards, so the connection and the profile
+        // store never fork.
         if (connection is null && graphics is null && adb is null && operationBus is null
-            && System.Windows.Application.Current is App && App.Services is IServiceProvider services)
+            && ShellHelper.TryResolveViewModel(out GraphicsViewModel? resolved)
+            && resolved is not null)
         {
-            if (services.GetService<GraphicsViewModel>() is { } resolved) return resolved;
+            return resolved;
         }
 
         var registry = new RegistryService();
@@ -141,7 +139,7 @@ public partial class GraphicsView : UserControl
         if (_viewModel.IsBusy) return;
 
         var result = await _viewModel.ApplyAsync(BuildSelection());
-        SetStatus(result.Message, !result.Success);
+        StatusChanged?.Invoke(result.Message, !result.Success);
     }
 
     /// <summary>
@@ -349,7 +347,7 @@ public partial class GraphicsView : UserControl
         }
     }
 
-    private Brush GetBrush(string key) => ResourceBrushLookup.Get(this, key);
+    private Brush GetBrush(string key) => ShellHelper.GetBrush(this, key);
 
     private static DropShadowEffect CreateSuccessGlow() =>
         new() { Color = Color.FromRgb(0x10, 0xB9, 0x81), BlurRadius = 8, ShadowDepth = 0, Opacity = 0.9 };

@@ -59,7 +59,7 @@ public partial class MainWindow : Window
         _performanceEngine = performanceEngine ?? fallback.PerformanceEngine;
         _updateHandoff = new UpdateHandoff(
             updates ?? fallback.Updates,
-            () => Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished,
+            () => !ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished),
             SetStatus,
             CloseOnce);
 
@@ -80,6 +80,11 @@ public partial class MainWindow : Window
         TuningView.ViewModel.StatusChanged += SetStatus;
         NetworkView.ViewModel.StatusChanged += SetStatus;
 
+        // The Graphics page owns its connection orchestration and paints; the
+        // shell keeps the window status bar its outcomes forward to, exactly
+        // like every other page — no page hosts the bar anymore.
+        GraphicsView.StatusChanged += SetStatus;
+
         // The Optimizer page owns its profile and tool flows; the shell keeps
         // only the window status bar and the startup/close lifecycle around it.
         OptimizerView.StatusChanged += SetStatus;
@@ -91,7 +96,15 @@ public partial class MainWindow : Window
 
         // The About page owns its own content, including the version pill —
         // the shell keeps no About state.
-        _navigator = new ShellNavigator(BuildShowMap(), BuildRefreshMap(() => TuningView.RefreshAsync()));
+        _navigator = new ShellNavigator(
+            BuildShowMap(
+                show => GraphicsView.Visibility = ToVisibility(show),
+                show => OptimizerView.Visibility = ToVisibility(show),
+                show => TuningView.Visibility = ToVisibility(show),
+                show => NetworkView.Visibility = ToVisibility(show),
+                show => ShortcutsView.Visibility = ToVisibility(show),
+                show => AboutView.Visibility = ToVisibility(show)),
+            BuildRefreshMap(() => TuningView.RefreshAsync()));
         SetStatus("Ready to connect to GameLoop.");
     }
 
@@ -99,17 +112,26 @@ public partial class MainWindow : Window
     /// The page-visibility table: one show/hide callback per page key in
     /// sidebar order. Sits beside <see cref="BuildRefreshMap(Func{Task})"/> so
     /// the navigator pairs visibility with refresh-on-arrive, and the shell
-    /// never names a page outside these two tables.
+    /// never names a page outside these two tables. The callbacks arrive as
+    /// parameters rather than being captured from the page controls, so the
+    /// key set is testable without a Window instance — a page missing here
+    /// fails in CI instead of never painting.
     /// </summary>
-    private IReadOnlyDictionary<string, Action<bool>> BuildShowMap() =>
+    internal static IReadOnlyDictionary<string, Action<bool>> BuildShowMap(
+        Action<bool> showGraphics,
+        Action<bool> showOptimizer,
+        Action<bool> showTuning,
+        Action<bool> showNetwork,
+        Action<bool> showShortcuts,
+        Action<bool> showAbout) =>
         new Dictionary<string, Action<bool>>
         {
-            [NavigationItem.Graphics.Key] = show => GraphicsView.Visibility = ToVisibility(show),
-            [NavigationItem.Optimizer.Key] = show => OptimizerView.Visibility = ToVisibility(show),
-            [NavigationItem.Tuning.Key] = show => TuningView.Visibility = ToVisibility(show),
-            [NavigationItem.Network.Key] = show => NetworkView.Visibility = ToVisibility(show),
-            [NavigationItem.Shortcuts.Key] = show => ShortcutsView.Visibility = ToVisibility(show),
-            [NavigationItem.About.Key] = show => AboutView.Visibility = ToVisibility(show),
+            [NavigationItem.Graphics.Key] = showGraphics,
+            [NavigationItem.Optimizer.Key] = showOptimizer,
+            [NavigationItem.Tuning.Key] = showTuning,
+            [NavigationItem.Network.Key] = showNetwork,
+            [NavigationItem.Shortcuts.Key] = showShortcuts,
+            [NavigationItem.About.Key] = showAbout,
         };
 
     /// <summary>Shell half of the connection paint, behind the presenter: the page
@@ -235,7 +257,7 @@ public partial class MainWindow : Window
         _closeCompleted = true;
         try
         {
-            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished) Close();
+            if (ShellHelper.IsAlive(Dispatcher.HasShutdownStarted, Dispatcher.HasShutdownFinished)) Close();
         }
         catch (InvalidOperationException)
         {
@@ -344,11 +366,14 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The status bar surface. It lives visually inside the Graphics page but
-    /// the shell still owns what it writes here — the update handoff, the
-    /// page forwards and this connection paint — so the bar keeps exactly one
-    /// writer per message even though the control moved with the page.
+    /// The status bar surface, shell-owned: the update handoff, the page
+    /// forwards and the connection paint all land here no matter which page
+    /// shows, so the bar keeps exactly one writer per message without ever
+    /// painting into a collapsed page tree.
     /// </summary>
-    private void SetStatus(string message, bool isError = false) =>
-        GraphicsView.SetStatus(message, isError);
+    private void SetStatus(string message, bool isError = false)
+    {
+        ShellStatusText.Text = message;
+        ShellStatusText.Foreground = ShellHelper.GetBrush(this, isError ? "Danger" : "TextSecondary");
+    }
 }

@@ -86,6 +86,31 @@ public sealed class ShellNavigatorTests
     }
 
     [Fact]
+    public void ProductionShowMap_CoversEveryPage()
+    {
+        var seen = new Dictionary<string, bool>();
+        var map = MainWindow.BuildShowMap(
+            show => seen["Graphics"] = show,
+            show => seen["Optimizer"] = show,
+            show => seen["Tuning"] = show,
+            show => seen["Network"] = show,
+            show => seen["Shortcuts"] = show,
+            show => seen["About"] = show);
+
+        // U-09's missing half beside ProductionRefreshMap_CoversEveryFlaggedItem:
+        // every sidebar page must have a show entry, or selecting it paints nothing.
+        map.Keys.Should().BeEquivalentTo(NavigationItem.All.Select(item => item.Key));
+        foreach (var item in NavigationItem.All)
+        {
+            map[item.Key].Should().NotBeNull("the registered callback must be wired, not a placeholder");
+            map[item.Key](true);
+            seen[item.Key].Should().BeTrue();
+            map[item.Key](false);
+            seen[item.Key].Should().BeFalse();
+        }
+    }
+
+    [Fact]
     public void TryGetRefresh_MissingEntry_ReturnsFalse()
     {
         var navigator = new ShellNavigator(

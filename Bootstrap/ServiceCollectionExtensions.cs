@@ -98,10 +98,12 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IGameLoopPerformanceEngine, PerformanceEngineFacade>();
 
-        // Page ViewModel/View pairs, all transient. Each View has a
-        // designer-tolerant constructor (parameterless for the XAML designer,
-        // parameterized for the container), so the pair is registered to wire
-        // the resolved graph.
+        // Page ViewModel/View pairs, all transient. The views stay
+        // XAML-instantiated (parameterless for the XAML designer), so each
+        // view resolves its ViewModel from the container through ShellHelper;
+        // the View registrations below are the wiring guarantee pinned by
+        // DependencyInjectionTests (every DI-ctor parameter must resolve),
+        // not a runtime resolution path.
         // Graphics: both registrations forward to the connection and profile
         // singletons above.
         services.AddTransient<GraphicsViewModel>();
