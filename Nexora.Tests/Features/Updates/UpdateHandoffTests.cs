@@ -97,6 +97,66 @@ public sealed class UpdateHandoffTests
         closed.Should().BeFalse();
     }
 
+    [Fact]
+    public void CompleteHandoff_SuccessOnLiveWindow_ReportsAndClosesOnce()
+    {
+        var service = new FakeUpdateService { Info = NoneAvailable };
+        var statuses = new List<(string, bool)>();
+        var closes = 0;
+        var handoff = new UpdateHandoff(service, () => false, (m, e) => statuses.Add((m, e)), () => closes++);
+
+        handoff.CompleteHandoff(OperationResult.Ok("Update downloaded and verified."));
+
+        statuses.Should().ContainSingle().Which.Should().Be(("Update downloaded and verified.", false));
+        closes.Should().Be(1);
+    }
+
+    [Fact]
+    public void CompleteHandoff_ThrowingClose_IsSwallowedNeverMisreportedAsCheckFailure()
+    {
+        // U-05c: a racing close that beats the handoff to a dead window throws
+        // InvalidOperationException — it must stay silent instead of falling
+        // into RunAsync's catch-all as "Update check failed".
+        var service = new FakeUpdateService { Info = NoneAvailable };
+        var statuses = new List<(string, bool)>();
+        var handoff = new UpdateHandoff(
+            service, () => false, (m, e) => statuses.Add((m, e)),
+            () => throw new InvalidOperationException("Cannot call Close when the window is closing."));
+
+        var act = () => handoff.CompleteHandoff(OperationResult.Ok("Update downloaded and verified."));
+
+        act.Should().NotThrow();
+        statuses.Should().ContainSingle().Which.Should().Be(("Update downloaded and verified.", false));
+    }
+
+    [Fact]
+    public void CompleteHandoff_AfterShutdown_StaysFullySilent()
+    {
+        var service = new FakeUpdateService { Info = NoneAvailable };
+        var statuses = new List<(string, bool)>();
+        var closes = 0;
+        var handoff = new UpdateHandoff(service, () => true, (m, e) => statuses.Add((m, e)), () => closes++);
+
+        handoff.CompleteHandoff(OperationResult.Ok("Update downloaded and verified."));
+
+        statuses.Should().BeEmpty("the status sink paints an unguarded cell");
+        closes.Should().Be(0);
+    }
+
+    [Fact]
+    public void CompleteHandoff_FailedDownload_ReportsWithoutClosing()
+    {
+        var service = new FakeUpdateService { Info = NoneAvailable };
+        var statuses = new List<(string, bool)>();
+        var closes = 0;
+        var handoff = new UpdateHandoff(service, () => false, (m, e) => statuses.Add((m, e)), () => closes++);
+
+        handoff.CompleteHandoff(OperationResult.Fail("Update failed: offline."));
+
+        statuses.Should().ContainSingle().Which.Should().Be(("Update failed: offline.", true));
+        closes.Should().Be(0);
+    }
+
     private sealed class FakeUpdateService : IUpdateService
     {
         public UpdateInfo Info { get; set; } = NoneAvailable;

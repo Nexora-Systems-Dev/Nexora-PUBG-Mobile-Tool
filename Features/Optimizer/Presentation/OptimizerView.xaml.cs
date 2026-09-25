@@ -71,7 +71,9 @@ public partial class OptimizerView : UserControl
         RefreshOptimizerButton.IsEnabled = false;
         try
         {
-            var outcome = await _viewModel.RefreshProfileAsync();
+            // The token travels into the engine (not paint-gating only): a
+            // close landing before the detection spawn starts pre-empts it.
+            var outcome = await _viewModel.RefreshProfileAsync(cancellationToken);
             // The startup refresh runs beside the update check and can settle
             // after the update handoff has closed the window; a dead
             // dispatcher must never touch the visual tree (QA F-006).
@@ -178,9 +180,14 @@ public partial class OptimizerView : UserControl
         }
         finally
         {
-            button.IsEnabled = true;
+            // A close landing mid-tool must not re-enable (or paint) a dead
+            // tree — the Network page's post-await shutdown idiom, applied
+            // to the continuation this page was missing (QA F-005).
+            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                button.IsEnabled = true;
         }
 
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
         RenderOptimizerReport(result);
         StatusChanged?.Invoke(ActivityReportFormatter.Format(result).StatusLine, !result.Success);
 

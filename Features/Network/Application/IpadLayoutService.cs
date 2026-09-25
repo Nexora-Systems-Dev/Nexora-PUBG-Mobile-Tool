@@ -27,13 +27,8 @@ public sealed class IpadLayoutService : IIpadLayoutService
 
     public OperationResult SetIpadResolution(int width, int height)
     {
-        // The guard lives here (not with callers) so no composition path can
-        // silently skip it.
-        var runningNames = FindRunningGameLoopNames();
-        if (runningNames is not null)
-        {
-            return OperationResult.Fail($"Close GameLoop before applying iPad View ({runningNames}), then apply it again.");
-        }
+        var refusal = RefuseWhileGameLoopRuns("applying iPad View", "apply it again");
+        if (refusal is not null) return refusal;
 
         var originalPath = _options.GetKeymapFilePath();
         var backupPath = _options.GetBackupFilePath();
@@ -85,6 +80,12 @@ public sealed class IpadLayoutService : IIpadLayoutService
 
     public OperationResult ResetIpadResolution()
     {
+        // Reset rewrites the same keymap file and resolution values the apply
+        // owns, so it refuses under the same running-emulator guard: GameLoop
+        // locks the keymap and overwrites the values on exit.
+        var refusal = RefuseWhileGameLoopRuns("resetting iPad View", "try it again");
+        if (refusal is not null) return refusal;
+
         var originalPath = _options.GetKeymapFilePath();
         var backupPath = _options.GetBackupFilePath();
         var legacyBackupPath = _options.GetLegacyBackupFilePath();
@@ -129,6 +130,20 @@ public sealed class IpadLayoutService : IIpadLayoutService
     /// The two GameLoop registry values that together hold the VM resolution.
     /// </summary>
     private static readonly string[] ResolutionValueNames = { "VMResWidth", "VMResHeight" };
+
+    /// <summary>
+    /// The shared running-emulator refusal both mutating entries call: the
+    /// guard lives here (not with callers) so no composition path can
+    /// silently skip it. Null means no emulator is running and the caller
+    /// may proceed.
+    /// </summary>
+    private OperationResult? RefuseWhileGameLoopRuns(string action, string retry)
+    {
+        var runningNames = FindRunningGameLoopNames();
+        if (runningNames is null) return null;
+
+        return OperationResult.Fail($"Close GameLoop before {action} ({runningNames}), then {retry}.");
+    }
 
     /// <summary>
     /// The comma-joined names of the running GameLoop emulator processes, or

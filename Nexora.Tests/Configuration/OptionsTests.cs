@@ -81,6 +81,7 @@ public sealed class OptionsTests
         options.ExtractionFolderName.Should().Be("extracted");
         options.PortableExecutableName.Should().Be($"{AppConstants.ApplicationName}.exe");
         options.HttpTimeout.Should().Be(TimeSpan.FromSeconds(12));
+        options.DownloadBodyTimeout.Should().Be(TimeSpan.FromMinutes(10));
         options.ExpectedPublisher.Should().Be("Nexora");
         options.StaleStagingMaxAge.Should().Be(TimeSpan.FromHours(24));
 
@@ -130,6 +131,7 @@ public sealed class OptionsTests
             timeouts.MonitorInterval,
             timeouts.MonitorStopTimeout,
             new UpdateOptions().HttpTimeout,
+            new UpdateOptions().DownloadBodyTimeout,
         };
 
         spans.Should().OnlyContain(timeout => timeout > TimeSpan.Zero);

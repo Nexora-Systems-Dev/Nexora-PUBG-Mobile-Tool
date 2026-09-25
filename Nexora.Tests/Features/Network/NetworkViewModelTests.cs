@@ -266,6 +266,26 @@ public sealed class NetworkViewModelTests
         probe!.PingMs.Should().Be(12);
     }
 
+    [Fact]
+    public async Task ApplyIpadAsync_CanceledBeforeDispatch_SettlesFailedWithoutTouchingTheService()
+    {
+        // U-05a: the sync registry/file calls cannot pre-empt mid-call, so the
+        // cancellable window is dispatch — a close landing there settles Failed
+        // without starting new system writes, never throws.
+        using var canceled = new CancellationTokenSource();
+        canceled.Cancel();
+        var ipad = new FakeIpadLayout();
+        var bus = new PageOperationBus();
+        var vm = Build(ipadLayout: ipad, operationBus: bus);
+
+        var result = await vm.ApplyIpadAsync(IpadPresetCatalog.Presets[0], canceled.Token);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Be("Operation canceled.");
+        ipad.ApplyCalls.Should().Be(0, "a canceled dispatch must never reach the service tree");
+        bus.IsBusy.Should().BeFalse("the bus must release even on the pre-start cancel path");
+    }
+
     private static NetworkViewModel Build(
         INetworkToolsService? networkTools = null,
         FakeIpadLayout? ipadLayout = null,

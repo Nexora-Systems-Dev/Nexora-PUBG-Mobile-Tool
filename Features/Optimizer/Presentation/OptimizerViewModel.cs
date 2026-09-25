@@ -34,6 +34,15 @@ public sealed class OptimizerViewModel
     private readonly IPageOperationBus _operationBus;
     private CancellationTokenSource? _toolCancellation;
 
+    /// <summary>
+    /// The in-flight profile refresh's cancellation: the shell's Cancel()
+    /// pre-empts it at close/navigate-away so the 20 s detection spawn can
+    /// never outlive the page. Paint-gating alone is not enough — the token
+    /// travels into the engine, and a pre-empted refresh settles as a
+    /// silent no-op (a read with no reader), never a throw.
+    /// </summary>
+    private CancellationTokenSource? _refreshCancellation;
+
     public OptimizerViewModel(
         IGameLoopPerformanceEngine engine,
         ITempCleanupService tempCleanup,
@@ -72,21 +81,42 @@ public sealed class OptimizerViewModel
     /// detection failure is reported through the outcome — never thrown — so
     /// the view can paint the panel or the error cell without branching on
     /// exceptions. Deliberately takes no bus slot: like the pre-extraction
-    /// refresh it only refuses while busy.
+    /// refresh it only refuses while busy. The shell's close-linked token
+    /// (plus Cancel() below) travels into the engine: a close landing before
+    /// the detection spawn starts pre-empts it now instead of at its 20 s
+    /// timeout, and settles as a silent no-op.
     /// </summary>
-    public async Task<OptimizerProfileRefresh?> RefreshProfileAsync()
+    public async Task<OptimizerProfileRefresh?> RefreshProfileAsync(CancellationToken cancellationToken = default)
     {
         if (_operationBus.IsBusy) return null;
 
+        // Local so the source is disposed when the call ends; the field is
+        // just the live handle the shell's Cancel() pre-empts, cleared before
+        // disposal so a late Cancel() no-ops instead of hitting a disposed
+        // source (the ExecuteAsync ownership shape).
+        using var refresh = new CancellationTokenSource();
+        _refreshCancellation = refresh;
+
         try
         {
-            var hardware = await _engine.GetHardwareSnapshotAsync();
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, refresh.Token);
+            var hardware = await _engine.GetHardwareSnapshotAsync(linked.Token);
             var plan = _engine.GetRecommendedPlan(hardware);
             return new OptimizerProfileRefresh(OptimizerDisplayFormatter.Format(hardware, plan), null);
+        }
+        catch (OperationCanceledException)
+        {
+            // The reader went away (close/navigate): nothing to paint, and
+            // the view's own shutdown guards make a reported cancel moot.
+            return null;
         }
         catch (Exception ex)
         {
             return new OptimizerProfileRefresh(null, $"Hardware detection failed: {ex.Message}");
+        }
+        finally
+        {
+            _refreshCancellation = null;
         }
     }
 
@@ -121,8 +151,13 @@ public sealed class OptimizerViewModel
     }
 
     /// <summary>
-    /// Cancels whatever tool operation is in flight. Called at window close so
-    /// an outstanding boost can never outlive the shell.
+    /// Cancels whatever optimizer work is in flight — the tool operation and
+    /// the profile refresh alike. Called at window close and navigate-away so
+    /// an outstanding boost or detection spawn can never outlive the shell.
     /// </summary>
-    public void Cancel() => _toolCancellation?.Cancel();
+    public void Cancel()
+    {
+        _toolCancellation?.Cancel();
+        _refreshCancellation?.Cancel();
+    }
 }

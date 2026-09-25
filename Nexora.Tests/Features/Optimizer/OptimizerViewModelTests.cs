@@ -157,6 +157,65 @@ public sealed class OptimizerViewModelTests
         act.Should().NotThrow();
     }
 
+    [Fact]
+    public async Task ExecuteAsync_CancelDuringRun_SettlesSkippedAndReleasesTheBus()
+    {
+        // U-05b: close-during-optimizer-apply pre-empts the tool token; the
+        // spine translates the pre-emption to a Skip, never a throw.
+        var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var vm = Build();
+
+        var run = vm.ExecuteAsync(async cancellationToken =>
+        {
+            await gate.Task.WaitAsync(cancellationToken);
+            return OperationResult.Ok("Done.");
+        });
+        vm.Cancel();
+        gate.TrySetResult(true);
+
+        var result = await run;
+        result.IsSkipped.Should().BeTrue();
+        result.Message.Should().Be("Operation canceled.");
+        vm.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RefreshProfileAsync_CancelDuringDetection_SettlesNullWithoutThrowing()
+    {
+        // U-05b: the refresh token travels into the engine — a close landing
+        // mid-detection pre-empts the wait and settles as a silent no-op.
+        var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var engine = new FakeEngine { Snapshot = Snapshot, Plan = Plan };
+        engine.SnapshotAsyncImpl = async cancellationToken =>
+        {
+            await gate.Task.WaitAsync(cancellationToken);
+            return Snapshot;
+        };
+        var vm = Build(engine: engine);
+
+        var refresh = vm.RefreshProfileAsync();
+        vm.Cancel();
+        gate.TrySetResult(true);
+
+        (await refresh).Should().BeNull("a pre-empted read has no reader and paints nothing");
+        engine.SnapshotCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RefreshProfileAsync_PrecanceledCallerToken_SettlesNullThroughTheEngine()
+    {
+        // The engine itself pre-empts the canceled token (as the real
+        // detection spawn does); the ViewModel translates that to the silent
+        // no-op, never a throw.
+        using var canceled = new CancellationTokenSource();
+        canceled.Cancel();
+        var engine = new FakeEngine { Snapshot = Snapshot, Plan = Plan };
+        var vm = Build(engine: engine);
+
+        (await vm.RefreshProfileAsync(canceled.Token)).Should().BeNull();
+        engine.SnapshotCalls.Should().Be(1);
+    }
+
     private static OptimizerViewModel Build(
         FakeEngine? engine = null,
         FakeTempCleanup? tempCleanup = null,
@@ -172,6 +231,7 @@ public sealed class OptimizerViewModelTests
         public HardwareSnapshot Snapshot { get; set; } = null!;
         public OptimizerPlan Plan { get; set; } = null!;
         public Exception? ThrowOnSnapshot { get; set; }
+        public Func<CancellationToken, Task<HardwareSnapshot>>? SnapshotAsyncImpl { get; set; }
         public int SnapshotCalls { get; private set; }
 
         public HardwareSnapshot GetHardwareSnapshot() => Snapshot;
@@ -179,7 +239,11 @@ public sealed class OptimizerViewModelTests
         public Task<HardwareSnapshot> GetHardwareSnapshotAsync(CancellationToken cancellationToken = default)
         {
             SnapshotCalls++;
+            if (SnapshotAsyncImpl is not null) return SnapshotAsyncImpl(cancellationToken);
             if (ThrowOnSnapshot is not null) throw ThrowOnSnapshot;
+            // Mirrors the real detection service, whose Task.Run pre-empts a
+            // canceled token before the spawn starts.
+            cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(Snapshot);
         }
 

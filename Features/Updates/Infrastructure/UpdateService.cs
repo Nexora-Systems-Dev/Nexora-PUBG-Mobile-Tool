@@ -68,6 +68,16 @@ public sealed class UpdateService : IUpdateService
             var (stageFailure, executablePath) = await StageUpdateArchiveAsync(update, archivePath, extractionRoot, cancellationToken);
             if (stageFailure is not null) return stageFailure;
 
+            // Install-time freshness: the prompt may be minutes old (a slow
+            // download behind it). Re-read the feed and launch only if it
+            // still offers this exact version as newer than the running
+            // build — a pulled or superseded release aborts instead of
+            // installing stale. A re-check that itself errors (transient
+            // network) lets the hash-verified staged payload proceed;
+            // cancellation still settles as a failed result via the catch.
+            var freshnessFailure = await RecheckUpdateFreshnessAsync(update, cancellationToken);
+            if (freshnessFailure is not null) return freshnessFailure;
+
             var launchFailure = LaunchHandoff(executablePath!, targetExecutablePath, extractionRoot, stagingRoot);
             if (launchFailure is not null) return launchFailure;
 
@@ -86,6 +96,39 @@ public sealed class UpdateService : IUpdateService
                 StagingDirectoryGC.TryDeleteDirectory(stagingRoot);
             }
         }
+    }
+
+    /// <summary>
+    /// Re-reads the releases feed at install time and confirms it still
+    /// offers the prompted version. Null means fresh; a failure result means
+    /// the release was pulled or superseded and the staged payload must not
+    /// launch. Transport errors fail open (the staged archive is already
+    /// hash-verified, so a transient blip must not strand a valid install);
+    /// only a confirmed version mismatch fails closed. Cancellation
+    /// propagates so the outer catch settles it as a failed result.
+    /// </summary>
+    private async Task<OperationResult?> RecheckUpdateFreshnessAsync(UpdateInfo update, CancellationToken cancellationToken)
+    {
+        UpdateInfo fresh;
+        try
+        {
+            fresh = await _checker.CheckAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (!fresh.Available || !string.Equals(fresh.LatestVersion, update.LatestVersion, StringComparison.Ordinal))
+        {
+            return OperationResult.Fail($"The update to {update.LatestVersion} is no longer available.");
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -161,7 +204,7 @@ public sealed class UpdateService : IUpdateService
     /// <summary>
     /// Maximum redirect hops followed for an update download. GitHub release
     /// downloads settle in one or two hops; five is the conventional
-    /// manual-walk ceiling and keeps the whole fetch inside one HttpTimeout.
+    /// manual-walk ceiling and keeps the whole hop walk inside one HttpTimeout.
     /// </summary>
     private const int MaxDownloadRedirects = 5;
 
@@ -175,13 +218,17 @@ public sealed class UpdateService : IUpdateService
     /// invalid; null after the archive has been fully written.</returns>
     private async Task<OperationResult?> DownloadArchiveWithTrustedRedirectsAsync(string downloadUrl, string archivePath, CancellationToken cancellationToken)
     {
-        // One deadline for the whole fetch: all hops plus the body share a
-        // single HttpTimeout instead of each hop getting its own, so a long
-        // chain can never stretch the download into minutes. The linked token
-        // also carries the caller's cancellation into every stalled hop.
-        using var budgetSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        budgetSource.CancelAfter(_updates.HttpTimeout);
-        var budget = budgetSource.Token;
+        // Split budgets (Item-9): the redirect walk shares one HttpTimeout —
+        // hops are headers-only and fast, so a long chain can never stretch
+        // metadata into minutes — while the body gets DownloadBodyTimeout,
+        // sized for slow networks. The linked tokens also carry the caller's
+        // cancellation into every stalled hop and every stalled body read.
+        using var hopBudgetSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        hopBudgetSource.CancelAfter(_updates.HttpTimeout);
+        var hopBudget = hopBudgetSource.Token;
+        using var bodyBudgetSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        bodyBudgetSource.CancelAfter(_updates.DownloadBodyTimeout);
+        var bodyBudget = bodyBudgetSource.Token;
 
         // The shared client keeps its default handler (auto-redirect on) for
         // the releases feed. The archive fetch must observe each hop to
@@ -199,20 +246,20 @@ public sealed class UpdateService : IUpdateService
         var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { current.AbsoluteUri };
         for (var hop = 0; ; hop++)
         {
-            budget.ThrowIfCancellationRequested();
+            hopBudget.ThrowIfCancellationRequested();
             if (!IsTrustedDownloadUrl(current.AbsoluteUri))
             {
                 return OperationResult.Fail("The update download address was rejected.");
             }
 
             using var request = new HttpRequestMessage(HttpMethod.Get, current);
-            using var response = await fetchClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, budget);
+            using var response = await fetchClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, hopBudget);
             if (!IsRedirect(response.StatusCode))
             {
                 response.EnsureSuccessStatusCode();
-                await using var source = await response.Content.ReadAsStreamAsync(budget);
+                await using var source = await response.Content.ReadAsStreamAsync(bodyBudget);
                 await using var destination = File.Create(archivePath);
-                await source.CopyToAsync(destination, budget);
+                await source.CopyToAsync(destination, bodyBudget);
                 return null;
             }
 

@@ -26,6 +26,16 @@ public sealed class UpdateOptions
     public TimeSpan HttpTimeout { get; init; } = TimeSpan.FromSeconds(12);
 
     /// <summary>
+    /// Budget for the update archive body alone (Item-9 split): redirect hops
+    /// share <see cref="HttpTimeout"/> because they are headers-only and fast,
+    /// but the ~150 MB body must survive slow networks — 10 minutes holds a
+    /// ~256 KB/s floor. Measured from the code (no live run needed): the
+    /// whole fetch previously shared one 12 s deadline, so any body slower
+    /// than ~12 MB/s timed out.
+    /// </summary>
+    public TimeSpan DownloadBodyTimeout { get; init; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>
     /// Expected publisher identifier in the Authenticode certificate subject.
     /// </summary>
     public string ExpectedPublisher { get; init; } = "Nexora";

@@ -219,6 +219,26 @@ public sealed class IpadLayoutServiceTests
         }
     }
 
+    [Fact]
+    public void ResetIpadResolution_Refuses_WhenGameLoopProcessesAreRunning()
+    {
+        // U-05a: reset rewrites the same keymap file and resolution values
+        // the apply owns, so it shares the extracted running-emulator guard.
+        // The current test-host process stands in for a running emulator
+        // instance; default options are untouched because the guard fires
+        // before any filesystem lookup.
+        using var running = Process.GetCurrentProcess();
+        var service = new IpadLayoutService(
+            new RegistryService(),
+            new PhysicalFileSystem(),
+            processService: new FixedProcessService(new List<Process> { running }));
+
+        var result = service.ResetIpadResolution();
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Close GameLoop before resetting iPad View");
+    }
+
     private sealed class FixedProcessService : IGameLoopProcessService
     {
         private readonly List<Process> _processes;

@@ -50,7 +50,7 @@ public sealed class UpdateHandoff
             // close, or the refresh settling first); never show UI on a
             // dispatcher that is already torn down.
             if (_isShutdown()) return;
-            if (update.Available) await PromptAndDownloadAsync(update);
+            if (update.Available) await PromptAndDownloadAsync(update, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -66,18 +66,43 @@ public sealed class UpdateHandoff
     /// Prompts for the release, downloads it, and closes this instance on success
     /// so the elevated handoff can replace the executable. Stays inside
     /// <see cref="RunAsync"/>'s try so a download failure is reported, not thrown.
+    /// The download honors the shell's close-linked token; the close itself
+    /// goes through <see cref="CompleteHandoff"/>.
     /// </summary>
-    private async Task PromptAndDownloadAsync(UpdateInfo update)
+    private async Task PromptAndDownloadAsync(UpdateInfo update, CancellationToken cancellationToken)
     {
         var message = $"Nexora update {update.LatestVersion} is available.\n\n{update.ChangeLog}";
         if (MessageBox.Show(message, "Update Available", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes) return;
 
         _setStatus("Downloading update...", false);
-        var result = await _updates.DownloadAndLaunchAsync(update);
+        var result = await _updates.DownloadAndLaunchAsync(update, cancellationToken);
+        CompleteHandoff(result);
+    }
+
+    /// <summary>
+    /// Reports the download outcome and, on success, closes this instance so
+    /// the elevated handoff can replace the executable (UpdateService has
+    /// already verified the new process started). The close is CloseOnce-safe:
+    /// a window already going away is never closed twice, and a racing close
+    /// that beats us to a dead window throws InvalidOperationException — which
+    /// must stay silent instead of falling into RunAsync's catch-all and
+    /// misreporting as a check failure.
+    /// </summary>
+    internal void CompleteHandoff(OperationResult result)
+    {
+        // Shutdown first: the status sink paints an unguarded visual-tree
+        // cell, so a handoff settling after close stays fully silent — the
+        // RunAsync post-check silence, applied to the success path too.
+        if (_isShutdown()) return;
         _setStatus(result.Message, !result.Success);
-        // UpdateService has already verified that the new elevated process
-        // started successfully. Closing this instance lets the new version
-        // take over cleanly.
-        if (result.Success) _close();
+        if (!result.Success) return;
+        try
+        {
+            _close();
+        }
+        catch (InvalidOperationException)
+        {
+            // A racing close won and the window is already dead; teardown done.
+        }
     }
 }

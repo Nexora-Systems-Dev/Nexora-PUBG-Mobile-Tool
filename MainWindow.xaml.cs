@@ -61,7 +61,7 @@ public partial class MainWindow : Window
             updates ?? fallback.Updates,
             () => Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished,
             SetStatus,
-            Close);
+            CloseOnce);
 
         // The Graphics page owns its connection orchestration; the shell keeps
         // only the surfaces that live outside it — the title-bar pill, the
@@ -189,6 +189,8 @@ public partial class MainWindow : Window
 
         _graphicsViewModel.Cancel();
         TuningView.ViewModel.Cancel();
+        NetworkView.ViewModel.Cancel();
+        OptimizerView.ViewModel.Cancel();
         ShortcutsView.ViewModel.Cancel();
         _loadedCts.Cancel();
         _chromeHook?.Dispose();
@@ -272,9 +274,9 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Cancels the leavable work of one page. Mirrors <see cref="Window_Closing"/>
-    /// exactly: Graphics (orphaned connect poll), Tuning and Shortcuts (tool
-    /// runs). Optimizer is excluded to match close — widening that asymmetry
-    /// is its own slice — and Network/About own no cancellable work.
+    /// exactly: Graphics (orphaned connect poll), Tuning, Network and
+    /// Optimizer (tool runs plus the Optimizer profile refresh), and Shortcuts
+    /// (tool runs). About owns no cancellable work.
     /// </summary>
     private void CancelPageWork(string page)
     {
@@ -285,6 +287,14 @@ public partial class MainWindow : Window
         else if (string.Equals(page, NavigationItem.Tuning.Key, StringComparison.Ordinal))
         {
             TuningView.ViewModel.Cancel();
+        }
+        else if (string.Equals(page, NavigationItem.Network.Key, StringComparison.Ordinal))
+        {
+            NetworkView.ViewModel.Cancel();
+        }
+        else if (string.Equals(page, NavigationItem.Optimizer.Key, StringComparison.Ordinal))
+        {
+            OptimizerView.ViewModel.Cancel();
         }
         else if (string.Equals(page, NavigationItem.Shortcuts.Key, StringComparison.Ordinal))
         {
