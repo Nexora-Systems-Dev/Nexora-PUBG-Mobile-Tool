@@ -62,7 +62,7 @@ public sealed class KoreanFullHdAbortTests
 
         adb.Commands.Should().NotContain(command => command.StartsWith("pm clear ", StringComparison.Ordinal),
             "the package reset must be unreachable while the account backup is incomplete");
-        adb.Commands.Should().NotContain(command => command.StartsWith("cp -r /sdcard/mk_safe_folder/", StringComparison.Ordinal),
+        adb.Commands.Should().NotContain(command => command.StartsWith("cp -r '/sdcard/mk_safe_folder/", StringComparison.Ordinal),
             "the account restore must never run after a failed account backup");
         adb.Commands.Should().NotContain(command => command.StartsWith("am start ", StringComparison.Ordinal),
             "the relaunch must not follow a half-applied sequence");
@@ -130,7 +130,7 @@ public sealed class KoreanFullHdAbortTests
         var adb = new FailingFakeAdb(directories: [DataPath]);
         adb.FailWhen.Add(command =>
             command.StartsWith("[ -d ", StringComparison.Ordinal) &&
-            command.Contains(DataPath + " ]", StringComparison.Ordinal));
+            command.Contains(DataPath + "' ]", StringComparison.Ordinal));
 
         var result = await InvokeKoreanFullHdAsync(adb);
 
@@ -155,14 +155,42 @@ public sealed class KoreanFullHdAbortTests
         result.Message.Should().Contain("1080p");
         adb.Commands.Should().Contain(command => command.StartsWith("pm clear ", StringComparison.Ordinal),
             "the reset is the point of the sequence and must run on success");
-        adb.Commands.Should().Contain($"mv {DataPath} {DataPath}.nexora-backup",
+        adb.Commands.Should().Contain($"mv '{DataPath}' '{DataPath}.nexora-backup'",
             "the folder backup is the first destructive step after the account copy");
-        adb.Commands.Should().Contain($"mv {DataPath}.nexora-backup {DataPath}",
+        adb.Commands.Should().Contain($"mv '{DataPath}.nexora-backup' '{DataPath}'",
             "the folder restore must put the backup back");
         adb.Commands.Should().Contain(command => command.Contains("/sdcard/mk_safe_folder/databases", StringComparison.Ordinal),
             "the account restore is the last destructive step and must be reached");
-        adb.Commands.Should().Contain(command => command.StartsWith("rm -r /sdcard/mk_safe_folder", StringComparison.Ordinal),
+        adb.Commands.Should().Contain(command => command.StartsWith("rm -r '/sdcard/mk_safe_folder", StringComparison.Ordinal),
             "the temporary backup is cleaned up on success");
+    }
+
+    /// <summary>
+    /// The quoting end-to-end: a hostile package name flows through the whole
+    /// Korean sequence and every interpolated word stays one quoted shell
+    /// word — the injected command never becomes a word of its own, and the
+    /// quote-aware fake still parses every path so the sequence succeeds.
+    /// </summary>
+    [Fact]
+    public async Task HostilePackageName_CommandsKeepItInsideSingleQuotedWords()
+    {
+        const string hostilePackage = "com.evil; touch /sdcard/pwned";
+        var hostileData = $"/sdcard/Android/data/{hostilePackage}";
+        var adb = new FailingFakeAdb(directories: [hostileData]);
+
+        var result = await InvokeKoreanFullHdAsync(adb, hostilePackage);
+
+        result.Success.Should().BeTrue("quoting must not break the success path even for hostile input");
+        adb.Commands.Should().Contain($"pm clear '{hostilePackage}'",
+            "the package word is quoted, so the device shell reads one argument");
+        adb.Commands.Should().Contain($"mv '{hostileData}' '{hostileData}.nexora-backup'",
+            "derived paths are quoted as whole words too");
+        foreach (var command in adb.Commands)
+        {
+            var words = ShellWords.Split(command);
+            words.Should().NotContain("touch", "the injected payload must never become its own shell word");
+            words.Should().NotContain(";", "the injected separator must never become its own shell word");
+        }
     }
 
     /// <summary>
@@ -171,14 +199,17 @@ public sealed class KoreanFullHdAbortTests
     /// present on the fake filesystem — the two preconditions the sequence checks
     /// before any device command runs.
     /// </summary>
-    private static async Task<OperationResult> InvokeKoreanFullHdAsync(FailingFakeAdb adb)
+    private static Task<OperationResult> InvokeKoreanFullHdAsync(FailingFakeAdb adb, string? packageName = null) =>
+        InvokeKoreanFullHdWithPackageAsync(adb, packageName ?? KoreanPackage);
+
+    private static async Task<OperationResult> InvokeKoreanFullHdWithPackageAsync(FailingFakeAdb adb, string packageName)
     {
         var fileSystem = new FakeFileSystem();
         var storage = new GameLoopWorkingStorage(fileSystem, FakeWorkRoot.Instance);
         fileSystem.Existing.Add(storage.KoreanResolutionAssetPath);
 
         var session = new GameLoopSession();
-        session.LoadVersion([0x01, 0x02, 0x03], KoreanPackage);
+        session.LoadVersion([0x01, 0x02, 0x03], packageName);
 
         var applier = new GraphicsSettingsApplier(adb, storage, fileSystem, session);
 
@@ -236,20 +267,22 @@ public sealed class KoreanFullHdAbortTests
 
             if (command.StartsWith("[ -d ", StringComparison.Ordinal))
             {
-                var path = command.Substring("[ -d ".Length, command.IndexOf(" ]", StringComparison.Ordinal) - "[ -d ".Length);
+                var words = ShellWords.Split(command);
+                var path = words.Count >= 3 ? words[2] : string.Empty;
                 return Task.FromResult(new ProcessResult(0, _directories.Contains(path) ? "1" : "0", string.Empty, false));
             }
 
             if (command.StartsWith("mv ", StringComparison.Ordinal))
             {
-                var parts = command.Substring(3).Split(' ', 2);
-                if (_directories.Remove(parts[0])) _directories.Add(parts[1]);
+                var words = ShellWords.Split(command);
+                if (words.Count >= 3 && _directories.Remove(words[1])) _directories.Add(words[2]);
                 return Task.FromResult(new ProcessResult(0, string.Empty, string.Empty, false));
             }
 
             if (command.StartsWith("rm -r ", StringComparison.Ordinal))
             {
-                _directories.Remove(command.Substring("rm -r ".Length));
+                var words = ShellWords.Split(command);
+                if (words.Count >= 3) _directories.Remove(words[2]);
                 return Task.FromResult(new ProcessResult(0, string.Empty, string.Empty, false));
             }
 

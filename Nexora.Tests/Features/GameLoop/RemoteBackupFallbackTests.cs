@@ -30,7 +30,7 @@ public sealed class RemoteBackupFallbackTests
 
         await InvokeBackup(applier, DataPath);
 
-        adb.Commands.Should().Contain($"mv {DataPath} {DataPath}.nexora-backup");
+        adb.Commands.Should().Contain($"mv '{DataPath}' '{DataPath}.nexora-backup'");
         adb.DirectoryExists($"{DataPath}.nexora-backup").Should().BeTrue();
         adb.DirectoryExists(DataPath).Should().BeFalse();
     }
@@ -43,7 +43,7 @@ public sealed class RemoteBackupFallbackTests
 
         await InvokeBackup(applier, DataPath);
 
-        adb.Commands.Should().Contain($"rm -r {DataPath}");
+        adb.Commands.Should().Contain($"rm -r '{DataPath}'");
         adb.Commands.Should().NotContain(command => command.StartsWith("mv ", StringComparison.Ordinal));
         adb.DirectoryExists($"{DataPath}.MKbackup").Should().BeTrue("the legacy backup must be preserved");
     }
@@ -56,7 +56,7 @@ public sealed class RemoteBackupFallbackTests
 
         await InvokeRestore(applier, DataPath);
 
-        adb.Commands.Should().Contain($"mv {DataPath}.nexora-backup {DataPath}");
+        adb.Commands.Should().Contain($"mv '{DataPath}.nexora-backup' '{DataPath}'");
         adb.DirectoryExists($"{DataPath}.MKbackup").Should().BeTrue("the legacy orphan is left in place, never auto-migrated");
     }
 
@@ -68,7 +68,7 @@ public sealed class RemoteBackupFallbackTests
 
         await InvokeRestore(applier, DataPath);
 
-        adb.Commands.Should().Contain($"mv {DataPath}.MKbackup {DataPath}");
+        adb.Commands.Should().Contain($"mv '{DataPath}.MKbackup' '{DataPath}'");
         adb.DirectoryExists(DataPath).Should().BeTrue();
     }
 
@@ -158,20 +158,22 @@ public sealed class RemoteBackupFallbackTests
             Commands.Add(command);
             if (command.StartsWith("[ -d ", StringComparison.Ordinal))
             {
-                var path = command.Substring("[ -d ".Length, command.IndexOf(" ]", StringComparison.Ordinal) - "[ -d ".Length);
+                var words = ShellWords.Split(command);
+                var path = words.Count >= 3 ? words[2] : string.Empty;
                 return _directories.Contains(path) ? "1" : "0";
             }
 
             if (command.StartsWith("mv ", StringComparison.Ordinal))
             {
-                var parts = command.Substring(3).Split(' ', 2);
-                if (_directories.Remove(parts[0])) _directories.Add(parts[1]);
+                var words = ShellWords.Split(command);
+                if (words.Count >= 3 && _directories.Remove(words[1])) _directories.Add(words[2]);
                 return "";
             }
 
             if (command.StartsWith("rm -r ", StringComparison.Ordinal))
             {
-                _directories.Remove(command.Substring("rm -r ".Length));
+                var words = ShellWords.Split(command);
+                if (words.Count >= 3) _directories.Remove(words[2]);
                 return "";
             }
 

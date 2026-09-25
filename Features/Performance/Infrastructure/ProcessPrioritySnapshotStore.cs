@@ -81,8 +81,11 @@ public sealed class ProcessPrioritySnapshotStore : IProcessPrioritySnapshotStore
 
     /// <summary>
     /// Test seam to seed snapshot entries without requiring a live process.
+    /// Internal so production callers cannot reach it; the test assembly sees
+    /// it through InternalsVisibleTo (Nexora.csproj). Explicit because an
+    /// internal interface member cannot be implicitly implemented.
     /// </summary>
-    public void AddSnapshotForTesting(
+    void IProcessPrioritySnapshotStore.AddSnapshotForTesting(
         int processId,
         string? executablePath,
         string processName,

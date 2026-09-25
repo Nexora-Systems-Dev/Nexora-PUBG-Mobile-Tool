@@ -44,6 +44,20 @@ public sealed class ShortcutService : IShortcutService
 
     public OperationResult CreateShortcut(string displayName, string packageName)
     {
+        // Defense-in-depth: the picker is catalog-gated upstream, but neither
+        // value may reach a file path or the shortcut script unchecked. The
+        // package rule is GetIcon's rule in this same class; the display-name
+        // rule keeps it a single file name (no traversal, no separators).
+        if (!AppConstants.Validation.IsValidAndroidPackageName(packageName))
+        {
+            return OperationResult.Fail("Invalid PUBG package name.");
+        }
+
+        if (!IsValidShortcutDisplayName(displayName))
+        {
+            return OperationResult.Fail("Invalid shortcut display name.");
+        }
+
         var marketPath = _paths.GetAppMarketPath();
         if (marketPath is null)
         {
@@ -82,5 +96,22 @@ public sealed class ShortcutService : IShortcutService
         {
             return OperationResult.Fail($"Shortcut creation failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// A display name is only ever interpolated as one <c>.lnk</c> file name,
+    /// so it must be a single file name: non-blank, no parent traversal, no
+    /// directory separators, no invalid file-name characters. Catalog names
+    /// ("PUBG Mobile Global") pass; anything path-shaped fails.
+    /// </summary>
+    private static bool IsValidShortcutDisplayName(string? displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName)) return false;
+        if (!string.Equals(displayName, displayName.Trim(), StringComparison.Ordinal)) return false;
+        if (displayName.Contains("..", StringComparison.Ordinal)) return false;
+        if (displayName.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]) >= 0) return false;
+        if (displayName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) return false;
+        if (Path.IsPathRooted(displayName)) return false;
+        return true;
     }
 }

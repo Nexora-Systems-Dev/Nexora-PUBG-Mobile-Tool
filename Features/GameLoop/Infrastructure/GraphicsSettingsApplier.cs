@@ -7,6 +7,7 @@ using Nexora.Features.GameLoop.Application;
 using Nexora.Features.GameLoop.Domain;
 using Nexora.Shared.Contracts;
 using Nexora.Infrastructure.Processes;
+using Nexora.Infrastructure.GameLoop;
 
 /// <summary>
 /// Applies graphics settings to the active PUBG Mobile installation and deploys
@@ -180,7 +181,7 @@ public sealed class GraphicsSettingsApplier
 
         cancellationToken.ThrowIfCancellationRequested();
         var log = new DeviceIssueLog();
-        await RunNonDestructiveAsync($"am force-stop {packageName}", log, cancellationToken);
+        await RunNonDestructiveAsync($"am force-stop {AdbShellText.Quote(packageName)}", log, cancellationToken);
         await Task.Delay(_gameLoop.Timeouts.ForceStopSettleDelayMilliseconds, cancellationToken);
 
         if (!await _adb.PushAsync(_storage.PendingSavPath, $"{remoteDataRoot}/SaveGames/Active.sav", cancellationToken))
@@ -283,12 +284,12 @@ public sealed class GraphicsSettingsApplier
             return OperationResult.Fail(abort);
         }
 
-        await RunNonDestructiveAsync($"am start -n {packageName}/com.epicgames.ue4.SplashActivity", log, cancellationToken);
+        await RunNonDestructiveAsync($"am start -n {AdbShellText.Quote($"{packageName}/com.epicgames.ue4.SplashActivity")}", log, cancellationToken);
 
         // The temporary backup is our own scratch folder, not user data, but a
         // failed cleanup leaves account files behind on the device, so it is
         // destructive-classified and aborts rather than being quietly noted.
-        abort = await RunDestructiveAsync($"rm -r {temporaryAccountBackupPath}", log, cancellationToken);
+        abort = await RunDestructiveAsync($"rm -r {AdbShellText.Quote(temporaryAccountBackupPath)}", log, cancellationToken);
         if (abort is not null)
         {
             return OperationResult.Fail(abort);
@@ -304,26 +305,26 @@ public sealed class GraphicsSettingsApplier
         // mkdir and the copy-out build the backup the restore step depends on,
         // so both are destructive-classified: a failure here is a failure of the
         // whole account-restore contract.
-        var abort = await RunDestructiveAsync($"mkdir -p {temporaryBackupPath}", log, cancellationToken);
+        var abort = await RunDestructiveAsync($"mkdir -p {AdbShellText.Quote(temporaryBackupPath)}", log, cancellationToken);
         if (abort is not null)
         {
             return abort;
         }
 
-        abort = await RunDestructiveAsync($"cp -r {appAccountDataPath}/shared_prefs {temporaryBackupPath}/shared_prefs", log, cancellationToken);
+        abort = await RunDestructiveAsync($"cp -r {AdbShellText.Quote($"{appAccountDataPath}/shared_prefs")} {AdbShellText.Quote($"{temporaryBackupPath}/shared_prefs")}", log, cancellationToken);
         if (abort is not null)
         {
             return abort;
         }
 
-        return await RunDestructiveAsync($"cp -r {appAccountDataPath}/databases {temporaryBackupPath}/databases", log, cancellationToken);
+        return await RunDestructiveAsync($"cp -r {AdbShellText.Quote($"{appAccountDataPath}/databases")} {AdbShellText.Quote($"{temporaryBackupPath}/databases")}", log, cancellationToken);
     }
 
     private async Task<string?> ResetPackageAndGrantPermissionsAsync(string packageName, DeviceIssueLog log, CancellationToken cancellationToken)
     {
         // pm clear wipes the package's data: the first failure aborts so the
         // restore phase never runs against a package in an unknown state.
-        var abort = await RunDestructiveAsync($"pm clear {packageName}", log, cancellationToken);
+        var abort = await RunDestructiveAsync($"pm clear {AdbShellText.Quote(packageName)}", log, cancellationToken);
         if (abort is not null)
         {
             return abort;
@@ -331,25 +332,25 @@ public sealed class GraphicsSettingsApplier
 
         // Grants repair a cleared package and cannot lose data, so they are
         // reported rather than fatal.
-        await RunNonDestructiveAsync($"pm grant {packageName} android.permission.READ_EXTERNAL_STORAGE", log, cancellationToken);
-        await RunNonDestructiveAsync($"pm grant {packageName} android.permission.WRITE_EXTERNAL_STORAGE", log, cancellationToken);
+        await RunNonDestructiveAsync($"pm grant {AdbShellText.Quote(packageName)} android.permission.READ_EXTERNAL_STORAGE", log, cancellationToken);
+        await RunNonDestructiveAsync($"pm grant {AdbShellText.Quote(packageName)} android.permission.WRITE_EXTERNAL_STORAGE", log, cancellationToken);
 
         return null;
     }
 
     private async Task<string?> RestoreAccountCredentialsAsync(string temporaryBackupPath, string appAccountDataPath, DeviceIssueLog log, CancellationToken cancellationToken)
     {
-        var abort = await RunDestructiveAsync($"cp -r {temporaryBackupPath}/shared_prefs {appAccountDataPath}/shared_prefs", log, cancellationToken);
+        var abort = await RunDestructiveAsync($"cp -r {AdbShellText.Quote($"{temporaryBackupPath}/shared_prefs")} {AdbShellText.Quote($"{appAccountDataPath}/shared_prefs")}", log, cancellationToken);
         if (abort is not null)
         {
             return abort;
         }
 
-        return await RunDestructiveAsync($"cp -r {temporaryBackupPath}/databases {appAccountDataPath}/databases", log, cancellationToken);
+        return await RunDestructiveAsync($"cp -r {AdbShellText.Quote($"{temporaryBackupPath}/databases")} {AdbShellText.Quote($"{appAccountDataPath}/databases")}", log, cancellationToken);
     }
 
     private Task RelaunchPubgActivityAsync(string packageName, DeviceIssueLog log, CancellationToken cancellationToken) =>
-        RunNonDestructiveAsync($"am start -n {packageName}/com.epicgames.ue4.SplashActivity", log, cancellationToken);
+        RunNonDestructiveAsync($"am start -n {AdbShellText.Quote($"{packageName}/com.epicgames.ue4.SplashActivity")}", log, cancellationToken);
 
     private async Task<string?> BackupRemoteFolderAsync(string remotePath, DeviceIssueLog log, CancellationToken cancellationToken)
     {
@@ -368,12 +369,12 @@ public sealed class GraphicsSettingsApplier
         {
             if (backupExists is { Answered: true, Exists: false } && legacyBackupExists is { Answered: true, Exists: false })
             {
-                return await RunDestructiveAsync($"mv {remotePath} {backupPath}", log, cancellationToken);
+                return await RunDestructiveAsync($"mv {AdbShellText.Quote(remotePath)} {AdbShellText.Quote(backupPath)}", log, cancellationToken);
             }
 
             if (backupExists is { Answered: true, Exists: true } || legacyBackupExists is { Answered: true, Exists: true })
             {
-                return await RunDestructiveAsync($"rm -r {remotePath}", log, cancellationToken);
+                return await RunDestructiveAsync($"rm -r {AdbShellText.Quote(remotePath)}", log, cancellationToken);
             }
 
             // Folder present but the backup pair only partly known: skipping the
@@ -405,13 +406,13 @@ public sealed class GraphicsSettingsApplier
         var newBackup = await RemoteFolderExistsAsync(backupPath, log, cancellationToken);
         if (newBackup is { Answered: true, Exists: true })
         {
-            return await RunDestructiveAsync($"mv {backupPath} {remotePath}", log, cancellationToken);
+            return await RunDestructiveAsync($"mv {AdbShellText.Quote(backupPath)} {AdbShellText.Quote(remotePath)}", log, cancellationToken);
         }
 
         var legacyBackup = await RemoteFolderExistsAsync(legacyBackupPath, log, cancellationToken);
         if (legacyBackup is { Answered: true, Exists: true })
         {
-            return await RunDestructiveAsync($"mv {legacyBackupPath} {remotePath}", log, cancellationToken);
+            return await RunDestructiveAsync($"mv {AdbShellText.Quote(legacyBackupPath)} {AdbShellText.Quote(remotePath)}", log, cancellationToken);
         }
 
         return null;
@@ -426,7 +427,7 @@ public sealed class GraphicsSettingsApplier
     /// </summary>
     private async Task<RemoteProbe> RemoteFolderExistsAsync(string remotePath, DeviceIssueLog log, CancellationToken cancellationToken)
     {
-        var result = await _adb.ShellAsync($"[ -d {remotePath} ] && echo 1 || echo 0", cancellationToken);
+        var result = await _adb.ShellAsync($"[ -d {AdbShellText.Quote(remotePath)} ] && echo 1 || echo 0", cancellationToken);
         if (!result.Succeeded)
         {
             log.Issues.Add($"Could not verify whether '{remotePath}' exists: {ProcessText.GetError(result)}");
