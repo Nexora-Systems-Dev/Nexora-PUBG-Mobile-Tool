@@ -62,7 +62,7 @@ Package the self-contained release with [`scripts/package-release.ps1`](./script
 .\scripts\package-release.ps1 -Version v1.3.0
 ```
 
-This produces `Nexora-v1.3.0-win-x64.exe`, `Nexora-v1.3.0-win-x64.zip`, and a `SHA256SUMS.txt` under `artifacts/`. Releases are unsigned (no Authenticode certificate configured), so paste the `SHA-256 (...)` line the script prints into the GitHub release body — the in-app updater reads the checksum from there.
+This produces `Nexora-v1.3.0-win-x64.exe`, `Nexora-v1.3.0-win-x64.zip`, and a `SHA256SUMS.txt` under `artifacts/`. Releases are unsigned (no Authenticode certificate configured), so paste the `SHA256: <hash>` line the script prints into the GitHub release body — the in-app updater reads the checksum from there.
 
 ## Project layout
 

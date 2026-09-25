@@ -120,7 +120,7 @@ $hashes | Set-Content -LiteralPath (Join-Path $artifactsRoot "$releaseName-SHA25
 # can read this checksum, and it reads the checksum from the GitHub release
 # body. Surface a paste-ready line so publishing it is not a manual hunt.
 $exeChecksum = (Get-FileHash -Algorithm SHA256 -LiteralPath $releaseExe).Hash.ToLowerInvariant()
-$publisherLine = "SHA-256 ($releaseName.exe): $exeChecksum"
+$publisherLine = "SHA256: $exeChecksum"
 
 [pscustomobject]@{
     Executable = $releaseExe
