@@ -75,6 +75,12 @@ This produces `Nexora-v1.3.0-win-x64.exe`, `Nexora-v1.3.0-win-x64.zip`, and a `S
 
 - Settings are not applied until you select the action.
 - NVIDIA Profile Inspector, Defender, and power-plan operations can fail on driver versions, file locks, or Windows policy. Failures are reported, not hidden.
+- **Defender exclusions are cleaned up on close.** When an optimizer action excludes the GameLoop directory from Windows Defender, Nexora removes that exclusion again when you close the window or restore the performance session — and only the exclusion it added itself; an exclusion you or another tool already had is left untouched. If a close is interrupted before that runs, remove it by hand from an elevated PowerShell (list first, then remove your path):
+
+  ```powershell
+  Get-MpPreference | Select-Object -ExpandProperty ExclusionPath
+  Remove-MpPreference -ExclusionPath 'C:\Program Files\TxGameAssistant'
+  ```
 - Updates apply in place: a helper waits for the app to exit, overwrites the executable, relaunches it, and cleans up staging.
 - `artifacts/`, `bin/`, and `obj/` are build outputs and stay out of Git.
 

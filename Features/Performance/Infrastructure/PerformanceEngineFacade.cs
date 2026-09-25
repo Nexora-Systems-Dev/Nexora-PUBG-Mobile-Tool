@@ -140,18 +140,26 @@ public sealed class PerformanceEngineFacade : IGameLoopPerformanceEngine
     public async Task<OperationResult> RestorePerformanceSessionAsync(CancellationToken cancellationToken = default)
     {
         // Shutdown-safe path: await the bounded 2s monitor stop via
-        // RestoreAsync instead of fire-and-forget Stop(). Power restore is
-        // sync-native and bounded by the process runner timeout.
-        // Note: registry / GPU / NVIDIA / Defender optimizers are permanent
-        // user-triggered tuning (not session state) — only power policy and
-        // runtime priority are restored here.
+        // RestoreAsync instead of fire-and-forget Stop(). Power restore and
+        // Defender exclusion removal are sync-native and bounded by the
+        // process runner timeout.
+        // Note: registry / GPU / NVIDIA optimizers are permanent
+        // user-triggered tuning (not session state) — only power policy,
+        // runtime priority, and the exclusion this same session added are
+        // restored here.
         cancellationToken.ThrowIfCancellationRequested();
         var priorityResult = await _processPriority.RestoreAsync(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var powerResult = _powerSession.Restore();
+        cancellationToken.ThrowIfCancellationRequested();
+        // Best-effort like the steps above: a failure lands in the report
+        // instead of escaping into Window_Closing. Only the exclusion this
+        // engine added is eligible, never a pre-existing one.
+        var defenderResult = await _defenderExclusion.RemoveDefenderExclusionAsync(cancellationToken);
         var report = PerformanceExecutionReport.Create(
             ("Power policy restore", powerResult),
-            ("GameLoop runtime priority restore", priorityResult));
+            ("GameLoop runtime priority restore", priorityResult),
+            ("Defender exclusion removal", defenderResult));
 
         return report.ToOperationResult(
             "Previous Windows power mode and GameLoop priorities restored.",
