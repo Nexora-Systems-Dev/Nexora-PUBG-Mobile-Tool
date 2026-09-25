@@ -71,8 +71,12 @@ public sealed class NetworkViewModel
     {
         if (!DnsCatalog.TryGet(label, out var entry) || entry is null) return null;
 
+        // Cancel only; the superseded probe disposes its own CTS in its finally.
+        // Eagerly disposing here would leave a disposed source in the hands of a
+        // still-running probe (audit PRP-018) — benign for Register on this runtime
+        // by experiment, but a trap for any future WaitHandle use, so cancel-only
+        // is the shape.
         _probeCancellation?.Cancel();
-        _probeCancellation?.Dispose();
         var probeCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _probeCancellation = probeCancellation;
         try

@@ -247,6 +247,25 @@ public sealed class NetworkViewModelTests
         probe!.PingMs.Should().Be(12);
     }
 
+    [Fact]
+    public async Task ProbeDnsAsync_SupersededProbe_RegisteringLate_DoesNotThrow()
+    {
+        var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var network = new LateRegisterPingTools(gate.Task);
+        var vm = Build(networkTools: network);
+        var first = DnsCatalog.Labels[0];
+        var second = DnsCatalog.Labels[1];
+
+        var superseded = vm.ProbeDnsAsync(first, () => second);
+        var current = vm.ProbeDnsAsync(second, () => second);
+        gate.TrySetResult(true);
+
+        (await superseded).Should().BeNull("late registration on a canceled-not-disposed token must not throw");
+        var probe = await current;
+        probe.Should().NotBeNull();
+        probe!.PingMs.Should().Be(12);
+    }
+
     private static NetworkViewModel Build(
         INetworkToolsService? networkTools = null,
         FakeIpadLayout? ipadLayout = null,
@@ -285,6 +304,27 @@ public sealed class NetworkViewModelTests
 
         public async Task<int?> PingDnsAsync(string host, CancellationToken cancellationToken = default) =>
             await gate.WaitAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Pins the supersede contract under adversarial timing: a ping that registers
+    /// on the token only after the supersede has landed must still settle null and
+    /// never throw. (Audit PRP-018: the previous CTS is canceled, never eagerly
+    /// disposed. Verified by experiment that Register tolerates a disposed source on
+    /// this runtime — but cancel-only keeps the whole WaitHandle class of failures
+    /// impossible, so the test pins the contract, not the race.)
+    /// </summary>
+    private sealed class LateRegisterPingTools(Task<bool> gate) : INetworkToolsService
+    {
+        public OperationResult ChangeDns(string primary, string secondary) =>
+            OperationResult.Ok($"Applied: {primary} / {secondary}");
+
+        public async Task<int?> PingDnsAsync(string host, CancellationToken cancellationToken = default)
+        {
+            await gate;
+            using var registration = cancellationToken.Register(() => { });
+            return 12;
+        }
     }
 
     private sealed class FakeIpadLayout : IIpadLayoutService
