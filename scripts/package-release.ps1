@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "v1.0.15",
+    [string]$Version = "v1.3.0",
     [string]$Runtime = "win-x64",
     [string]$CertificateThumbprint = $env:NEXORA_SIGN_CERT_THUMBPRINT,
     [string]$CertificatePath = $env:NEXORA_SIGN_CERT_PATH,
