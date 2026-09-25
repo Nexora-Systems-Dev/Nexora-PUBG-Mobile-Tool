@@ -51,6 +51,15 @@ public sealed class GraphicsSettingsService : IGraphicsSettingsService
         return null;
     }
 
+    /// <summary>
+    /// The service boundary owns the off-thread surface: the apply's ADB round
+    /// trips — over twenty for the Korean 1080p path — run on the thread pool so
+    /// the page's "Applying graphics settings…" status can ever render instead of
+    /// blocking the dispatcher for the whole duration. <see cref="Task.Run"/>
+    /// deliberately runs the engine on a pool thread; it does not capture the
+    /// caller's context into the delegate, while the page still awaits on its own
+    /// context, so status events keep posting to the UI thread as they fire.
+    /// </summary>
     public Task<OperationResult> ApplyAsync(GraphicsSelection selection, CancellationToken cancellationToken = default) =>
-        _graphics.ApplyGraphicsAsync(selection, cancellationToken);
+        Task.Run(() => _graphics.ApplyGraphicsAsync(selection, cancellationToken), cancellationToken);
 }

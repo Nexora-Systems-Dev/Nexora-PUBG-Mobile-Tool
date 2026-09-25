@@ -115,6 +115,19 @@ public sealed class AdbClient : IAdbClient
         return Shell(command);
     }
 
+    /// <summary>
+    /// Async twin of <see cref="Shell(string, CancellationToken)"/>: the adb
+    /// wait runs off the calling (UI) thread, and the full
+    /// <see cref="ProcessResult"/> comes back so a caller can see a command that
+    /// failed instead of only its stdout. Missing-binary handling mirrors
+    /// <see cref="Run"/>.
+    /// </summary>
+    public async Task<ProcessResult> ShellAsync(string command, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return await RunAsync(cancellationToken, "-s", DeviceSerial, "shell", command);
+    }
+
     public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null)
     {
         return TransferWithRetryAsync("pull", remotePath, localPath, cancellationToken, progress);

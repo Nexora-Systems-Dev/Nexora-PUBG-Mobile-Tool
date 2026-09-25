@@ -185,6 +185,9 @@ public sealed class SaveProfileReaderTests
             return Shell(command);
         }
 
+        public Task<ProcessResult> ShellAsync(string command, CancellationToken cancellationToken) =>
+            Task.FromResult(new ProcessResult(0, Shell(command, cancellationToken), string.Empty, false));
+
         public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(pullSucceeds);
 

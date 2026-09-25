@@ -138,6 +138,9 @@ public sealed class ConnectDisconnectOffloadTests
 
         public string Shell(string command, CancellationToken cancellationToken) => string.Empty;
 
+        public Task<ProcessResult> ShellAsync(string command, CancellationToken cancellationToken) =>
+            Task.FromResult(new ProcessResult(0, string.Empty, string.Empty, false));
+
         public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(false);
 
@@ -176,6 +179,9 @@ public sealed class ConnectDisconnectOffloadTests
         public string Shell(string command) => string.Empty;
 
         public string Shell(string command, CancellationToken cancellationToken) => string.Empty;
+
+        public Task<ProcessResult> ShellAsync(string command, CancellationToken cancellationToken) =>
+            Task.FromResult(new ProcessResult(0, string.Empty, string.Empty, false));
 
         public Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null) =>
             Task.FromResult(false);

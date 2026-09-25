@@ -27,6 +27,17 @@ public interface IAdbClient
     /// </summary>
     string Shell(string command, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Async twin of <see cref="Shell(string, CancellationToken)"/> for callers
+    /// that must not block the UI thread: the adb round trip awaits the offloaded
+    /// process instead of occupying the calling thread. Unlike the sync overloads
+    /// it returns the whole <see cref="ProcessResult"/> — stdout, stderr and exit
+    /// code — because a caller that mutates device state has to be able to see a
+    /// command that failed. Throws <see cref="OperationCanceledException"/> when
+    /// the token is cancelled before adb starts.
+    /// </summary>
+    Task<ProcessResult> ShellAsync(string command, CancellationToken cancellationToken);
+
     Task<bool> PullAsync(string remotePath, string localPath, CancellationToken cancellationToken, IProgress<string>? progress = null);
 
     Task<bool> PushAsync(string localPath, string remotePath, CancellationToken cancellationToken, IProgress<string>? progress = null);

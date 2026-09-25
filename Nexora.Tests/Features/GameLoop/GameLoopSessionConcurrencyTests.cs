@@ -226,6 +226,9 @@ public sealed class GameLoopSessionConcurrencyTests
             return Shell(command);
         }
 
+        public Task<ProcessResult> ShellAsync(string command, CancellationToken cancellationToken) =>
+            Task.FromResult(new ProcessResult(0, Shell(command, cancellationToken), string.Empty, false));
+
         public Task<bool> WaitForBootAsync(CancellationToken cancellationToken, IProgress<string>? progress = null) => Task.FromResult(true);
 
         public IReadOnlyList<string> FindInstalledPackages(IEnumerable<string> packageNames, CancellationToken cancellationToken) =>
